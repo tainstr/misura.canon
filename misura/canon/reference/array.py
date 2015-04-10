@@ -4,7 +4,7 @@ import tables
 from misura.parameters import cfilter
 from reference import Reference
 import numpy as np
-from scipy.interpolate import interp1d
+from scipy.interpolate import interp1d, LSQUnivariateSpline
 
 class Array(Reference):
 	fields=[('t','float64'),('v','float64')]
@@ -59,7 +59,7 @@ class Array(Reference):
 		return Reference.decode(tuple(dat))
 	
 	#TODO: move into OutputFile to avoid IPC (performance quite ok anyway)
-	def interpolate(self,step=1,kind='linear'):
+	def interpolate(self,step=1,kind=1):
 		"""Array interpolation for summary synchronization."""
 		vt=Reference.interpolate(self,step)
 		if vt is False:
@@ -76,8 +76,10 @@ class Array(Reference):
 # 		print 'Getting data',self.path,dat,vt
 		dat=np.array(dat)
 		dat=dat.transpose()
-		# Interpolate time and value
-		f=interp1d(dat[0],dat[1],kind=kind)
+		# Interpolate time and value - interp1d version
+#		f=interp1d(dat[0],dat[1],kind=kind)
+		# Build a linear spline using vt points as knots
+		f=LSQUnivariateSpline(dat[0],dat[1],vt, k=kind)
 		while vt[0]<dat[0][0] and len(vt)>1:
 			vt=vt[1:]
 		while vt[-1]>dat[0][-1] and len(vt)>1:

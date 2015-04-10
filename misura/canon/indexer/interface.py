@@ -213,9 +213,7 @@ class SharedFile(CoreFile,DataOperator):
 	@lockme
 	def header(self, reference_classes=['Array'],startswith=False,refresh=False):
 		"""Returns all available data references"""
-		print 'header getting node /'
 		if refresh or len(self._header)==0:
-			print 'refreshing'
 			self._header=list_references(self.test.root)
 			print self._header
 		if reference_classes is False:
