@@ -13,8 +13,6 @@ class Array(Reference):
 		f=Reference.create(self)
 		if not f:
 			return False
-# 		print 'creating array table',self.outfile,f,self.folder,self.handle,fields,self.name
-# 		print self.outfile.get_path(),self.outfile.get_id()
 		if fields:
 			self.fields=fields
 		self.outfile.create_table(where=f,
@@ -77,9 +75,13 @@ class Array(Reference):
 		dat=np.array(dat)
 		dat=dat.transpose()
 		# Interpolate time and value - interp1d version
-#		f=interp1d(dat[0],dat[1],kind=kind)
+		#f=interp1d(dat[0],dat[1],kind=kind)
 		# Build a linear spline using vt points as knots
-		f=LSQUnivariateSpline(dat[0],dat[1],vt, k=kind)
+		#f=LSQUnivariateSpline(dat[0],dat[1],vt, k=kind)
+		# Do a linear fitting
+		(slope,const),res,rank,sing,rcond=np.polyfit(dat[0],dat[1], kind, full=True)
+		# Build a vectorized evaluator
+		f=np.vectorize(lambda x: slope*x+const)
 		while vt[0]<dat[0][0] and len(vt)>1:
 			vt=vt[1:]
 		while vt[-1]>dat[0][-1] and len(vt)>1:
