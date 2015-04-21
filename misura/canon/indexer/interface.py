@@ -49,7 +49,6 @@ class SharedFile(CoreFile,DataOperator):
 	
 	def __init__(self,*a,**k):
 		CoreFile.__init__(self,*a,**k)
-		self.cache=[]
 		self.conf=False
 		self.version=''
 
@@ -124,7 +123,9 @@ class SharedFile(CoreFile,DataOperator):
 		print 'setting version to ',newversion
 		# Find latest version
 		if newversion<0:
+			self._lock.acquire()
 			newversion=getattr(self.test.root.conf.attrs,'versions',0)
+			self._lock.release()
 		if newversion==0 or newversion=='':
 			print 'set_version original'
 			if self.version!='':
@@ -144,6 +145,7 @@ class SharedFile(CoreFile,DataOperator):
 		self.version=newversion
 		return True
 		
+	@lockme
 	def create_version(self,name=False):
 		"""Create a new version with `name`"""
 		latest=getattr(self.test.root.conf.attrs,'versions',0)
@@ -152,7 +154,7 @@ class SharedFile(CoreFile,DataOperator):
 		if not name: name=newversion
 		self.create_group('/',newversion[1:])
 		d=datetime.now().strftime("%H:%M:%S, %d/%m/%Y")
-		self.set_attributes(newversion,attrs={'name':name,'date': d})	
+		self._set_attributes(newversion,attrs={'name':name,'date': d})	
 		self.test.root.conf.attrs.versions=latest+1
 		# Set current version (will be empty until some transparent writing occurs)
 		self.version=newversion
@@ -240,26 +242,28 @@ class SharedFile(CoreFile,DataOperator):
 	@lockme
 	def get_decoded(self,path,idx,get):
 		"""Get the `path` node index `idx` using the getter function `get`"""
-		n=self.test.getNode(path)
-		return get(n,idx)
-	
-
+		n=self.test.get_node(path)
+		r=get(n,idx)
+#		n.close()
+		return r
 
 	@lockme
 	def query_time(self, path, startTime=-1,  endTime=-1, step=None, interp=False):
 		"""Reads an array in the requested time range"""
-		n=self.test.getNode(path)
+		n=self.test.get_node(path)
 		#TODO: adapt also to other Reference objects
 		t=n.cols.t
 		if startTime<0: startTime=t[0]
 		if endTime<=0: endTime=t[-1]
 		if startTime>endTime:
 			self.log.error('impossible time frame',startTime,endTime)
+#			n.close()
 			return []
 		si=csutil.find_nearest_val(t,startTime)
 		ei=csutil.find_nearest_val(t,endTime)
 		print startTime,si,endTime,ei
 		arr=n[si:ei]
+#		n.close()
 		if step is None:
 			return arr
 		# Interpolate for time stepping

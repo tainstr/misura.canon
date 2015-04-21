@@ -36,6 +36,7 @@ class FileManager(object):
 			if f is False:
 				f=self.open_uid(prefix)
 				if f is False:
+					print 'Failed opening by uid', prefix
 					return False
 			uid=prefix
 		f=self.tests[uid]

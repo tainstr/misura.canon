@@ -23,6 +23,7 @@ class Reference(object):
 		"""
 		self.summary=False
 		self.mtime=0
+		"""Last modification time"""
 		self._path=False
 		"""Path of the output node"""
 		self.outfile=outfile
@@ -31,11 +32,13 @@ class Reference(object):
 		# Define static methods for unbound functions
 		for k,func in self.unbound.iteritems():
 			setattr(self,k,staticmethod(func))
-		# Create or Read a reference
+		
+		# Read opt from reference
 		if opt is False:
-			self.open(folder)		
+			self.open(folder)
+		# Create reference
 		else:
-			# get folder from KID if undefined
+			# Get folder from KID if undefined
 			if folder is False:
 				folder=opt['kid']
 				h=opt['handle']
@@ -76,10 +79,8 @@ class Reference(object):
 		Returns False if the structure was already present.
 		To be overridden."""
 		ref=self.folder+self.handle
-# 		print 'creating reference node',ref
 		if self.outfile.has_node(ref):
 			if self.outfile.get_node_attr(ref,'_reference_class')==self.__class__.__name__:
-# 				print 'Recovered previous reference',ref
 				self.path=ref
 				return False
 			print 'Removing wrong type old reference',ref
@@ -91,12 +92,13 @@ class Reference(object):
 	def open(self,folder):
 		"""Opens an existing data structure located at `folder`"""
 		f=folder.split('/')
-		if f[-1]=='': f.pop(-1)
+		if f[-1]=='': 
+			f.pop(-1)
 		hnd=f.pop(-1)
 		self.folder='/'.join(f)+'/'
 		self._path=self.folder+hnd
-		print 'opening existent node',folder,self.folder,self.path
-		self.opt=self.get_attributes()	
+		self.opt=self.get_attributes()
+		return True
 		
 	def append(self,data):
 		"""Append rows of data to referenced node."""

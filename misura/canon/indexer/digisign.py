@@ -38,8 +38,9 @@ def get_node_hash(f,path):
 	#FIXME: fails on VLArray (image, profile, object)
 	d=''
 	try:
-		n=f.getNode(path)
+		n=f.get_node(path)
 		d=hashlib.md5(n[:]).hexdigest()
+		n.close()
 	except:
 		print 'while hashing',path
 		print_exc()

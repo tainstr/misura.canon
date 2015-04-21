@@ -45,7 +45,6 @@ class CoreFile(object):
 		# FIXME: open_file is defined in SharedFile...!!!!
 		if path is not False:
 			self.open_file(path,uid,mode=mode,header=header)
-		self.cache=[]
 		
 	def fileno(self):
 		return self.test.fileno()
@@ -80,8 +79,10 @@ class CoreFile(object):
 		if t is False:
 			print 'Asking length without file' 
 			return 0
-		n=self.test.getNode(path)
-		return len(n)
+		n=self.test.get_node(path)
+		r=len(n)
+#		n.close()
+		return r
 	
 	def isopen(self):
 		if self.test is False:
@@ -132,42 +133,55 @@ class CoreFile(object):
 			return False
 		if name: where+='/'+name
 		return where in self.test
+		
 	@lockme
 	def has_node_attr(self,path,attr):
 		if not path.startswith('/'): 
 			print 'has_node_path, wrong path', path, attr
 			path='/'+path
-		n=self.test.getNode(path)
-		return hasattr(n.attrs,attr)
+		n=self.test.get_node(path)
+		r=hasattr(n.attrs,attr)
+#		n.close()
+		return r
+		
 	@lockme
 	def get_node_attr(self,*a,**kw):
 		"""Return the attribute named `attrname` of node `where`"""
-		r=self.test.getNodeAttr(*a,**kw)
+		r=self.test.get_node_attr(*a,**kw)
 		return csutil.xmlrpcSanitize(r)
 	
 	@lockme
 	def set_node_attr(self,*a,**kw):
-		return self.test.setNodeAttr(*a,**kw)
+		return self.test.set_node_attr(*a,**kw)
 	
 	@lockme
 	def get_attributes(self,where,name=None):
 		print 'getting attributes from',where
 		r={}
-		a=self.test.getNode(where,name).attrs
+		n=self.test.get_node(where,name)
+		a=n.attrs
 		for key in a._v_attrnamesuser:
 			r[key]=getattr(a,key)
+#		n.close()
 		return r
 	
-	def set_attributes(self,where,name=None,attrs={}):
+	@lockme
+	def _set_attributes(self,where,name=None,attrs={}):
 		for k,v in attrs.iteritems():
 			print 'setting node attr',where,name,k,v
-			self.set_node_attr(where,k,v,name=name)
+			self.test.set_node_attr(where,k,v,name=name)
 	
+	def set_attributes(self, *a, **kw):
+		return self._set_attributes(*a, **kw)
+	
+	@lockme
 	def len(self,where):
 # 		print 'len',where
-		n=self.test.getNode(where)
+		n=self.test.get_node(where)
 # 		print 'asking length',where,n,n.nrows
-		return int(n.nrows)
+		r=int(n.nrows)
+#		n.close()
+		return r
 	
 	
 	@lockme
@@ -178,8 +192,9 @@ class CoreFile(object):
 			return False
 		r=False
 		try:
-			n=self.test.getNode(where)
+			n=self.test.get_node(where)
 			r=n.append(data)
+#			n.close()
 		except:
 			print 'Exception appending to',where,type(data),data,repr(data)
 			print_exc()
@@ -204,11 +219,11 @@ class CoreFile(object):
 		if self.test is False: 
 			print 'CoreFile.file_node: no test', self.path
 			return ''
-		node=self.test.getNode(path)
+		node=self.test.get_node(path)
 		print 'open node',path
 		node=filenode.openNode(node, 'r')
 		r=node.read()
-		node.close()
+#		node.close()
 		return r
 	
 	def xmlrpc_file_node(self,path):
@@ -302,7 +317,7 @@ class CoreFile(object):
 			print 'total',t2-t0
 		else:
 			node.write(data)
-		node.close()
+#		node.close()
 		# Restore attributes
 		self.test.flush()
 		self._lock.release()
