@@ -105,7 +105,7 @@ class DataOperator(object):
 		x=False
 		node=False
 		if path is not False:
-			node=self.test.get_node(path)
+			node=self._get_node(path)
 			arr=node
 			x=arr.cols.t
 			y=arr.cols.v
@@ -114,11 +114,7 @@ class DataOperator(object):
 			y=arr[:,1]
 		if len(arr)==0:
 			print 'Empty dataset',path
-			if node: 
-				node.close()
 			return False,False
-		if node: 
-			node.close()
 		if x is False:
 			return False,False
 		limit=self.limit.get(path,False)
@@ -130,8 +126,7 @@ class DataOperator(object):
 	@lockme
 	def col(self, path, idx_or_slice=None,raw=False):
 		"""Reads an array in the requested slice. If endIdx is not specified, reads just one point."""
-		n=self.test.get_node(path)
-		node=n
+		n=self._get_node(path)
 		lim=self.get_limit(path)
 		if lim:
 			n=n[lim]
@@ -144,16 +139,14 @@ class DataOperator(object):
 		if idx_or_slice is not None:
 			slc=csutil.toslice(idx_or_slice)
 			n=n[slc]
-		node.close()
 		return n
 		
 	def _col_at(self, path, idx, raw=False):
 		"""Retrive single index `idx` from node `path`"""
-		node=self.test.get_node(path)
+		node=self._get_node(path)
 		n=node[idx]
 		if not raw:
 			n=n.view(np.float64).reshape(n.shape + (-1,))
-		node.close()
 		return n
 
 	@lockme
@@ -213,7 +206,7 @@ class DataOperator(object):
 	def search(self,path,op,cond='x==y',pos=-1):
 		"""Search dataset path with operator `op` for condition `cond`"""
 		print 'searching in ',path,cond
-		tab=self.test.get_node(path)
+		tab=self._get_node(path)
 		x, y=tab.cols.t, tab.cols.v
 		limit=self.limit.get(path,slice(None, None, None))
 		y,m=op(y)
@@ -223,20 +216,17 @@ class DataOperator(object):
 			if y[0]>m:
 				last=0
 			elif max(y)<m:
-				tab.close()
 				return False
 			cond='y>m'
 		elif cond=='x<y': # drops
 			if y[0]<m:
 				last=0
 			elif min(y)>m:
-				tab.close()
 				return False
 			cond='y<m'
 		elif cond=='x~y':
 			last=self.find_nearest_cond(tab,m,limit=limit)
 			if last is None:
-				tab.close()
 				return False
 		else:
 			cond='y==m'
@@ -256,11 +246,9 @@ class DataOperator(object):
 			print 'get_where_list', path, cond, m, last, limit
 			if last is None or len(last)==0:
 				print 'FAILED SEARCH', path, cond, m, limit
-				tab.close()
 				return False
 			last=last[0]
 		print 'done searching',path,last, len(y), x[last], y[last], m,  cond
-		tab.close()
 		return last,x[last],y[last]
 	
 	def max(self,path):
@@ -305,7 +293,7 @@ class DataOperator(object):
 	
 	def _get_time(self,path,t, get=False,seed=None):
 		"""Optimized search of the nearest index to time `t` using the getter function `get` and starting from `seed` index."""
-		n=self.test.get_node(path)
+		n=self._get_node(path)
 #		lim=self.get_limit(path)
 #		if lim:
 #			n=n[lim]
@@ -314,7 +302,6 @@ class DataOperator(object):
 		else:
 			get=functools.partial(get,n)
 		idx=csutil.find_nearest_val(n, t, get=get, seed=seed)
-		n.close()
 		return idx
 	
 	@lockme

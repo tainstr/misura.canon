@@ -55,8 +55,8 @@ class Array(Reference):
 		if n==2:
 			return list(dat)
 		return Reference.decode(tuple(dat))
-	
-	#TODO: move into OutputFile to avoid IPC (performance quite ok anyway)
+
+
 	def interpolate(self,step=1,kind=1):
 		"""Array interpolation for summary synchronization."""
 		vt=Reference.interpolate(self,step)

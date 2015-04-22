@@ -37,6 +37,7 @@ class CoreFile(object):
 	
 	def __init__(self,path=False,uid='',mode='a',title='',log=csutil.fakelogger,header=True):
 		self._header={} # static header listing
+		self.node_cache={}
 		self.path=False
 		self.uid=False
 		self._test=False	# currently opened HDF file
@@ -73,13 +74,29 @@ class CoreFile(object):
 	def test(self,test):
 		self._test=test
 		
+	def _get_node(self,path,subpath=False):
+		return self.test.get_node(path)
+		#FOR TESTING:
+		if subpath:
+			if not path.endswith('/'): path+='/'
+			path=path+subpath
+		n=self.node_cache.get(path,False)
+		if n is not False:
+			if not n._v_isopen:
+				print 'Found closed node. Reopening:',path,n._v_isopen
+				n=False
+		if n is False:
+			n=self.test.get_node(path)
+			self.node_cache[path]=n
+		return n
+		
 	@lockme
 	def __len__(self,path):
 		t=self.test
 		if t is False:
 			print 'Asking length without file' 
 			return 0
-		n=self.test.get_node(path)
+		n=self._get_node(path)
 		r=len(n)
 #		n.close()
 		return r
@@ -95,6 +112,7 @@ class CoreFile(object):
 	@lockme
 	def close(self):
 		print 'CoreFile.close',self.path,type(self.test)
+		self.node_cache={}
 		try:
 			if self.test is not False: 
 # 				print 'closing',self.path
@@ -139,7 +157,7 @@ class CoreFile(object):
 		if not path.startswith('/'): 
 			print 'has_node_path, wrong path', path, attr
 			path='/'+path
-		n=self.test.get_node(path)
+		n=self._get_node(path)
 		r=hasattr(n.attrs,attr)
 #		n.close()
 		return r
@@ -158,7 +176,7 @@ class CoreFile(object):
 	def get_attributes(self,where,name=None):
 		print 'getting attributes from',where
 		r={}
-		n=self.test.get_node(where,name)
+		n=self._get_node(where,name)
 		a=n.attrs
 		for key in a._v_attrnamesuser:
 			r[key]=getattr(a,key)
@@ -177,7 +195,7 @@ class CoreFile(object):
 	@lockme
 	def len(self,where):
 # 		print 'len',where
-		n=self.test.get_node(where)
+		n=self._get_node(where)
 # 		print 'asking length',where,n,n.nrows
 		r=int(n.nrows)
 #		n.close()
@@ -192,7 +210,7 @@ class CoreFile(object):
 			return False
 		r=False
 		try:
-			n=self.test.get_node(where)
+			n=self._get_node(where)
 			r=n.append(data)
 #			n.close()
 		except:
@@ -219,11 +237,11 @@ class CoreFile(object):
 		if self.test is False: 
 			print 'CoreFile.file_node: no test', self.path
 			return ''
-		node=self.test.get_node(path)
+		node=self._get_node(path)
 		print 'open node',path
 		node=filenode.openNode(node, 'r')
 		r=node.read()
-#		node.close()
+# 		node.close()
 		return r
 	
 	def xmlrpc_file_node(self,path):

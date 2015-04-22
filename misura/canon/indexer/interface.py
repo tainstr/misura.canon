@@ -51,9 +51,11 @@ class SharedFile(CoreFile,DataOperator):
 		CoreFile.__init__(self,*a,**k)
 		self.conf=False
 		self.version=''
-
+		self.node_cache={}
+		
 	def open_file(self, path=False,uid='',mode='a', title='',header=True):
 		"""opens the hdf file in `path` or `uid`"""
+		self.node_cache={}
 		if not path: 
 			path=self.path
 		if not path:
@@ -242,7 +244,7 @@ class SharedFile(CoreFile,DataOperator):
 	@lockme
 	def get_decoded(self,path,idx,get):
 		"""Get the `path` node index `idx` using the getter function `get`"""
-		n=self.test.get_node(path)
+		n=self._get_node(path)
 		r=get(n,idx)
 #		n.close()
 		return r
@@ -250,7 +252,7 @@ class SharedFile(CoreFile,DataOperator):
 	@lockme
 	def query_time(self, path, startTime=-1,  endTime=-1, step=None, interp=False):
 		"""Reads an array in the requested time range"""
-		n=self.test.get_node(path)
+		n=self._get_node(path)
 		#TODO: adapt also to other Reference objects
 		t=n.cols.t
 		if startTime<0: startTime=t[0]

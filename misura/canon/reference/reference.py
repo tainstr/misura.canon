@@ -166,54 +166,6 @@ class Reference(object):
 # 			self.mtime=t
 		return n
 	
-# 	def append_from_sequence(self,filepath):
-# 		return self.outfile.append_from_sequence(self.path,filepath,self.__class__)
-	
-	#DEPRECATED
-	def copy(self,destpath,startTime=-1,endTime=-1,stats=False):
-		"""Create an identical reference object on `destpath` SharedFile instance 
-		and copy data from time `startTime` to time `endTime`.
-		Return written destination reference."""
-		N=len(self)
-		if N<=0:
-			print 'no points in reference',self.path
-			return False
-		### Calc start index
-		if startTime<=0: 
-			startIdx=0
-		else:
-			tN=self.time_at(-1)
-			if startTime>=tN:
-				print 'no points in range start',self.path,startTime,tN,self[-1]
-				return False
-			print 'getting start time',startTime
-			startIdx=self.get_time(startTime)
-		### Calc end index
-		if endTime<=0:
-			endIdx=N-1
-		else:
-			t0=self.time_at(0)
-			if endTime<=t0:
-				print 'no points in range end',self.path,endTime,t0,self[0]
-				return False
-			print 'getting end time',endTime
-			endIdx=self.get_time(endTime)+1
-		if endIdx>=N-1: endIdx=N-1
-		print 'start,end',self.path,startIdx,startTime,endIdx,endTime
-		if endIdx<=startIdx:
-			print 'erroneous range',self.path,startIdx,endIdx
-			return False
-		
-		print 'copy',self.path,self.folder,startIdx,endIdx
-		# Copy to destination path
-		stats=self.outfile.leaf_copy(destpath, self.path, startIdx, endIdx,stats)
-# 		dest=self.__class__(destfile,self.folder,self.opt)
-# 		#TODO: optimized copy!
-# 		print 'writing %i points onto %s' % (endIdx-startIdx+1,dest.path)
-# 		dest.commit(self[startIdx:endIdx])
-		return stats
-
-	#TODO: move into OutputFile to avoid IPC
 	def interpolate(self,step=1):
 		"""Synchronize the internal interpolated summary reference. 
 		Returns False if no summary is defined, or the time vector for interpolation"""
