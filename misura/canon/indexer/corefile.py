@@ -28,7 +28,7 @@ def addHeader(func):
 			if not self._header.has_key(rc): 
 				self._header[rc]=[]
 			self._header[rc].append(g._v_pathname)	
-		self.test.flush()
+#		self.test.flush()
 		return True
 	return addHeader_wrapper
 
@@ -75,8 +75,7 @@ class CoreFile(object):
 		self._test=test
 		
 	def _get_node(self,path,subpath=False):
-		return self.test.get_node(path)
-		#FOR TESTING:
+#		return self.test.get_node(path) # no cache
 		if subpath:
 			if not path.endswith('/'): path+='/'
 			path=path+subpath
@@ -216,7 +215,6 @@ class CoreFile(object):
 		except:
 			print 'Exception appending to',where,type(data),data,repr(data)
 			print_exc()
-# 		self.test.flush()
 		return r
 	
 	@lockme
@@ -259,7 +257,7 @@ class CoreFile(object):
 	@lockme
 	def create_group(self,*a,**kw):
 		g=self.test.createGroup(*a,**kw)
-		self.test.flush()
+#		self.test.flush()
 		return True
 	
 	@lockme
@@ -295,7 +293,7 @@ class CoreFile(object):
 			v.remove(path)
 			self._header[k]=v
 			break
-		self.test.flush()
+#		self.test.flush()
 		return True
 	
 	@unlockme
