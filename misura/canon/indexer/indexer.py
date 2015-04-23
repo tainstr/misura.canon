@@ -7,16 +7,25 @@ import hashlib
 import os
 import cPickle as pickle
 from traceback import print_exc
+import sqlite3
+import functools
+
 import tables
 from tables.nodes import filenode
-import sqlite3
+
 from .. import csutil
-import functools
+
 from filemanager import FileManager
 import digisign
 
 testColumn=('file', 'serial', 'uid', 'id', 'date', 'instrument', 'flavour', 'name', 'elapsed', 'nSamples' , 'comment','verify')
+testColumnDefault=['file','serial','uid', 'id', 'date', 'instrument', 'flavour', 'name', 1, 1 , 'comment',0]
 testColDef=('text','text','text','text','text','text','text','text', 'real','integer','text','bool')
+testTableDef='''(file text, serial text, uid text, id text, date text, instrument text, flavour text,
+		name text, elapsed real, nSamples integer, comment text,verify bool)'''
+sampleTableDef='''(file text, ii integer, idx integer, material text, name text, comment text, 
+		dim integer, height integer, volume integer, 
+		sintering real, softening real, sphere real, halfSphere real, melting real )'''
 testColConverter={}
 colConverter={'text':unicode,'real':float,'bool':bool,'integer':int}
 for i,n in enumerate(testColumn):
@@ -34,9 +43,11 @@ def dbcom(func):
 			self.close_db()
 	return safedb_wrapper
 
+	
 
 class Indexer(object):
-	public=['rebuild','searchUID','update','header','listMaterials','query','remove']
+	public=['rebuild','searchUID','update','header','listMaterials',
+		'query','remove','get_len','list','get_dbpath']
 	cur=False
 	conn=False
 	addr='LOCAL'
@@ -50,7 +61,22 @@ class Indexer(object):
 		self.dbPath=dbPath
 		if dbPath and not os.path.exists(dbPath):
 			self.rebuild()
+			
+	@dbcom
+	def execute(self,query,*a,**kw):
+		self.cur.execute(query,*a,**kw)
+		self.conn.commit()
 		
+	@dbcom
+	def execute_fetchall(self,query,*a,**kw):
+		g=self.cur.execute(query,*a,**kw)
+		return g.fetchall()
+		
+	@dbcom
+	def execute_fetchone(self,query,*a,**kw):
+		g=self.cur.execute(query,*a,**kw)
+		return g.fetchone()
+			
 	def open_db(self,db=False):
 		if not db: 
 			db=self.dbPath
@@ -59,6 +85,10 @@ class Indexer(object):
 			return False
 		self.conn=sqlite3.connect(self.dbPath)
 		self.cur=self.conn.cursor()
+		# Sync tables
+		self.cur.execute("create table if not exists sync_exclude "+testTableDef)
+		self.cur.execute("create table if not exists sync_queue "+testTableDef)
+		self.conn.commit()
 		return True
 		
 	def close_db(self):
@@ -68,10 +98,11 @@ class Indexer(object):
 		self.cur=False
 		self.conn=False
 		
-	def searchUID(self,uid):
+	def searchUID(self,uid,full=False):
+		"""Search `uid` in tests table and return its path or full record if `full`"""
 		uid=str(uid)
 		conn=sqlite3.connect(self.dbPath)
-		cur=conn.cursor()	
+		cur=conn.cursor()
 		try:
 			cur.execute('SELECT file FROM test WHERE uid=?', [uid])	
 		except sqlite3.OperationalError:
@@ -84,6 +115,9 @@ class Indexer(object):
 			return False
 		if len(r)>1:
 			self.log.warning('Found duplicate UIDs',r)
+		# Return full line
+		if full:
+			return r[0]
 		return r[0][0]
 	
 	def search_path(self,path):
@@ -109,15 +143,12 @@ class Indexer(object):
 		conn=self.conn
 		cur=self.cur
 		self.cur=cur
-		cur.execute('''CREATE TABLE test
-		(file text, serial text, uid text, id text, date text, instrument text, flavour text,
-		name text, elapsed real, nSamples integer, comment text,verify bool)
-		''')
-		cur.execute('''CREATE TABLE sample
-		(file text, ii integer, idx integer, material text, name text, comment text, 
-		dim integer, height integer, volume integer, 
-		sintering real, softening real, sphere real, halfSphere real, melting real )
-		''')
+		cur.execute("DROP TABLE IF EXISTS test")
+		cur.execute("CREATE TABLE test "+testTableDef)
+		cur.execute("DROP TABLE IF EXISTS sample")
+		cur.execute("CREATE TABLE sample "+sampleTableDef)
+		cur.execute("DROP TABLE IF EXISTS sync_exclude")
+		cur.execute("DROP TABLE IF EXISTS sync_queue")
 		conn.commit()
 		self.close_db()
 		tn=0
@@ -278,6 +309,23 @@ class Indexer(object):
 			self.cur.execute(cmd,vals)
 		r=self.cur.fetchall()
 		return r
+	
+	
+	@dbcom
+	def get_len(self):
+		self.cur.execute('SELECT Count(*) FROM test')
+		r=self.cur.fetchone()[0]
+		return r
+		
+	@dbcom
+	def list(self,start=0,stop=25):
+		self.cur.execute('SELECT * FROM test ORDER BY rowid LIMIT ? OFFSET ?',(stop-start,start))
+		r=self.cur.fetchall()
+		return r
+		
+	def get_dbpath(self):
+		return self.dbPath
+		
 		
 		
 	

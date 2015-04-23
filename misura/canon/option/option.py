@@ -27,6 +27,7 @@ defined_types={"Binary":'Binary blob',
 		"Dict": 'Dictionary',
 		"Boolean":'True/False',
 		"String":'Text field',
+		"FilePath":'File system path',
 		"TextArea":'Long text field',
 		"ThermalCycle":'Thermal cycle curve preset name',
 		"Preset":'Persistently saved preset name',
@@ -170,7 +171,7 @@ def validate(entry):
 		elif etype=='Meta': v={'temp':'None','time':'None','value':'None'}
 		elif etype=='Log': 	v=[0,'log']
 		elif etype=='Profile': v=[]
-		elif etype in ['String','Binary']: v=''
+		elif etype in ['String','Binary','FilePath']: v=''
 		elif etype=='Rect': v=[0,0,0,0]
 		elif etype=='Point': v=[0,0]
 		elif etype.startswith('Role'):

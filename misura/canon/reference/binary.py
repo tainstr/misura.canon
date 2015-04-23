@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Option persistence on HDF files."""
 import tables
-from misura.parameters import cfilter
+from ..parameters import cfilter
 import numpy as np
 from reference import Reference
 from variable import VariableLength, binary_cast

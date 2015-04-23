@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+"""Indexing hdf5 files"""
 from interface import SharedFile
 from filemanager import FileManager
 from indexer import Indexer

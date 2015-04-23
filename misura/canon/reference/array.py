@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 """Option persistence on HDF files."""
-import tables
-from misura.parameters import cfilter
+from ..parameters import cfilter
 from reference import Reference
 import numpy as np
 from scipy.interpolate import interp1d, LSQUnivariateSpline

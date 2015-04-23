@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """Option persistence on HDF files."""
-from misura.parameters import cfilter
+from ..parameters import cfilter
 from reference import Reference
 #TODO: Unify commit/append!!! They are basically the same!
 import numpy as np
