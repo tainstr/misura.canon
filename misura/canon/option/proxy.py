@@ -255,3 +255,16 @@ class ConfigurationProxy(Scriptable, Conf):
 			out.append(obj)
 		print 'returning samples', out
 		return out
+	
+	def roledev(self,opt):
+		"""Return the device object associated with role option `opt`"""
+		p=self[opt]
+		if p is False: 
+			return False
+		p=p[0]
+		if p in ('None',None):
+			return False
+		obj=self.root.toPath(p)
+		if not obj:
+			return False
+		return obj
