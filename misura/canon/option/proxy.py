@@ -17,6 +17,9 @@ def dictRecursiveModel(base):
 class ConfigurationProxy(Scriptable, Conf):
 	"""A configuration object behaving like a live server"""
 	separator='/'
+	_readLevel=5
+	_writeLevel=5
+	
 	def __init__(self,desc={'self':{}}, name='MAINSERVER', parent=False):
 		Scriptable.__init__(self)
 		self.log=logger.BaseLogger()
@@ -268,3 +271,8 @@ class ConfigurationProxy(Scriptable, Conf):
 		if not obj:
 			return False
 		return obj
+		
+	def check_read(self, opt):
+		return self.desc[opt].get('readLevel', 0) <= self._readLevel
+	def check_write(self, opt):
+		return self.desc[opt].get('writeLevel', 0) <= self._writeLevel
