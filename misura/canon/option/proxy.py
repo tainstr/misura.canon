@@ -20,11 +20,13 @@ class ConfigurationProxy(Scriptable, Conf):
 	_readLevel=5
 	_writeLevel=5
 	
-	def __init__(self,desc={'self':{}}, name='MAINSERVER', parent=False):
+	def __init__(self,desc={'self':{}}, name='MAINSERVER', parent=False,readLevel=5,writeLevel=5):
 		Scriptable.__init__(self)
 		self.log=logger.BaseLogger()
 #		self.desc=desc['self']
 		Conf.__init__(self,desc['self'])
+		self._readLevel=readLevel
+		self._writeLevel=writeLevel
 		self.children=desc.copy()
 		"""Child configuration dictionaries"""
 		self.children_obj={}
@@ -43,6 +45,11 @@ class ConfigurationProxy(Scriptable, Conf):
 # 				self._Method__name=name
 		self.get=self.__getitem__
 		self.set=self.__setitem__
+		
+	def check_read(self,opt):
+		return self.desc[opt]['readLevel']<=self._readLevel
+	def check_write(self,opt):
+		return self.desc[opt]['writeLevel']<=self._writeLevel
 		
 	@property
 	def root(self):
@@ -125,6 +132,8 @@ class ConfigurationProxy(Scriptable, Conf):
 		self.children_obj=obj.children_obj
 		self._parent=obj._parent
 		self._Method__name=obj._Method__name
+		self._readLevel=obj._readLevel
+		self._writeLevel=obj._writeLevel
 			
 	def copy(self):
 		p=ConfigurationProxy()
@@ -259,7 +268,7 @@ class ConfigurationProxy(Scriptable, Conf):
 		print 'returning samples', out
 		return out
 	
-	def roledev(self,opt):
+	def role2dev(self,opt):
 		"""Return the device object associated with role option `opt`"""
 		p=self[opt]
 		if p is False: 

@@ -85,6 +85,8 @@ class Indexer(object):
 			return False
 		self.conn=sqlite3.connect(self.dbPath)
 		self.cur=self.conn.cursor()
+		self.cur.execute("CREATE TABLE if not exists test "+testTableDef)
+		self.cur.execute("CREATE TABLE if not exists sample "+sampleTableDef)
 		# Sync tables
 		self.cur.execute("create table if not exists sync_exclude "+testTableDef)
 		self.cur.execute("create table if not exists sync_queue "+testTableDef)
@@ -97,6 +99,10 @@ class Indexer(object):
 			self.conn.close()
 		self.cur=False
 		self.conn=False
+		return True
+		
+	def close(self):
+		return self.close_db()
 		
 	def searchUID(self,uid,full=False):
 		"""Search `uid` in tests table and return its path or full record if `full`"""
@@ -163,16 +169,19 @@ class Indexer(object):
 		return 'Done. Found %i tests.' % tn
 	
 	
-	def appendFile(self,fp,fn):
+	def appendFile(self,fp,fn=False):
+		#TODO: remove unused fn argument!!!
 		if not os.path.exists(fp):
 			print 'File not found',fp
 			return False
+		if not fn:
+			fn=os.path.basename(fp)
 		r=0
 		t=False
 		try:
 			t=tables.openFile(fp,mode='r+')	
 			if not getattr(t.root, 'conf', False):
-				self.log.debug('Tree configuration not found',fn)
+				self.log.debug('Tree configuration not found',fp)
 				t.close()
 				return False
 			r=self._appendFile(t,fp,fn)

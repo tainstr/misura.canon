@@ -134,7 +134,12 @@ class DataOperator(object):
 			n=n[:]
 		# Convert to regular array (we could convert to dict for fields?)
 		if not raw:
-			n=n.view(np.float64).reshape(n.shape + (-1,))
+			try:
+				n=n.view(np.float64).reshape(n.shape + (-1,))
+			except:
+				print 'SHAPE',path,n.shape
+				raise
+				
 		slc=False
 		if idx_or_slice is not None:
 			slc=csutil.toslice(idx_or_slice)
@@ -260,9 +265,6 @@ class DataOperator(object):
 		return self.search(path,op)
 	
 	def nearest(self,path,val):
-# 		def op(y):
-# 			y=abs(y-val)
-# 			return y,min(y)
 		op=lambda y: (y,val)
 		return self.search(path,op,cond='x~y')
 

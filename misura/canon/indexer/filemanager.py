@@ -87,7 +87,7 @@ class FileManager(object):
 		return self.tests.get(u,False)
 	
 	def purge(self,hdf):
-		"""Remove hdf registry"""
+		"""Remove hdf from registry"""
 		uid=hdf.get_uid()
 		path=hdf.get_path()
 		if hdf.isopen():
@@ -97,6 +97,12 @@ class FileManager(object):
 		if self.path.has_key(path):
 			del self.path[path]
 		return uid,path
+	
+	def close_uid(self,uid):
+		f=self.uid(uid)
+		if f:
+			f.close()
+		return True
 	
 	def close(self):
 		for ti in self.tests.itervalues():
