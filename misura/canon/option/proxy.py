@@ -185,6 +185,9 @@ class ConfigurationProxy(Scriptable, Conf):
 	def list(self): 
 		return [(c,c) for c in self.children.iterkeys()]
 			
+	def has_child(self,name):
+		"""Returns if `name` is a child"""
+		return self.children.has_key(name)
 		
 	def child(self, name):
 		if not self.children.has_key(name):
