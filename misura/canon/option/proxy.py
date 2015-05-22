@@ -190,6 +190,7 @@ class ConfigurationProxy(Scriptable, Conf):
 		return self.children.has_key(name)
 		
 	def child(self, name):
+		"""Return child ConfigurationProxy object by `name`"""
 		if not self.children.has_key(name):
 			return None
 		if not self.children_obj.has_key(name):

@@ -47,10 +47,6 @@ defined_types={"Binary":'Binary blob',
 		'Log':'Log messages',
 		"Role":'Generic device role',
 		"RoleIO":'Generic input/output Role',
-		"RoleSmaugIO":'Input/Output Role',
-		"RoleBalance":'Balance role',
-		"RoleBeholder":'Camera role',
-		"RoleMorla":'Motion Role'
 		}
 
 nowrite=set(['Binary','Runtime']) # attributes which should not be saved
