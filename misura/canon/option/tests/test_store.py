@@ -21,7 +21,7 @@ class CsvStore(unittest.TestCase):
 	def test_merge_file(self):
 		st=option.CsvStore(kid='ciao')
 		st.merge_file(c1)
-		self.assertEqual(st.desc['name']['kid'],'ciao::name')
+		self.assertEqual(st.desc['name']['kid'],'ciaoname')
 	
 #	@unittest.skip('')
 	def test_write_file(self):

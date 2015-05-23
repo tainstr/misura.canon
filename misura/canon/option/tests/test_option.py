@@ -29,9 +29,28 @@ class Option(unittest.TestCase):
 		o['csunit']='minute'
 		self.assertEqual(o.get(),0)
 		self.assertEqual(o['csunit'],'minute')
-		
 	
+	def test_migrate(self):
+		old=option.Option(current=0,handle='test',type='Integer')
+		old.validate()
+		new=option.Option(current='1',handle='test',type='String')
+		new.validate()
+		new.migrate_from(old)
+		new.validate()
+		# Should retain type
+		self.assertEqual(new['type'],'Integer')
+		# But should try to update value by converting it
+		self.assertEqual(new['current'],1)
 		
+		# Fail conversion
+		new=option.Option(current='fail',handle='test',type='String')
+		new.validate()
+		new.migrate_from(old)
+		new.validate()
+		# Should retain type
+		self.assertEqual(new['type'],'Integer')
+		# But as it cannot be converted, should keep old current value
+		self.assertEqual(new['current'],0)	
 
 		
 

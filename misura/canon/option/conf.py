@@ -106,9 +106,9 @@ class Conf(object):
 		self.desc[name]=opt
 		return True
 
-	def getattr(self, name, attr):
+	def getattr(self, handle, attr):
 		"""Returns the attribute `attr` of an option `name`"""
-		return self.desc[name][attr]
+		return self.desc[handle][attr]
 	
 	def setattr(self,handle, key, val):
 		"""Sets to val the `key` of `handle` option"""
@@ -116,10 +116,7 @@ class Conf(object):
 			print 'Attempt to modify read-only key'
 			return False
 		opt=self.desc[handle]
-		if not opt.has_key(key):
-			opt[key]=val
-		else:
-			opt[key]=val
+		opt[key]=val
 		self.desc[handle]=opt
 		return True
 	

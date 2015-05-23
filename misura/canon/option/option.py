@@ -92,7 +92,9 @@ def prop_sorter(a, b):
 	else: 
 		return -1
 
-def ao(d,handle=False,type='Empty',current=None,name=False, priority=-1, parent=False, flags={}, unit=None,options=False,values=False, attr=[], **kw):
+def ao(d,handle=False,type='Empty',current=None,name=False, 
+		priority=-1, parent=False, flags={}, unit=None,options=False,
+		values=False, attr=[], **kw):
 	if not handle:
 		return d
 	if current is None:
@@ -106,7 +108,7 @@ def ao(d,handle=False,type='Empty',current=None,name=False, priority=-1, parent=
 		elif type=='Point': current=[0,0]
 		elif type=='Log': current=[0,'log'] # level, message
 		elif type=='Profile': current=[]
-		elif type.startswith('Role'):
+		elif type=='Role':
 			current=['None','default']
 		else: current=''
 	if not name: name=handle
@@ -121,6 +123,10 @@ def ao(d,handle=False,type='Empty',current=None,name=False, priority=-1, parent=
 		ent['values']=values
 	if options is not False:
 		ent['options']=options
+	elif type=='RoleIO':
+		ent['options']=['None','default','None']
+	elif type in ('Chooser','FileList'):
+		ent['options']=[]
 	if unit is not None:
 		ent['unit']=unit
 	elif type=='Meta':
@@ -130,7 +136,7 @@ def ao(d,handle=False,type='Empty',current=None,name=False, priority=-1, parent=
 	d[handle]=ent
 	return d
 
-vkeys="handle,name,current,factory_default,attr,type,writeLevel,readLevel,mb,step,max,min,options,parent,values,unit,csunit,kid".split(',')
+vkeys="handle,name,current,factory_default,attr,type,writeLevel,readLevel,mb,step,max,min,options,parent,values,flags,unit,csunit,kid".split(',')
 
 def validate(entry):
 	"""Verify coherence of option `entry`"""
@@ -171,12 +177,13 @@ def validate(entry):
 		elif etype in ['String','Binary','FilePath']: v=''
 		elif etype=='Rect': v=[0,0,0,0]
 		elif etype=='Point': v=[0,0]
-		elif etype.startswith('Role'):
-			if etype.endswith('IO'): v=['None', 'default', 'None']
-			else: v=['None', 'default']
+		elif etype=='Role':
+			v=['None', 'default']
 		else: v=''
 		entry['current']=v
-	
+		
+	if etype=='RoleIO' and not entry.has_key('options'): 
+		entry['options']=['None', 'default', 'None']
 	if not entry.has_key('flags'):
 		entry['flags']={}
 	# 0=always visible; 1=user ; 2=expert ; 3=advanced ; 4=technician ; 5=developer; 6=never visible
@@ -214,6 +221,7 @@ def validate(entry):
 		entry['max']=1
 	return entry
 
+
 read_only_keys=['handle','type','unit']
 
 class Option(object):
@@ -226,8 +234,6 @@ class Option(object):
 	_priority=0
 
 	def __init__(self, **kw):
-		# Set everything to None
-		if not kw.has_key('kid'): kw['kid']=str(id(self))
 		self.entry=kw
 		
 	def iteritems(self):
@@ -235,7 +241,6 @@ class Option(object):
 		
 	def itervalues(self):
 		return self.entry.itervalues()
-		
 		
 	def __str__(self):
 		"""String representation useful for printing purposes"""
@@ -340,10 +345,49 @@ class Option(object):
 	# Conversions
 	###
 	
+	def validate(self):
+		self._entry=validate(self._entry)
+	
 	def copy(self):
 		return Option(**self._entry)
 	
-	
+	def migrate_from(self,old):
+		"""Migrate Option from `old`. 
+		Notice: the first migration always happens between hard-coded `old` and configuration file self."""
+		# These keys can only change on software updates. 
+		# So, their `old` value cannot be overwritten and must be retained
+		for k in ('name','factory_default','readLevel','writeLevel','mb'):
+			if old.has_key(k):
+				self._entry[k]=old[k]
+		ot=old['type']
+		nt=self['type']
+		# No type change: exit
+		if ot==nt:
+			return 
+		# Hard-coded 'old' type differs from configured type:
+		# Import all special keys that might be defined in old but missing in self
+		for k in ('type','step','max','min','options','values'):
+			if old.has_key(k):
+				self._entry[k]=old[k]
+		if not self._entry.has_key('current'):
+			return
+		nc=self._entry['current']
+		# New current value migration from new type (red) to old type (hard coded)
+		try:
+			if ot in ('String','TextArea','FileList','Section'):
+				nc=str(nc)
+			elif ot=='Integer':
+				nc=int(nc)
+			elif ot in ('Float','Number'):
+				nc=float(nc)
+			elif ot=='Button':
+				nc=''
+			self['current']=nc
+		except:
+			print 'Impossible to migrate current value',old['handle'],nc,ot
+			# Remove current key
+			del self._entry['current']
+		
 
 
 
