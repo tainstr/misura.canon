@@ -15,6 +15,8 @@ class Conf(object):
 		self.desc={}
 		if desc is not False:
 			for k,v in desc.iteritems():
+				if not v.has_key('handle'):
+					v['handle']=k
 				if type(v)==type({}):
 					v=Option(**v)
 				self.desc[k]=v
@@ -175,4 +177,13 @@ class Conf(object):
 			self.desc[k]=v
 		return failed
 		
-	
+	def iolist(self):
+		"""Returns a list of options having History attribute set or RoleIO type."""
+		r=[]
+		for opt in self.desc.itervalues():
+			# io can point only towards History or RoleIO types
+			if 'History' in opt['attr'] or opt['type']=='RoleIO':
+				r.append(opt['handle'])
+		print 'iolist',r
+		return r
+			

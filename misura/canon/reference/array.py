@@ -97,7 +97,7 @@ class Array(Reference):
 		out=np.array([vt,out]).transpose()
 # 		print 'Appending',self.summary.path,len(out),out
 		self.summary.commit(out)
-		
+		return True
 	
 class Boolean(Array):
 	"""A True/False value"""

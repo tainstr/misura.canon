@@ -19,11 +19,10 @@ class ConfigurationProxy(Scriptable, Conf):
 	separator='/'
 	_readLevel=5
 	_writeLevel=5
-	
-	def __init__(self,desc={'self':{}}, name='MAINSERVER', parent=False,readLevel=5,writeLevel=5):
+	def __init__(self,desc={'self':{}}, name='MAINSERVER', parent=False,readLevel=5,writeLevel=5,kid_base='/'):
 		Scriptable.__init__(self)
 		self.log=logger.BaseLogger()
-#		self.desc=desc['self']
+		self.kid_base=kid_base
 		Conf.__init__(self,desc['self'])
 		self._readLevel=readLevel
 		self._writeLevel=writeLevel
@@ -194,7 +193,8 @@ class ConfigurationProxy(Scriptable, Conf):
 		if not self.children.has_key(name):
 			return None
 		if not self.children_obj.has_key(name):
-			self.children_obj[name]=ConfigurationProxy(self.children[name],	name=name, parent=self)
+			kb=self.kid_base+name+self.separator
+			self.children_obj[name]=ConfigurationProxy(self.children[name],	name=name, parent=self,kid_base=kb)
 		return self.children_obj[name]
 	
 	def parent(self):
@@ -284,7 +284,8 @@ class ConfigurationProxy(Scriptable, Conf):
 		if not obj:
 			return False
 		return obj
-		
+	
+
 	def check_read(self, opt):
 		return self.desc[opt].get('readLevel', 0) <= self._readLevel
 	def check_write(self, opt):
