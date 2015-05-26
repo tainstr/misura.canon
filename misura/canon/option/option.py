@@ -359,6 +359,22 @@ class Option(object):
 		for k in ('name','factory_default','readLevel','writeLevel','mb'):
 			if old.has_key(k):
 				self._entry[k]=old[k]
+		# Retain special attributes
+		oa=set([])
+		na=set([])
+		if self._entry.has_key('attr'):
+			na=set(self._entry['attr'])
+		if old.has_key('attr'):
+			oa=set(self._entry['attr'])
+		# Update user-modifiable attributes
+		for a in ('History','ExeSummary', 'ExeEnd', 'ExeAlways', 'Enabled', 'Disabled'):
+			# Add if added in new
+			if a in na:
+				oa.add(a)
+			# Remove if missing from new
+			elif a in oa:
+				oa.remove(a)
+		self._entry['attr']=list(oa)
 		ot=old['type']
 		nt=self['type']
 		# No type change: exit

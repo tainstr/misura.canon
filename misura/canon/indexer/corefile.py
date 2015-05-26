@@ -20,6 +20,8 @@ from ..csutil import lockme,  unlockme
 def addHeader(func):
 	@functools.wraps(func)
 	def addHeader_wrapper(self,*a,**kw):
+		if not self.test:
+			return False
 		rc=kw.get('reference_class',False)
 		if rc is not False:
 			del kw['reference_class']
@@ -257,13 +259,11 @@ class CoreFile(object):
 	@lockme
 	def create_group(self,*a,**kw):
 		g=self.test.createGroup(*a,**kw)
-#		self.test.flush()
 		return True
 	
 	@lockme
 	@addHeader
 	def create_vlarray(self,*a,**kw):
-# 		print 'create_vlarray',a,kw
 		g=self.test.createVLArray(*a,**kw)
 		return g
 	
@@ -276,11 +276,13 @@ class CoreFile(object):
 	@lockme
 	@addHeader
 	def create_table(self,*a,**kw):
-# 		print 'creating table',a,kw
-		if not self.test:
-			return False
 		g=self.test.createTable(*a,**kw)
-# 		print 'done',a,kw
+		return g
+		
+	@lockme
+	@addHeader
+	def create_hard_link(self, *a, **k):
+		g=self.test.create_hard_link(*a, **K)
 		return g
 	
 	@lockme
