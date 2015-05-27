@@ -353,10 +353,10 @@ class Option(object):
 	
 	def migrate_from(self,old):
 		"""Migrate Option from `old`. 
-		Notice: the first migration always happens between hard-coded `old` and configuration file self."""
+		Notice: the first migration always happens between hard-coded `old` and saved configuration file in self."""
 		# These keys can only change on software updates. 
 		# So, their `old` value cannot be overwritten and must be retained
-		for k in ('name','factory_default','readLevel','writeLevel','mb'):
+		for k in ('name','factory_default','readLevel','writeLevel','mb', 'unit'):
 			if old.has_key(k):
 				self._entry[k]=old[k]
 		# Retain special attributes
@@ -365,7 +365,7 @@ class Option(object):
 		if self._entry.has_key('attr'):
 			na=set(self._entry['attr'])
 		if old.has_key('attr'):
-			oa=set(self._entry['attr'])
+			oa=set(old['attr'])
 		# Update user-modifiable attributes
 		for a in ('History','ExeSummary', 'ExeEnd', 'ExeAlways', 'Enabled', 'Disabled'):
 			# Add if added in new
@@ -374,6 +374,7 @@ class Option(object):
 			# Remove if missing from new
 			elif a in oa:
 				oa.remove(a)
+		# Keep everything else
 		self._entry['attr']=list(oa)
 		ot=old['type']
 		nt=self['type']

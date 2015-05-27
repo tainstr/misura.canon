@@ -127,5 +127,5 @@ class Scriptable(object):
 # 		self.log.debug('Executing measure scripts',period)
 		self.measure.execute_scripts(self,period=period)
 		for smp in self.samples:
-#			self.log.debug('Executing sample scripts',smp['fullpath'],period)
+			self.log.debug('Executing sample scripts',smp['fullpath'],period)
 			smp.execute_scripts(self,period=period)

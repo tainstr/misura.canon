@@ -282,7 +282,7 @@ class CoreFile(object):
 	@lockme
 	@addHeader
 	def create_hard_link(self, *a, **k):
-		g=self.test.create_hard_link(*a, **K)
+		g=self.test.create_hard_link(*a, **k)
 		return g
 	
 	@lockme
