@@ -1,16 +1,14 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 import unittest
-import os
 from misura.canon import option
 from misura import parameters as params
-import sqlite3
 
 
 c1=params.testdir+'storage/Conf.csv'
 c2=params.testdir+'storage/Conf2.csv'
 tmp=params.testdir+'storage/tmpfile'
-db=params.testdir+'storage/tmpdb'
+
 
 c3=params.mdir+'conf/MeasureFlex.csv'
 c4=params.mdir+'conf/Standard.csv'
@@ -58,32 +56,7 @@ class CsvStore(unittest.TestCase):
 		st.validate()
 		e=st.desc['PQF']
 		self.assertEqual(e['priority'], 12, msg="Wrong priority after validation. real=%i, teor=%i" % (e['priority'], 12))
-		
 
-class SqlStore(unittest.TestCase):
-	@classmethod
-	def setUpClass(cls):
-		if os.path.exists(db): os.remove(db)
-		cls.conn=sqlite3.connect(db)	
-	
-#	@unittest.skip('')
-	def test_tables(self):
-		st0=option.CsvStore(kid='ciao')
-		st0.merge_file(c1)
-		st=option.SqlStore(kid='ciao')
-		st.desc=st0.desc
-		k0=set(st.desc.iterkeys())
-		cursor=self.conn.cursor()
-		st.write_table(cursor,'conf1')
-		self.conn.commit()
-		cursor.execute('select handle from conf1')
-		r=cursor.fetchall()
-		k1=set([eval(k[0]) for k in r])
-		self.assertEqual(k0,k1)
-		
-		st2=option.SqlStore(kid='ciao')
-		st2.read_table(cursor,'conf1')
-		self.assertEqual(st.desc,st2.desc)
 		
 class ListStore(unittest.TestCase):
 	

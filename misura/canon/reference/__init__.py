@@ -15,7 +15,7 @@ def get_reference(opt):
 # 	if 'History' not in opt['attr']:
 # 		return False
 	t=opt['type']
-	if t in ['Float','Number','Integer']:
+	if t in ['Float','Integer','Progress','Time']:
 		return Array
 	if t in ['Binary', 'String','TextArea', 'Image']:
 		return Binary

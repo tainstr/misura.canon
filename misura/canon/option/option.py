@@ -18,36 +18,72 @@ defined_attr={'Binary':'Binary blob',
 		'ExeAlways':'Execute at each supervisor iteration'
 		}
 
-defined_types={"Binary":'Binary blob',
-		"ReadOnly": 'The user cannot change this',
-		"Hidden":'Never visible to the user',
+defined_types={
+		# Binary types
+		"Binary":'Binary blob',
+		'Image':'Image',
+		
+		# Float types
+		"Float":'Float number',
+		"Progress":'Progress indicator',
+		"Time":'Time',
+		
+		# Integer types
+		"Integer":'Integer number',
+		"Boolean":'True/False',
+		
+		# String types
 		"Script":'Executable script',
 		"Section":'Section header',
-		"Chooser":'Predefined multiple choices',
 		"FileList":'List of file names',
-		"Dict": 'Dictionary',
-		"Boolean":'True/False',
 		"String":'Text field',
 		"FilePath":'File system path',
 		"TextArea":'Long text field',
-		"ThermalCycle":'Thermal cycle curve preset name',
-		"Preset":'Persistently saved preset name',
 		"Date":'Date',
-		"Integer":'Integer number',
+		"Preset":'Persistently saved preset name',
+		"ThermalCycle":'Thermal cycle curve name',
+		# None types (as empty strings)
 		"Button":'Getting this option triggers a server-side action',
-		"Progress":'Progress indicator', 
-		"List":'List of objects',
-		"Time":'Time',
-		"Float":'Float number',
-		"Meta":'Metadata composite field (Time, Temperature, Index, Value)',
-		"Table":'A table of data',
-		'Image':'Image',
+		
+		# Fixed multicolumn types
+		"Meta":'Metadata composite field (Time, Temperature, Value)',
 		'Rect':'Rectangle x,y,w,h',
 		'Point':'Point x,y', 
 		'Log':'Log messages',
 		"Role":'Generic device role',
 		"RoleIO":'Generic input/output Role',
+				
+		# Variable multicolumn types
+		"Table":'A table of data',
+		
+		# Pickled types
+		"ReadOnly": 'The user cannot change this',
+		"Hidden":'Never visible to the user',
+		"Chooser":'Predefined multiple choices',
+		"List":'List of objects',
+		'Profile':'Image profile',
 		}
+
+typed_types={'integer':('Integer','Boolean'),
+			'float':('Float','Progress','Time'),
+			'binary':('Binary','Image'),
+			'string':('String','TextArea','Script','Section','FileList','Date','Preset','Button','ThermalCycle'),
+			'multicol':('Meta','Rect','Point','Role','RoleIO'),
+			'pickle':('ReadOnly','Hidden','Chooser','List','Profile','Table','Log'),
+			}
+bytype={}
+for k,v in typed_types.iteritems():
+	for t in v:
+		bytype[t]=k
+
+num_types=typed_types['integer']+typed_types['float']
+
+vkeys="handle,name,current,factory_default,attr,type,writeLevel,readLevel,mb,step,max,min,options,parent,values,flags,unit,csunit,kid,priority".split(',')
+
+str_keys=('handle','name','type','parent','unit','csunit','kid')
+int_keys=('readLevel','writeLevel','mb','priority')
+type_keys=('current','factory_default','min','max','step')
+repr_keys=('attr','flags','options','values') # and any other....
 
 nowrite=set(['Binary','Runtime']) # attributes which should not be saved
 #TODO: limit the nowrite just to the current and factory_default properties.
@@ -98,10 +134,9 @@ def ao(d,handle=False,type='Empty',current=None,name=False,
 	if not handle:
 		return d
 	if current is None:
-		if type in ['Number','Float','Integer','Boolean', 'Progress','Time']: 
+		if bytype[type] in ('float','integer'): 
 			current=0
 		elif type=='List': current=[]
-		elif type=='Dict': current={}
 		#TODO: remove point, does no meaning anymore!
 		elif type=='Meta': current={'temp':'None','time':'None','value':'None'}
 		elif type=='Rect': current=[0,0,640,480]
@@ -136,8 +171,6 @@ def ao(d,handle=False,type='Empty',current=None,name=False,
 	d[handle]=ent
 	return d
 
-vkeys="handle,name,current,factory_default,attr,type,writeLevel,readLevel,mb,step,max,min,options,parent,values,flags,unit,csunit,kid".split(',')
-
 def validate(entry):
 	"""Verify coherence of option `entry`"""
 	key=entry.get('handle',False)
@@ -157,20 +190,17 @@ def validate(entry):
 		elif type(cur) in [type([]), type((1,))]:
 			etype='List'
 		elif type(cur)==type({}):
-			if set(cur.keys())==set('temp','time','point','value'):
+			if set(cur.keys())==set('temp','time','value'):
 				etype='Meta'
-			else:
-				etype='Dict'
 		else:
 			print 'No type for',entry,': skipping!'
 			return False
 		entry['type']=etype
 	# redundancy integration
 	if not entry.has_key('current'): 
-		if etype in ['Number','Float','Integer','Boolean', 'Progress','Time']: 
+		if etype in num_types: 
 			v=0
 		elif etype=='List': v=[]
-		elif etype=='Dict': v={}
 		elif etype=='Meta': v={'temp':'None','time':'None','value':'None'}
 		elif etype=='Log': 	v=[0,'log']
 		elif etype=='Profile': v=[]
@@ -200,11 +230,7 @@ def validate(entry):
 	if not entry.has_key('parent'):
 		entry['parent']=False
 	if not entry.has_key('unit'):
-		if entry['type']=='Dict':
-			entry['unit']=entry['current'].copy()
-			for key in entry['current'].iterkeys():
-				entry['unit'][key]='None'
-		elif entry['type']=='Meta':
+		if entry['type']=='Meta':
 			entry['unit']={'time': 'second','temp': 'celsius', 'value': 'None'}
 		else:
 			entry['unit']='None'
@@ -318,6 +344,9 @@ class Option(object):
 		# Return the value or raise exception
 		return self._entry[k] 
 	__getitem__=get
+	
+	def __contains__(self,key):
+		return key in self._entry
 		
 	def set(self,*arg):
 		# If just one argument, pass to `current` key
@@ -395,7 +424,7 @@ class Option(object):
 				nc=str(nc)
 			elif ot=='Integer':
 				nc=int(nc)
-			elif ot in ('Float','Number'):
+			elif ot in ('Float'):
 				nc=float(nc)
 			elif ot=='Button':
 				nc=''

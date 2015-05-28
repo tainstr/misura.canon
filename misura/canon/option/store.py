@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 """Option persistence."""
 from .. import logger
-from option import Option, sorter, vkeys,tosave
+from option import Option, sorter, tosave
+
 from traceback import format_exc
 import ast
 import os
-tabdef="' text,'".join(vkeys)+"' text"
-tabdef="'"+tabdef
+
 
 class Store(object):
 	"""Used for iterative Option loading from file, db, etc"""
@@ -48,6 +48,7 @@ class Store(object):
 	def read(cls,obj):
 		s=cls(obj)
 		return s.desc
+	
 	
 
 assign_sym='=>'
@@ -163,74 +164,11 @@ class CsvStore(Store):
 			out.write(line+'\n')
 		out.close()	
 		
-###
-#  SQL PERSISTENCE
-###
 
-def from_row(row):
-	"""Create an Option object starting from a database row"""
-	e={}
-	print row
-	for i,k in enumerate(vkeys):
-		if row[i]=='': continue
-		e[k]=ast.literal_eval(row[i])
-	return Option(**e)
-
-def to_row(entry):
-	"""Encode the option into a database row"""
-	if not tosave(entry): return False
-	r=[]
-	for k in vkeys:
-		if entry.has_key(k):
-			r.append(repr(entry[k]))
-		else:
-			r.append('')
-	return r
-
-		
-class SqlStore(Store):	
-	def read_table(self,cursor,tabname):
-		cursor.execute("SELECT * from "+tabname)
-		r=cursor.fetchall()
-		self.desc={}
-		for row in r:
-			entry=from_row(row)
-			entry=self.update(entry)
-			if not entry: continue
-			self.desc[entry['handle']]=entry
-		return self.desc
-	
-	def write_table(self, cursor,tabname,desc=False):
-		# Create the table
-		if not desc: desc=self.desc
-		cursor.execute("drop table if exists "+tabname)
-		cmd="create table " + tabname + " ("+tabdef+");"
-		print cmd
-		cursor.execute(cmd)
-		
-		# Prepare the insertion command
-		icmd='?,'*len(vkeys)
-		icmd='INSERT INTO '+tabname+' VALUES ('+icmd[:-1]+')'
-		
-		# Reorder the options by priority
-		values=desc.items()
-		values.sort(sorter)
-		prio=0
-		
-		# Write the options
-		for key, entry in values:		
-			prio+=1; entry['priority']=prio
-			line=to_row(entry)
-			if not line:
-				print 'skipping line',key 
-				continue
-			print entry.keys(),tabdef
-			print icmd,line
-			cursor.execute(icmd,line)
-		return True
 
 		
 class ListStore(Store):	
+	"""Simple store used to read a list of dicts representing single entries."""
 	def __init__(self,lst=[]):
 		Store.__init__(self)
 		self.read_list(lst)

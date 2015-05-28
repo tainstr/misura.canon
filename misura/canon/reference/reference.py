@@ -50,6 +50,7 @@ class Reference(object):
 			"""Folder path where data will be saved"""
 			self.opt=opt
 			self.create()
+		
 			
 	@property
 	def path(self):

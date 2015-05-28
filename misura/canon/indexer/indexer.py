@@ -83,7 +83,7 @@ class Indexer(object):
 		self.dbPath=db
 		if not self.dbPath: 
 			return False
-		self.conn=sqlite3.connect(self.dbPath)
+		self.conn=sqlite3.connect(self.dbPath, detect_types=sqlite3.PARSE_DECLTYPES)
 		self.cur=self.conn.cursor()
 		self.cur.execute("CREATE TABLE if not exists test "+testTableDef)
 		self.cur.execute("CREATE TABLE if not exists sample "+sampleTableDef)
@@ -128,7 +128,7 @@ class Indexer(object):
 	
 	def search_path(self,path):
 		path=str(path)
-		conn=sqlite3.connect(self.dbPath)
+		conn=sqlite3.connect(self.dbPath, detect_types=sqlite3.PARSE_DECLTYPES)
 		cur=conn.cursor()	
 		cur.execute('SELECT file FROM test WHERE path=?', [path])	
 		r=cur.fetchall()

@@ -6,6 +6,7 @@ import cPickle as pickle
 from ..milang import Scriptable
 
 def dictRecursiveModel(base):
+	"""BUild a dictionary configuration tree from ConfigurationProxy `base`"""
 	out={}
 	for path,obj in base.iteritems():
 		if path=='self':
@@ -13,6 +14,25 @@ def dictRecursiveModel(base):
 			continue
 		out[path]=dictRecursiveModel(obj)
 	return out	
+
+
+def print_tree(tree,level=0):
+	"""Pretty-print a dictionary configuration `tree`"""
+	pre='   '*level
+	msg=''
+	for k,v in tree.iteritems():
+		if k=='self':
+			msg+=print_tree(v,level)
+			continue
+		# Detect subdevice
+		if isinstance(v,dict) and 'self' in v:
+			msg+=pre+'|++> '+k+'\n'
+			msg+=print_tree(v,level+1)
+			continue
+		v=repr(v['current'])
+		if len(v)>50: v=v[:50]
+		msg+='{}|: {} = {}\n'.format(pre,k,v)
+	return msg
 
 class ConfigurationProxy(Scriptable, Conf):
 	"""A configuration object behaving like a live server"""
