@@ -13,7 +13,7 @@ import functools
 import tables
 from tables.nodes import filenode
 
-from .. import csutil
+from .. import csutil, option
 
 from filemanager import FileManager
 import digisign
@@ -230,7 +230,9 @@ class Indexer(object):
 		v=[]
 		for k in 'file,serial,uid,id,date,instrument,flavour,name,elapsed,nSamples,comment'.split(','):
 			v.append(testColConverter[k](test[k]))
-		ok=digisign.verify(t)
+# 		ok=digisign.verify(t)
+		#Performance problem: should be only verified on request.
+		ok=False
 		print 'File verify:',ok
 		v.append(ok)
 		cmd='?,'*len(v)
@@ -256,6 +258,15 @@ class Indexer(object):
 			cur.execute(cmd,v)
 			r=cur.fetchall()
 			print 'Result:',r
+		self.conn.commit()
+		
+		###
+		# Options
+		###
+		s=option.SqlStore()
+		s.cursor=cur
+		s.write_tree(tree,preset=test['uid'])
+		
 		self.conn.commit()
 		return True
 

@@ -53,15 +53,20 @@ class SqlStore(unittest.TestCase):
 		print s.column_definition(go('Log'))[1]
 		print s.column_definition(go('Meta'))[1]
 		
-	def test_write_tables(self):
+	def test_write_desc(self):
 		s=option.SqlStore()
 		s.cursor=self.conn.cursor()
-		s.write_tables(self.desc)
+		s.write_desc(self.desc)
 		print 'READING'
-		r=s.read_tree('/base/')
+		r=s.read_tree()
 		print r
 		print 'print tree\n',print_tree(r)
-
+		print 'WRITING AGAIN'
+		s.write_tree(r)
+		print "READING AGAIN"
+		r=s.read_tree()
+		print r
+		print 'print tree2\n',print_tree(r)
 		
 			
 	

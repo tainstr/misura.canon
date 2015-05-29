@@ -6,8 +6,13 @@ from misura.canon import indexer
 print 'Importing test_indexer'
 
 paths=[params.testdir+'storage']
+
 dbPath=params.testdir+'storage/db'
 
+dbPath='/media/essmeridia/deploy/misura4/opt/shared_data/test.sqlite'
+paths=['/media/essmeridia/deploy/misura4/opt/shared_data']
+# dbPath='/home/daniele/Scrivania/tests/test.sqlite'
+# paths=['/home/daniele/Scrivania/tests']
 def setUpModule():
 	print 'Starting',__name__
 	
