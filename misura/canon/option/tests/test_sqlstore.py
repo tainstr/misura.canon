@@ -55,15 +55,13 @@ class SqlStore(unittest.TestCase):
 		
 	def test_write_tables(self):
 		s=option.SqlStore()
-		cursor=self.conn.cursor()
-		s.write_tables(cursor,self.desc)
-		self.assertGreater(len(s.list_tables()),5)
+		s.cursor=self.conn.cursor()
+		s.write_tables(self.desc)
 		print 'READING'
-		r=s.read_tree(cursor,'/base/')
+		r=s.read_tree('/base/')
 		print r
 		print 'print tree\n',print_tree(r)
-		
-		s.create_view()
+
 		
 			
 	

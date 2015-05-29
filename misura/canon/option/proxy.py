@@ -30,7 +30,7 @@ def print_tree(tree,level=0):
 			msg+=print_tree(v,level+1)
 			continue
 		v=repr(v['current'])
-		if len(v)>50: v=v[:50]
+		if len(v)>50: v=v[:46]+' ...'
 		msg+='{}|: {} = {}\n'.format(pre,k,v)
 	return msg
 
