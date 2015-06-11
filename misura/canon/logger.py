@@ -34,6 +34,10 @@ def formatMsg(*msg,**po):
 def justPrint(*msg,**po):
 	t,st,p,o,msg,pmsg=formatMsg(*msg,**po)
 	print pmsg
+	
+def toLogging(*msg, **po):
+	logging.log(po.get('p', 10), *msg)
+	
 
 
 class BaseLogger(object):
@@ -76,6 +80,6 @@ class SubLogger(BaseLogger):
 
 
 global Log,log
-Log=BaseLogger()
+Log=BaseLogger(log=toLogging)
 log=Log.log
 
