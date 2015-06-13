@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
-"""Logging"""
+"""Generalized logging utilities"""
 import os
 import logging
-import logging.handlers
 from datetime import datetime
 import csutil
 
@@ -36,8 +35,9 @@ def justPrint(*msg,**po):
 	print pmsg
 	
 def toLogging(*msg, **po):
+	"""Send log to standard python logging library"""
 	logging.log(po.get('p', 10), *msg)
-	
+
 
 
 class BaseLogger(object):
@@ -69,17 +69,12 @@ class SubLogger(BaseLogger):
 		for i, e in enumerate(msg):
 			msg[i]=unicode(str(e), errors='ignore')
 		smsg=u' '.join(tuple(msg))
-		# Use set() in order to transparently call on ConfigurationInterface and Conf objects 
-# 		print 'logging',[p,smsg]
 		self.parent.desc.set_current('log',[p,smsg])
 		return p,smsg
 		
 
-			
-		
-
-
 global Log,log
 Log=BaseLogger(log=toLogging)
+#Log=BaseLogger(log=justPrint)
 log=Log.log
 

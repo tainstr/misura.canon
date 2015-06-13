@@ -40,10 +40,10 @@ class Array(Reference):
 	
 	@classmethod
 	def encode(cls,t,dat):
-		dat=list(dat)
 		if len(cls.fields)==2:
 			return np.array([(t,dat)],dtype=cls.fields)
 		else:
+			dat=list(dat)
 			return np.array([tuple([t]+dat)],dtype=cls.fields)
 	@classmethod
 	def decode(cls,dat):
