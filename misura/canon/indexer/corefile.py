@@ -184,13 +184,16 @@ class CoreFile(object):
 #		n.close()
 		return r
 	
-	@lockme
 	def _set_attributes(self,where,name=None,attrs={}):
+		"""Non-locking call to set_node_attr on `where` with a dict of `attrs`.
+		Optionally accepts leaf `name`."""
 		for k,v in attrs.iteritems():
 			print 'setting node attr',where,name,k,v
 			self.test.set_node_attr(where,k,v,name=name)
-	
+			
+	@lockme
 	def set_attributes(self, *a, **kw):
+		"""Locking call to _set_attributes"""
 		return self._set_attributes(*a, **kw)
 	
 	@lockme

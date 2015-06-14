@@ -13,7 +13,7 @@ from datetime import datetime
 from time import time
 from .. import option
 import numpy as np
-from ..csutil import lockme
+from ..csutil import lockme, unlockme
 from .. import reference
 
 from corefile import CoreFile
@@ -154,13 +154,13 @@ class SharedFile(CoreFile,DataOperator):
 		newversion='/ver_{}'.format(latest+1)
 		print 'creating new version',newversion,name
 		if not name: name=newversion
-		self.create_group('/',newversion[1:])
+		self.test.create_group('/',newversion[1:])
 		d=datetime.now().strftime("%H:%M:%S, %d/%m/%Y")
 		self._set_attributes(newversion,attrs={'name':name,'date': d})	
 		self.test.root.conf.attrs.versions=latest+1
 		# Set current version (will be empty until some transparent writing occurs)
 		self.version=newversion
-		self.flush()
+		self.test.flush()
 		return newversion
 			
 	def versioned(self,path):
