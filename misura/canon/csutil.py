@@ -2,7 +2,7 @@
 """Common utilities between client and server"""
 import os, sys
 import numpy
-from multiprocessing import Value
+import multiprocessing
 import cPickle as pickle
 
 import xmlrpclib
@@ -21,9 +21,9 @@ profiling=True
 # TIME SCALING (testing)
 ### 
 import time as standardTime
-time_scaled=Value('i')
+time_scaled=multiprocessing.Value('i')
 time_scaled.value=False
-time_factor=Value('d')
+time_factor=multiprocessing.Value('d')
 time_factor.value=1.0
 
 def time():
@@ -35,7 +35,7 @@ def time():
 def sleep(t):
 	return standardTime.sleep(t)
 
-sh_time_step=Value('i')
+sh_time_step=multiprocessing.Value('i')
 
 def time_step(set=-1):
 	if set<0:
@@ -314,7 +314,13 @@ def lockme(func):
 	def lockme_wrapper(self, *args, **kwargs):
 		if self._lock is False:
 			return func(self, *args, **kwargs)
-		self._lock.acquire()
+		if isinstance(self._lock, multiprocessing.synchronize.Lock):
+			r=self._lock.acquire(timeout=5)
+			if not r:
+				raise BaseException("Failed to acquire lock")
+		else:
+			# Threading locks does not support timeout (py2)
+			self._lock.acquire()
 		try:
 			return func(self, *args, **kwargs)
 		except KeyboardInterrupt:

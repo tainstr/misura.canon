@@ -263,10 +263,10 @@ class Indexer(object):
 		###
 		# Options
 		###
+		return True
 		s=option.SqlStore()
 		s.cursor=cur
 		s.write_tree(tree,preset=test['uid'])
-		
 		self.conn.commit()
 		return True
 

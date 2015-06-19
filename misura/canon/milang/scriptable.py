@@ -124,8 +124,6 @@ class Scriptable(object):
 		if not hasattr(self,'measure'):
 			self.log.error('Characterization makes no sense on this object')
 			return False		
-# 		self.log.debug('Executing measure scripts',period)
 		self.measure.execute_scripts(self,period=period)
 		for smp in self.samples:
-			self.log.debug('Executing sample scripts',smp['fullpath'],period)
 			smp.execute_scripts(self,period=period)

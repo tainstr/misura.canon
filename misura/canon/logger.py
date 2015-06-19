@@ -2,6 +2,7 @@
 """Generalized logging utilities"""
 import os
 import logging
+from traceback import print_exc
 from datetime import datetime
 import csutil
 
@@ -36,6 +37,7 @@ def justPrint(*msg,**po):
 	
 def toLogging(*msg, **po):
 	"""Send log to standard python logging library"""
+#	print 'toLogging', msg, po
 	logging.log(po.get('p', 10), *msg)
 
 
@@ -75,6 +77,6 @@ class SubLogger(BaseLogger):
 
 global Log,log
 Log=BaseLogger(log=toLogging)
-#Log=BaseLogger(log=justPrint)
+Log=BaseLogger(log=justPrint)
 log=Log.log
 
