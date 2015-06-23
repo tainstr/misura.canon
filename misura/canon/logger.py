@@ -71,7 +71,8 @@ class SubLogger(BaseLogger):
 		for i, e in enumerate(msg):
 			msg[i]=unicode(str(e), errors='ignore')
 		smsg=u' '.join(tuple(msg))
-		self.parent.desc.set_current('log',[p,smsg])
+		if self.parent and self.parent.desc:
+			self.parent.desc.set_current('log',[p,smsg])
 		return p,smsg
 		
 

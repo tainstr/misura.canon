@@ -225,14 +225,26 @@ class CoreFile(object):
 	@lockme
 	def list_nodes(self,*a,**k):
 		"""Return a list of node names"""
-		lst=self.test.listNodes(*a,**k)
+		lst=self.test.list_nodes(*a,**k)
 		r=[n._v_name for n in lst]
 		return r
 	
 	@lockme
 	def group_len(self,path,classname=''):
 		"""Returns length of objects contained in group path"""
-		return len(self.test.listNodes(path, classname=classname))
+		return len(self.test.list_nodes(path, classname=classname))
+	
+	
+	def get_unique_name(self,where,prefix='',suffix=''):
+		"""Return unique name for object under `where` group with `prefix`"""
+		idx=self.group_len(where)
+		name=prefix+suffix # no idx contained
+		if not len(name): name='0'
+		while self.has_node(where,name):
+			name=prefix+str(idx)+suffix
+			idx+=1
+		return name
+		
 	
 	@lockme
 	def file_node(self,path):

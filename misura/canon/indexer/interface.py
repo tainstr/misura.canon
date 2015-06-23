@@ -162,6 +162,54 @@ class SharedFile(CoreFile,DataOperator):
 		self.version=newversion
 		self.test.flush()
 		return newversion
+	
+	@lockme
+	def get_plots(self):
+		"""List available plots. Returns a dictionary {path: (name,date)}"""
+		r={}
+		if not self.test: 
+			return r
+		if not '/plot' in self.test:
+			return r
+		for node in self.test.list_nodes('/plot'):
+			script=self.test.get_node('/plot/{}/script'.format(node._v_name))
+			r[node._v_name]=(script.attrs.title,	script.attrs.date)
+		print 'returning plots',r
+		return r
+	
+	def get_plot(self,plot_id):
+		"""Returns the text of a plot"""	
+		return self.file_node('/plot/{}/script'.format(plot_id))
+	
+	def save_plot(self,text, plot_id=False, title=False, date=False, render=False, render_format=False):
+		"""Save the text of a plot to plot_id, optionally adding a title, date and rendered output"""
+		if not self.has_node('/plot'):
+			self.create_group('/','plot')
+			if not plot_id: plot_id='0'
+			
+		if not plot_id:
+			plot_id=self.get_unique_name('/plot')
+		if not title:
+			title=plot_id
+		current_date=datetime.now().strftime("%H:%M:%S, %d/%m/%Y")
+		if not date:
+			date=current_date
+
+		
+		self.create_group('/plot',plot_id)
+		base_group='/plot/'+plot_id
+		
+		text_path=base_group+'/script'
+		self.filenode_write(text_path,data=text)
+		self.set_attributes(text_path,attrs={'title':title,'date':date})
+		
+		if render and render_format:
+			render_path=base_group+'/render'
+			self.filenode_write(render_path,data=render)
+			self.set_attributes(render_path,attrs={'format':render_format})
+		
+		return plot_id,title,date
+	
 			
 	def versioned(self,path):
 		"""Translate standard orig path into configured version path.
