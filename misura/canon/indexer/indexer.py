@@ -47,7 +47,7 @@ def dbcom(func):
 
 class Indexer(object):
 	public=['rebuild','searchUID','update','header','listMaterials',
-		'query','remove','get_len','list','get_dbpath']
+		'query','remove','get_len','list_tests','get_dbpath']
 	cur=False
 	conn=False
 	addr='LOCAL'
@@ -90,6 +90,7 @@ class Indexer(object):
 		# Sync tables
 		self.cur.execute("create table if not exists sync_exclude "+testTableDef)
 		self.cur.execute("create table if not exists sync_queue "+testTableDef)
+		self.cur.execute("create table if not exists sync_approve "+testTableDef)
 		self.conn.commit()
 		return True
 		
@@ -338,7 +339,7 @@ class Indexer(object):
 		return r
 		
 	@dbcom
-	def list(self,start=0,stop=25):
+	def list_tests(self,start=0,stop=25):
 		self.cur.execute('SELECT * FROM test ORDER BY rowid LIMIT ? OFFSET ?',(stop-start,start))
 		r=self.cur.fetchall()
 		return r
