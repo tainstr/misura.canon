@@ -165,13 +165,15 @@ class SharedFile(CoreFile,DataOperator):
 	
 	@lockme
 	def get_plots(self,render=False):
-		"""List available plots. Returns a dictionary {path: (name,date)}"""
+		"""List available plots. Returns a dictionary {path: (name,date,render,render_format)}"""
 		r={}
 		if not self.test: 
 			return r
 		if not '/plot' in self.test:
 			return r
 		image=False
+		#TODO: read format
+		image_format=False
 		for node in self.test.list_nodes('/plot'):
 			path='/plot/{}/'.format(node._v_name)
 			script=self.test.get_node(path+'script')
@@ -180,7 +182,7 @@ class SharedFile(CoreFile,DataOperator):
 					image=self._file_node(path+'render')
 				else:
 					image=False
-			r[node._v_name]=(script.attrs.title,	script.attrs.date, image)
+			r[node._v_name]=(script.attrs.title, script.attrs.date, image, image_format)
 		return r
 	
 	def get_plot(self,plot_id):
