@@ -164,17 +164,23 @@ class SharedFile(CoreFile,DataOperator):
 		return newversion
 	
 	@lockme
-	def get_plots(self):
+	def get_plots(self,render=False):
 		"""List available plots. Returns a dictionary {path: (name,date)}"""
 		r={}
 		if not self.test: 
 			return r
 		if not '/plot' in self.test:
 			return r
+		image=False
 		for node in self.test.list_nodes('/plot'):
-			script=self.test.get_node('/plot/{}/script'.format(node._v_name))
-			r[node._v_name]=(script.attrs.title,	script.attrs.date)
-		print 'returning plots',r
+			path='/plot/{}/'.format(node._v_name)
+			script=self.test.get_node(path+'script')
+			if render:
+				if path+'render' in self.test:
+					image=self._file_node(path+'render')
+				else:
+					image=False
+			r[node._v_name]=(script.attrs.title,	script.attrs.date, image)
 		return r
 	
 	def get_plot(self,plot_id):
@@ -194,10 +200,11 @@ class SharedFile(CoreFile,DataOperator):
 		current_date=datetime.now().strftime("%H:%M:%S, %d/%m/%Y")
 		if not date:
 			date=current_date
-
 		
-		self.create_group('/plot',plot_id)
 		base_group='/plot/'+plot_id
+		if not self.has_node(base_group):
+			self.create_group('/plot',plot_id)
+		
 		
 		text_path=base_group+'/script'
 		self.filenode_write(text_path,data=text)

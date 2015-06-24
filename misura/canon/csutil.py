@@ -122,13 +122,14 @@ def func_args(func):
 #####
 # FILESYSTEM UTILS
 #######
-badchars=['-', '_', ' ']
-def validate_filename(fn):
+goodchars=['-', '_', ' ']
+badchars=[]
+def validate_filename(fn,good=goodchars,bad=badchars):
 	"""Purifica un filename da tutti i caratteri potenzialmente invalidi"""
 	fn=unicode(fn)
 	fn=fn.encode('ascii', 'ignore')
 		# scarta tutti i caratteri non alfanumerici
-	fn="".join([x for x in fn if x.isalpha() or x.isdigit() or x in badchars])
+	fn="".join([x for x in fn if x.isalpha() or x.isdigit() or x in goodchars and x not in badchars])
 	return fn
 
 def iter_cron_sort(top, field=1, reverse=False):

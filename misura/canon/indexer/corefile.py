@@ -244,11 +244,9 @@ class CoreFile(object):
 			name=prefix+str(idx)+suffix
 			idx+=1
 		return name
-		
 	
-	@lockme
-	def file_node(self,path):
-		"""Returns content of filenode in path"""
+	def _file_node(self,path):
+		"""Unlocked version of file_node"""
 		if self.test is False: 
 			print 'CoreFile.file_node: no test', self.path
 			return ''
@@ -258,6 +256,12 @@ class CoreFile(object):
 		r=node.read()
 # 		node.close()
 		return r
+		
+	
+	@lockme
+	def file_node(self,path):
+		"""Returns content of filenode in path"""
+		return self._file_node(path)
 	
 	def xmlrpc_file_node(self,path):
 		return csutil.binfunc(self.file_node(path))
