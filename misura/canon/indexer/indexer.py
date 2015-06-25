@@ -10,6 +10,7 @@ from traceback import print_exc
 import sqlite3
 import functools
 import threading
+from misura.canon.csutil import lockme,unlockme
 
 import tables
 from tables.nodes import filenode
@@ -22,7 +23,9 @@ import digisign
 testColumn=('file', 'serial', 'uid', 'id', 'date', 'instrument', 'flavour', 'name', 'elapsed', 'nSamples' , 'comment','verify')
 testColumnDefault=['file','serial','uid', 'id', 'date', 'instrument', 'flavour', 'name', 1, 1 , 'comment',0]
 testColDef=('text','text','text','text','text','text','text','text', 'real','integer','text','bool')
-testTableDef='''(file text, serial text, uid text, id text, date text, instrument text, flavour text,
+testTableDef='''(file text unique, serial text, uid text primary key, id text, date text, instrument text, flavour text,
+		name text, elapsed real, nSamples integer, comment text,verify bool)'''
+syncTableDef='''(file text, serial text, uid text primary key, id text, date text, instrument text, flavour text,
 		name text, elapsed real, nSamples integer, comment text,verify bool)'''
 errorTableDef='''(file text, serial text, uid text, id text, date text, instrument text, flavour text,
 		name text, elapsed real, nSamples integer, comment text,verify bool,error text)'''
@@ -97,9 +100,9 @@ class Indexer(object):
 		self.cur.execute("CREATE TABLE if not exists test "+testTableDef)
 		self.cur.execute("CREATE TABLE if not exists sample "+sampleTableDef)
 		# Sync tables
-		self.cur.execute("create table if not exists sync_exclude "+testTableDef)
-		self.cur.execute("create table if not exists sync_queue "+testTableDef)
-		self.cur.execute("create table if not exists sync_approve "+testTableDef)
+		self.cur.execute("create table if not exists sync_exclude "+syncTableDef)
+		self.cur.execute("create table if not exists sync_queue "+syncTableDef)
+		self.cur.execute("create table if not exists sync_approve "+syncTableDef)
 		self.cur.execute("create table if not exists sync_error "+errorTableDef)
 		self.conn.commit()
 		return True
@@ -127,45 +130,35 @@ class Indexer(object):
 		uid=str(uid)
 		g=self.cur.execute('SELECT file FROM test WHERE uid=?', [uid])
 		r=g.fetchall()
-		r=list(set(r))
 		if len(r)==0:
 			return False
-		if len(r)>1:
-			self.log.warning('Found duplicate UIDs',r)
+		file_path=r[0][0]
+		if not os.path.exists(file_path):
+			self._clear_file_path(file_path)
+			return False
 		# Return full line
 		if full:
 			return r[0]
-		return r[0][0]		
+		return file_path		
 		
 	@dbcom
 	def searchUID(self,uid,full=False):
 		"""Search `uid` in tests table and return its path or full record if `full`"""
 		return self._searchUID(uid, full)
-		
-	
-	def search_path(self,path):
-		path=str(path)
-		conn=sqlite3.connect(self.dbPath, detect_types=sqlite3.PARSE_DECLTYPES)
-		cur=conn.cursor()	
-		cur.execute('SELECT file FROM test WHERE path=?', [path])	
-		r=cur.fetchall()
-		r=list(set(r))
-		if len(r)==0:
-			return False
-		if len(r)>1:
-			self.log.warning('Found duplicate paths',r)
-		return r[0][0]
 
+	@unlockme
 	def rebuild(self):
 		"""Completely recreate the SQLite Database indexing all test files."""
 		if not self.dbPath: return False
 		if os.path.exists(self.dbPath): 
 			os.remove(self.dbPath)
+		if not self._lock.acquire(False):
+			self.log.error('Cannot lock database for rebuild')
+			return False
 		self.open_db(self.dbPath)
 		
 		conn=self.conn
 		cur=self.cur
-		self.cur=cur
 		cur.execute("DROP TABLE IF EXISTS test")
 		cur.execute("CREATE TABLE test "+testTableDef)
 		cur.execute("DROP TABLE IF EXISTS sample")
@@ -173,8 +166,10 @@ class Indexer(object):
 		cur.execute("DROP TABLE IF EXISTS sync_exclude")
 		cur.execute("DROP TABLE IF EXISTS sync_queue")
 		cur.execute("DROP TABLE IF EXISTS sync_approve")
+		cur.execute("DROP TABLE IF EXISTS sync_error")
 		conn.commit()
 		self.close_db()
+		self._lock.release()
 		tn=0
 		for path in self.paths:
 			for root, dirs, files in os.walk(path):
@@ -182,7 +177,7 @@ class Indexer(object):
 					if not fn.endswith(ext): continue
 					fp=os.path.join(root,fn)
 					print 'Appending',fp
-					tn+=self.appendFile(fp,fn)	
+					tn+=self.appendFile(fp,fn)
 		
 		return 'Done. Found %i tests.' % tn
 	
@@ -208,6 +203,7 @@ class Indexer(object):
 		if t: 
 			t.close()
 		return r
+	
 		
 	@dbcom
 	def _appendFile(self, t, fp,fn):
@@ -233,6 +229,7 @@ class Indexer(object):
 			print tree.keys()
 			self.log.debug('Instrument tree missing')
 			return False
+		
 		for p in 'name,comment,nSamples,date,elapsed,id'.split(','):
 			test[p]=tree[instrument]['measure']['self'][p]['current']
 		if test['date']<=1:
@@ -253,6 +250,10 @@ class Indexer(object):
 		ok=False
 		print 'File verify:',ok
 		v.append(ok)
+		
+		# Remove any old entry
+		self._clear_file_path(fn)
+		
 		cmd='?,'*len(v)
 		cmd='INSERT INTO test VALUES ('+cmd[:-1]+')'
 		print 'Executing',cmd,v
@@ -301,17 +302,22 @@ class Indexer(object):
 			return False
 		return self.remove_file(fn)
 	
-	@dbcom
-	def remove_file(self,fn):
-		#FIXME: inter-thread #412
-		e=self.cur.execute('delete from test where file=?',(fn,))
+	
+	def _clear_file_path(self,file_path):
+		"""Remove file in `file_path` from db"""
+		e=self.cur.execute('delete from test where file=?',(file_path,))
 		print 'Deleted from test',e.rowcount
-		e=self.cur.execute('delete from sample where file=?',(fn,))
+		e=self.cur.execute('delete from sample where file=?',(file_path,))
 		print 'Deleted from sample',e.rowcount
 		self.conn.commit()
-		if os.path.exists(fn):
-			os.remove(fn)
 		return True
+	
+	@dbcom
+	def remove_file(self,file_path):
+		r= self._clear_by_file_path(file_path)
+		if os.path.exists(file_path):
+			os.remove(file_path)
+		return r
 				
 	@dbcom
 	def header(self):
@@ -357,8 +363,15 @@ class Indexer(object):
 		
 	@dbcom
 	def list_tests(self,start=0,stop=25):
-		self.cur.execute('SELECT * FROM test ORDER BY rowid LIMIT ? OFFSET ?',(stop-start,start))
-		r=self.cur.fetchall()
+		self.cur.execute('SELECT * FROM test ORDER BY rowid DESC LIMIT ? OFFSET ?',(stop-start,start))
+		r=[]
+		for record in self.cur.fetchall():
+			file_path=record[0]
+			if not os.path.exists(file_path):
+				self.log.debug('Removing obsolete database entry: ',file_path)
+				self._clear_file_path(file_path)
+			else:
+				r.append(record)
 		return r
 		
 	def get_dbpath(self):
