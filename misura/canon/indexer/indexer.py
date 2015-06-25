@@ -9,6 +9,7 @@ import cPickle as pickle
 from traceback import print_exc
 import sqlite3
 import functools
+import threading
 
 import tables
 from tables.nodes import filenode
@@ -23,6 +24,8 @@ testColumnDefault=['file','serial','uid', 'id', 'date', 'instrument', 'flavour',
 testColDef=('text','text','text','text','text','text','text','text', 'real','integer','text','bool')
 testTableDef='''(file text, serial text, uid text, id text, date text, instrument text, flavour text,
 		name text, elapsed real, nSamples integer, comment text,verify bool)'''
+errorTableDef='''(file text, serial text, uid text, id text, date text, instrument text, flavour text,
+		name text, elapsed real, nSamples integer, comment text,verify bool,error text)'''
 sampleTableDef='''(file text, ii integer, idx integer, material text, name text, comment text, 
 		dim integer, height integer, volume integer, 
 		sintering real, softening real, sphere real, halfSphere real, melting real )'''
@@ -37,14 +40,18 @@ def dbcom(func):
 	@functools.wraps(func)
 	def safedb_wrapper(self, *args, **kwargs):
 		try:
+			r=self._lock.acquire(False)
+			if not r: 
+				raise BaseException('Impossible to lock database')
 			self.open_db()
 			return func(self, *args, **kwargs)
 		finally:
-			self.close_db()
+			try:
+				self.close_db()
+			finally:
+				self._lock.release()
 	return safedb_wrapper
-
 	
-
 class Indexer(object):
 	public=['rebuild','searchUID','update','header','listMaterials',
 		'query','remove','get_len','list_tests','get_dbpath']
@@ -52,6 +59,7 @@ class Indexer(object):
 	conn=False
 	addr='LOCAL'
 	def __init__(self,dbPath=False,paths=[],log=False):
+		self._lock=threading.Lock()
 		self.dbPath=dbPath
 		self.paths=paths
 		if log is False:
@@ -82,6 +90,7 @@ class Indexer(object):
 			db=self.dbPath
 		self.dbPath=db
 		if not self.dbPath: 
+			print 'Indexer: no dbpath set!'
 			return False
 		self.conn=sqlite3.connect(self.dbPath, detect_types=sqlite3.PARSE_DECLTYPES)
 		self.cur=self.conn.cursor()
@@ -91,6 +100,7 @@ class Indexer(object):
 		self.cur.execute("create table if not exists sync_exclude "+testTableDef)
 		self.cur.execute("create table if not exists sync_queue "+testTableDef)
 		self.cur.execute("create table if not exists sync_approve "+testTableDef)
+		self.cur.execute("create table if not exists sync_error "+errorTableDef)
 		self.conn.commit()
 		return True
 		
@@ -104,19 +114,19 @@ class Indexer(object):
 		
 	def close(self):
 		return self.close_db()
-		
-	def searchUID(self,uid,full=False):
-		"""Search `uid` in tests table and return its path or full record if `full`"""
+	
+	def tab_len(self,table_name):
+		"""Returns length of a table"""
+		r= self.execute_fetchone('SELECT COUNT(*) from {}'.format(table_name))
+		if not r:
+			return 0
+		return r[0]
+	
+	def _searchUID(self,uid,full=False):
+		"""Unlocked searchUID"""
 		uid=str(uid)
-		conn=sqlite3.connect(self.dbPath)
-		cur=conn.cursor()
-		try:
-			cur.execute('SELECT file FROM test WHERE uid=?', [uid])	
-		except sqlite3.OperationalError:
-			self.close_db()
-			self.rebuild()
-			return False
-		r=cur.fetchall()
+		g=self.cur.execute('SELECT file FROM test WHERE uid=?', [uid])
+		r=g.fetchall()
 		r=list(set(r))
 		if len(r)==0:
 			return False
@@ -125,7 +135,13 @@ class Indexer(object):
 		# Return full line
 		if full:
 			return r[0]
-		return r[0][0]
+		return r[0][0]		
+		
+	@dbcom
+	def searchUID(self,uid,full=False):
+		"""Search `uid` in tests table and return its path or full record if `full`"""
+		return self._searchUID(uid, full)
+		
 	
 	def search_path(self,path):
 		path=str(path)
@@ -156,6 +172,7 @@ class Indexer(object):
 		cur.execute("CREATE TABLE sample "+sampleTableDef)
 		cur.execute("DROP TABLE IF EXISTS sync_exclude")
 		cur.execute("DROP TABLE IF EXISTS sync_queue")
+		cur.execute("DROP TABLE IF EXISTS sync_approve")
 		conn.commit()
 		self.close_db()
 		tn=0
@@ -278,7 +295,7 @@ class Indexer(object):
 	
 	@dbcom
 	def remove(self,uid):
-		fn=self.searchUID(uid)
+		fn=self._searchUID(uid)
 		if not fn:
 			self.log.error('Impossible delete:',uid,'not found.')
 			return False

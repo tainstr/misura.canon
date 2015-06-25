@@ -400,7 +400,6 @@ class SqlStore(store.Store):
 		if len(wh)>0:
 			wh=" where "+wh
 		cmd="select * from {} ".format(self.tabname)+wh+';'
-		print cmd
 		self.cursor.execute(cmd)
 		rows=self.cursor.fetchall()
 		tree=tree_from_rows(rows,self.col_def)
@@ -442,7 +441,6 @@ class SqlStore(store.Store):
 		if not desc: desc=self.desc
 		cursor.execute("drop table if exists "+tabname+';')
 		cmd="create table " + tabname + " ("+tabdef+");"
-		print cmd
 		cursor.execute(cmd)
 		
 		# Prepare the insertion command
@@ -461,8 +459,6 @@ class SqlStore(store.Store):
 			if not line:
 				print 'skipping line',key 
 				continue
-			print entry.keys(),tabdef
-			print icmd,line
 			cursor.execute(icmd,line)
 		return True
 	
@@ -470,7 +466,6 @@ class SqlStore(store.Store):
 def from_row(row):
 	"""Create an Option object starting from a database row"""
 	e={}
-	print row
 	for i,k in enumerate(option.vkeys):
 		if row[i]=='': continue
 		e[k]=ast.literal_eval(row[i])
