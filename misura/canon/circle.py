@@ -37,7 +37,6 @@ def syn(a,b,c,step=1):
 	# Find circle radius
 	r,Ox,Oy=circle(a,b,c)
 	sg=np.sign(step)
-	print 'circle',r,Ox,Oy
 	y=a[1];	vr=[];	vl=[]
 	vxr=[]; vxl=[]; vy=[]
 	while sg*(b[1]-y)>=0:
