@@ -296,16 +296,17 @@ def next_point(crv,row,delta=1):
 	d=0
 	c=True
 	N=len(crv)
-	while c and 0<=row<N:
-		ent=crv[row]
-		c=isinstance(ent[1],str)
+	while c and 0 <= row < N:
+		ent = crv[row]
+		c = isinstance(ent[1], basestring)
 		if c:
 			row+=delta
 	if row<0:
 		return -1,False
 	if row>=N:
 		return N,False
-	return row,ent
+	
+	return row, ent
 
 def lockme(func):
 	"""Decorator to lock/unlock method execution.
