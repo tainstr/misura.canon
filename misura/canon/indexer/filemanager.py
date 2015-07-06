@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 """Indexing hdf5 files"""
-# NOTICE: THIS FILE IS ALSO PART OF THE CLIENT. IT SHOULD NOT CONTAINS REFERENCES TO THE SERVER OR TWISTED PKG.
 ext='.h5'
 
 import os
