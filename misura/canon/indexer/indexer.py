@@ -52,17 +52,22 @@ def dbcom(func):
 			try:
 				self.close_db()
 			finally:
+				self._lock.acquire(False)
 				self._lock.release()
 	return safedb_wrapper
+	
+def tid():
+	return threading.current_thread().ident
 	
 class Indexer(object):
 	public=['rebuild','searchUID','update','header','listMaterials',
 		'query','remove','get_len','list_tests','get_dbpath']
-	cur=False
-	conn=False
+# 	cur=False
+# 	conn=False
 	addr='LOCAL'
 	def __init__(self,dbPath=False,paths=[],log=False):
 		self._lock=threading.Lock()
+		self.threads={}
 		self.dbPath=dbPath
 		self.paths=paths
 		if log is False:
@@ -87,6 +92,14 @@ class Indexer(object):
 	def execute_fetchone(self,query,*a,**kw):
 		g=self.cur.execute(query,*a,**kw)
 		return g.fetchone()
+	
+	@property
+	def conn(self):
+		return self.threads.get(tid(),[False])[0]
+	
+	@property
+	def cur(self):
+		return self.threads.get(tid(),[False])[-1]
 			
 	def open_db(self,db=False):
 		if not db: 
@@ -95,24 +108,35 @@ class Indexer(object):
 		if not self.dbPath: 
 			print 'Indexer: no dbpath set!'
 			return False
-		self.conn=sqlite3.connect(self.dbPath, detect_types=sqlite3.PARSE_DECLTYPES)
-		self.cur=self.conn.cursor()
-		self.cur.execute("CREATE TABLE if not exists test "+testTableDef)
-		self.cur.execute("CREATE TABLE if not exists sample "+sampleTableDef)
+		
+		conn,cur=self.threads.get(tid(),(False,False))
+		if conn:
+			try: 
+				cur=conn.cursor()
+			except sqlite3.ProgrammingError:
+				conn=False
+		if not conn:
+			conn=sqlite3.connect(self.dbPath, detect_types=sqlite3.PARSE_DECLTYPES)
+			cur=conn.cursor()
+			self.threads[tid()]=(conn,cur)
+			
+		cur.execute("CREATE TABLE if not exists test "+testTableDef)
+		cur.execute("CREATE TABLE if not exists sample "+sampleTableDef)
 		# Sync tables
-		self.cur.execute("create table if not exists sync_exclude "+syncTableDef)
-		self.cur.execute("create table if not exists sync_queue "+syncTableDef)
-		self.cur.execute("create table if not exists sync_approve "+syncTableDef)
-		self.cur.execute("create table if not exists sync_error "+errorTableDef)
-		self.conn.commit()
+		cur.execute("create table if not exists sync_exclude "+syncTableDef)
+		cur.execute("create table if not exists sync_queue "+syncTableDef)
+		cur.execute("create table if not exists sync_approve "+syncTableDef)
+		cur.execute("create table if not exists sync_error "+errorTableDef)
+		conn.commit()
 		return True
+	
 		
 	def close_db(self):
-		if self.cur:
-			self.cur.close()
-			self.conn.close()
-		self.cur=False
-		self.conn=False
+		conn,cur=self.threads.get(tid(),(0,0))
+		if cur:
+			cur.close()
+		if conn:
+			conn.close()
 		return True
 		
 	def close(self):
