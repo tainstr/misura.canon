@@ -9,13 +9,14 @@ from misura.canon import milang, indexer
 from misura.canon import logger
 from misura import parameters as params
 
-np=numpy
+np = numpy
+
+
 def setUpModule():
-	print 'Starting',__name__
+    print 'Starting', __name__
 
 
-
-data_scr="""
+data_scr = """
 print 'data_scr'
 i0,t0,v0=mi.Raises('cohe',80)
 print 'raises',i0,t0,v0
@@ -33,7 +34,7 @@ x,y=mi.xy('w')
 """
 
 
-cooling0_scr="""
+cooling0_scr = """
 print 'Getting Max'
 maxT=mi.Max('T')
 print 'Equals'
@@ -46,36 +47,36 @@ print 'Setting time'
 mi.t(i)
 """
 
-#FIXME: for this to work, we need real data here!
-path=params.testdir+'storage/hsm_test'+params.ext
+# FIXME: for this to work, we need real data here!
+path = params.testdir + 'storage/hsm_test' + params.ext
+
 
 class DataEnvironment(unittest.TestCase):
-	env=milang.DataEnvironment()
+    env = milang.DataEnvironment()
 # 	tab=ut.FakeStorageFile()
-	tab=indexer.SharedFile(path)
-	env.hdf=tab
-	env.prefix='/hsm/sample0/'
-	
-	
-	def test_Value(self):
-		self.env.Value(10)
-		self.assertEqual(self.env.value,10)
-		
-	
-	def test_simple(self):
-		mi=milang.MiLang(data_scr,env=self.env)
-		self.assertTrue(mi.code)
-		mi.ins_env.obj=ut.DummyInstrument()
-		mi.do()
-		print 'verify point',mi.env.time,mi.env.temp,mi.env.value
-		ut.verify_point(self, mi.env, 1402241667.782006, 20.01248106656483,  215.33565530223945,'Ciao')
-		
-	def test_Select(self):
-		mi=milang.MiLang(cooling0_scr,env=self.env)
-		self.assertTrue(mi.code)
-		mi.ins_env.obj=ut.DummyInstrument()
-		mi.do()
-		
-	
+    tab = indexer.SharedFile(path)
+    env.hdf = tab
+    env.prefix = '/hsm/sample0/'
+
+    def test_Value(self):
+        self.env.Value(10)
+        self.assertEqual(self.env.value, 10)
+
+    def test_simple(self):
+        mi = milang.MiLang(data_scr, env=self.env)
+        self.assertTrue(mi.code)
+        mi.ins_env.obj = ut.DummyInstrument()
+        mi.do()
+        print 'verify point', mi.env.time, mi.env.temp, mi.env.value
+        ut.verify_point(self, mi.env, 1402241667.782006,
+                        20.01248106656483,  215.33565530223945, 'Ciao')
+
+    def test_Select(self):
+        mi = milang.MiLang(cooling0_scr, env=self.env)
+        self.assertTrue(mi.code)
+        mi.ins_env.obj = ut.DummyInstrument()
+        mi.do()
+
+
 if __name__ == "__main__":
-	unittest.main(verbosity=2) 
+    unittest.main(verbosity=2)

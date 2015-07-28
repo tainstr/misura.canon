@@ -2,4 +2,4 @@
 # -*- coding: utf-8 -*-
 """Common module parameters"""
 import tables
-cfilter=tables.Filters(complevel=5, complib='zlib')
+cfilter = tables.Filters(complevel=5, complib='zlib')
