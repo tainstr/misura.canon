@@ -438,6 +438,13 @@ class Option(object):
         self._entry['attr'] = list(oa)
         ot = old['type']
         nt = self['type']
+        # Reset table option if its definition changed
+        if nt == 'Table':
+            new_def = [h[1] for h in self['current'][0]]
+            old_def = [h[1] for h in old['current'][0]]
+            if new_def != old_def:
+                print 'Incompatible table definition', self['handle'], new_def, old_def
+                self['current']=[self['current'][0]]
         # No type change: exit
         if ot == nt:
             return

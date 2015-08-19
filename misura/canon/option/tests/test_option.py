@@ -54,6 +54,28 @@ class Option(unittest.TestCase):
         self.assertEqual(new['type'], 'Integer')
         # But as it cannot be converted, should keep old current value
         self.assertEqual(new['current'], 0)
+        
+        # Table conversion
+        oldh =[('A','A'),('B','B')]
+        old = option.Option(current=[oldh,[1,1]],handle='test',type='Table')
+        old.validate()
+        new = option.Option(current=[oldh,[2,2]],handle='test',type='Table')
+        new.validate()
+        new.migrate_from(old)
+        new.validate()
+        self.assertEqual(new['current'][1], [2,2])
+        newh = [('C','A'),('D','B')]
+        new['current'] = [newh,[2,2]]
+        new.migrate_from(old)
+        new.validate()
+        self.assertEqual(new['current'], [newh,[2,2]])
+        newh = [('A','A'),('B','E')]
+        new['current'] = [newh,[2,2]]
+        new.migrate_from(old)
+        new.validate()
+        self.assertEqual(new['current'], [newh])
+        
+        
 
 
 if __name__ == "__main__":
