@@ -58,7 +58,7 @@ class Conf(object):
 
     def get(self, name, *a):
         """Return option `name` current value"""
-#		print 'option.Conf.get', name, a
+#       print 'option.Conf.get', name, a
         try:
             opt = self.get_current(name)
         except:

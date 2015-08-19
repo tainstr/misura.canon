@@ -439,12 +439,12 @@ class Option(object):
         ot = old['type']
         nt = self['type']
         # Reset table option if its definition changed
-        if nt == 'Table':
+        if nt == 'Table' and self._entry.has_key('current'):
             new_def = [h[1] for h in self['current'][0]]
             old_def = [h[1] for h in old['current'][0]]
             if new_def != old_def:
                 print 'Incompatible table definition', self['handle'], new_def, old_def
-                self['current']=[self['current'][0]]
+                self._entry['current']=[old['current'][0]]
         # No type change: exit
         if ot == nt:
             return
@@ -468,7 +468,7 @@ class Option(object):
                 nc = float(nc)
             elif ot == 'Button':
                 nc = ''
-            self['current'] = nc
+            self._entry['current'] = nc
         except:
             print 'Impossible to migrate current value', old['handle'], nc, ot
             # Remove current key
