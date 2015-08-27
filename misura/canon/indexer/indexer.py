@@ -11,7 +11,8 @@ from traceback import print_exc
 import sqlite3
 import functools
 import threading
-from misura.canon.csutil import lockme, unlockme
+
+from misura.canon.csutil import unlockme
 
 import tables
 from tables.nodes import filenode
@@ -19,7 +20,6 @@ from tables.nodes import filenode
 from .. import csutil, option
 
 from filemanager import FileManager
-import digisign
 
 testColumn = ('file', 'serial', 'uid', 'id', 'date', 'instrument',
               'flavour', 'name', 'elapsed', 'nSamples', 'comment', 'verify')
@@ -55,9 +55,14 @@ def dbcom(func):
         finally:
             try:
                 self.close_db()
+            except: 
+                print_exc()
             finally:
                 self._lock.acquire(False)
-                self._lock.release()
+                try:
+                    self._lock.release()
+                except: 
+                    print_exc()
     return safedb_wrapper
 
 
