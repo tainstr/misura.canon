@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """Indexing hdf5 files"""
-# NOTICE: THIS FILE IS ALSO PART OF THE CLIENT. IT SHOULD NOT CONTAINS
+# NOTICE: THIS FILE IS ALSO PART OF THE CLIENT. IT SHOULD NOT CONTAIN
 # REFERENCES TO THE SERVER OR TWISTED PKG.
 ext = '.h5'
 
@@ -33,8 +33,8 @@ syncTableDef = '''(file text, serial text, uid text primary key, id text, date t
 		name text, elapsed real, nSamples integer, comment text,verify bool)'''
 errorTableDef = '''(file text, serial text, uid text, id text, date text, instrument text, flavour text,
 		name text, elapsed real, nSamples integer, comment text,verify bool,error text)'''
-sampleTableDef = '''(file text, ii integer, idx integer, material text, name text, comment text, 
-		dim integer, height integer, volume integer, 
+sampleTableDef = '''(file text, ii integer, idx integer, material text, name text, comment text,
+		dim integer, height integer, volume integer,
 		sintering real, softening real, sphere real, halfSphere real, melting real )'''
 testColConverter = {}
 colConverter = {'text': unicode, 'real': float, 'bool': bool, 'integer': int}
