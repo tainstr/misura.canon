@@ -42,5 +42,9 @@ class Indexer(unittest.TestCase):
         result = self.indexer.searchUID('eadd3abc68fa78ad64eb6df7174237a0')
         self.assertEqual(result, cur_dir + '/files/dummy1.h5')
 
+    def test_searchUIDFull(self):
+        result = self.indexer.searchUID('eadd3abc68fa78ad64eb6df7174237a0', True)
+        self.assertEqual(result, (cur_dir + '/files/dummy1.h5',))
+
 if __name__ == "__main__":
     unittest.main()
