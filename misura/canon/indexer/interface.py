@@ -8,13 +8,11 @@ import os
 from cPickle import dumps, loads
 from traceback import format_exc
 import tables
-from tables.nodes import filenode
 from .. import csutil
 from datetime import datetime
-from time import time
 from .. import option
 import numpy as np
-from ..csutil import lockme, unlockme
+from ..csutil import lockme
 from .. import reference
 
 from corefile import CoreFile
