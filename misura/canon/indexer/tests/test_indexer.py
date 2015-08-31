@@ -8,13 +8,27 @@ import os
 import shutil
 import sqlite3
 
+def ensure_deletion_of_file(file_to_delete):
+    def decorator(function_to_decorate):
+        def wrapper(*args, **kwargs):
+            try:
+                retval = function_to_decorate(*args, **kwargs)
+            except Exception, e:
+                raise e
+            finally:
+                os.remove(file_to_delete)
+
+            return retval
+        return wrapper
+    return decorator
+
+
+
+
 cur_dir = os.path.dirname(os.path.realpath(__file__))
 
 paths = [cur_dir + '/files']
 dbPath = cur_dir + '/files/test.sqlite'
-
-
-
 
 class Indexer(unittest.TestCase):
 
@@ -66,23 +80,20 @@ class Indexer(unittest.TestCase):
 
         self.assertEqual(cur_dir + '/other-files/dummy3.h5', actual_path)
 
+    @ensure_deletion_of_file(cur_dir + '/files/dummy3.h5')
     def test_appendFile_should_save_relative_path_when_possible(self):
         full_h5path = cur_dir + '/files/dummy3.h5'
-        try:
-            shutil.copyfile(cur_dir + '/other-files/dummy3.h5', full_h5path)
-            self.indexer.appendFile(full_h5path)
-        except Exception, e:
-            raise e
-        finally:
-            os.remove(full_h5path)
+        shutil.copyfile(cur_dir + '/other-files/dummy3.h5', full_h5path)
+
+        self.indexer.appendFile(full_h5path)
 
         conn = sqlite3.connect(dbPath, detect_types=sqlite3.PARSE_DECLTYPES)
         cur = conn.cursor()
-
         result = cur.execute('SELECT file FROM test WHERE uid=?', ['cd3c070164561106e9b001888edc38fc']).fetchall()
 
         self.assertEqual("./dummy3.h5", result[0][0])
 
+    @ensure_deletion_of_file(cur_dir + '/files/dummy3.h5')
     def test_path_is_always_absolute_when_reading(self):
         full_h5path = cur_dir + '/files/dummy3.h5'
         shutil.copyfile(cur_dir + '/other-files/dummy3.h5', full_h5path)
@@ -93,8 +104,6 @@ class Indexer(unittest.TestCase):
         self.assertEqual(full_h5path, self.indexer.searchUID('cd3c070164561106e9b001888edc38fc'))
         self.assertEqual((full_h5path,), self.indexer.searchUID('cd3c070164561106e9b001888edc38fc', True))
         self.assertEqual(full_h5path, self.indexer.list_tests()[0][0])
-
-        os.remove(full_h5path)
 
 
 
