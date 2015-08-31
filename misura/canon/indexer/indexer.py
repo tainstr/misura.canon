@@ -27,15 +27,20 @@ testColumnDefault = ['file', 'serial', 'uid', 'id', 'date',
                      'instrument', 'flavour', 'name', 1, 1, 'comment', 0]
 testColDef = ('text', 'text', 'text', 'text', 'text', 'text',
               'text', 'text', 'real', 'integer', 'text', 'bool')
-testTableDef = '''(file text unique, serial text, uid text primary key, id text, date text, instrument text, flavour text,
-		name text, elapsed real, nSamples integer, comment text,verify bool)'''
-syncTableDef = '''(file text, serial text, uid text primary key, id text, date text, instrument text, flavour text,
-		name text, elapsed real, nSamples integer, comment text,verify bool)'''
-errorTableDef = '''(file text, serial text, uid text, id text, date text, instrument text, flavour text,
-		name text, elapsed real, nSamples integer, comment text,verify bool,error text)'''
-sampleTableDef = '''(file text, ii integer, idx integer, material text, name text, comment text,
-		dim integer, height integer, volume integer,
-		sintering real, softening real, sphere real, halfSphere real, melting real )'''
+testTableDef = '''(file text unique, serial text, uid text primary key,
+                   id text, date text, instrument text, flavour text,
+                   name text, elapsed real, nSamples integer,
+                   comment text,verify bool)'''
+syncTableDef = '''(file text, serial text, uid text primary key, id text,
+                   date text, instrument text, flavour text, name text,
+                   elapsed real, nSamples integer, comment text,verify bool)'''
+errorTableDef = '''(file text, serial text, uid text, id text, date text,
+                    instrument text, flavour text, name text, elapsed real,
+                    nSamples integer, comment text,verify bool,error text)'''
+sampleTableDef = '''(file text, ii integer, idx integer, material text,
+                     name text, comment text, dim integer, height integer,
+                     volume integer, sintering real, softening real,
+                     sphere real, halfSphere real, melting real )'''
 testColConverter = {}
 colConverter = {'text': unicode, 'real': float, 'bool': bool, 'integer': int}
 for i, n in enumerate(testColumn):
@@ -163,7 +168,8 @@ class Indexer(object):
 
     def _searchUID(self, uid, full=False):
         """Unlocked searchUID"""
-        result = self.cur.execute('SELECT file FROM test WHERE uid=?', [str(uid)]).fetchall()
+        result = self.cur.execute(
+            'SELECT file FROM test WHERE uid=?', [str(uid)]).fetchall()
         if len(result) == 0:
             return False
 
@@ -257,7 +263,9 @@ class Indexer(object):
         test = {}
 
         dbdir = os.path.dirname(self.dbPath)
-        relative_path = "." + file_path[len(dbdir):] if file_path.startswith(dbdir) else file_path
+        relative_path = "." + \
+            file_path[len(dbdir):] if file_path.startswith(
+                dbdir) else file_path
         test['file'] = relative_path
 
         instrument = conf.attrs.instrument
@@ -425,6 +433,7 @@ class Indexer(object):
     def convert_query_result_to_full_path(self, query_results):
         converted = []
         for query_result in query_results:
-            converted.append((self.convert_to_full_path(query_result[0]),) + query_result[1:])
+            converted.append(
+                (self.convert_to_full_path(query_result[0]),) + query_result[1:])
 
         return converted
