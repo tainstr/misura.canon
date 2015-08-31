@@ -366,6 +366,23 @@ class CoreFile(object):
 
         print 'DONE SharedFile.filenode_write', path
         return len(data)
+        
+    def link(self, link_path, referred_path):
+        """Create a new link from link_path to existing object referred_path"""
+        if not self.has_node(referred_path):
+            print 'Impossible to create link:', link_path, referred_path
+            return False
+        v = link_path.split('/')
+        name = v.pop(-1)
+        where = '/'.join(v)
+        if not len(where):
+            where = '/'
+        print 'Creating link', link_path, referred_path, where, name
+        g = self.create_hard_link(
+            where, name, referred_path, createparents=True)
+        if g:
+            return True
+        return False
 
     def debug(self):
         msg = ['Debug info for object', str(id(self)), str(id(self.test)),
