@@ -21,14 +21,6 @@ from .. import csutil, option
 
 from filemanager import FileManager
 
-def is_subdir(path, directory):
-    path = os.path.realpath(path)
-    directory = os.path.realpath(directory)
-    relative = os.path.relpath(path, directory)
-
-    return not relative.startswith(os.pardir)
-
-
 testColumn = ('file', 'serial', 'uid', 'id', 'date', 'instrument',
               'flavour', 'name', 'elapsed', 'nSamples', 'comment', 'verify')
 testColumnDefault = ['file', 'serial', 'uid', 'id', 'date',
@@ -175,10 +167,7 @@ class Indexer(object):
         if len(result) == 0:
             return False
 
-        file_path = result[0][0]
-        if file_path.startswith("."):
-            dbdir = os.path.dirname(self.dbPath)
-            file_path = dbdir + file_path[1:]
+        file_path = self.convert_to_full_path(result[0][0])
 
         if not os.path.exists(file_path):
             self._clear_file_path(file_path)
@@ -412,23 +401,26 @@ class Indexer(object):
             'SELECT * FROM test ORDER BY rowid DESC LIMIT ? OFFSET ?', (stop - start, start))
         r = []
         for record in self.cur.fetchall():
-            file_path = record[0]
-            if file_path.startswith("."):
-                dbdir = os.path.dirname(self.dbPath)
-                file_path = dbdir + file_path[1:]
+            file_path = self.convert_to_full_path(record[0])
+
             if not os.path.exists(file_path):
                 self.log.debug('Removing obsolete database entry: ', file_path)
                 self._clear_file_path(file_path)
             else:
-                if record[0].startswith("."):
-                    dbdir = os.path.dirname(self.dbPath)
-                    record = (dbdir + record[0][1:],) + record[1:]
-
+                record = (file_path,) + record[1:]
                 r.append(record)
+
         return r
 
     def get_dbpath(self):
         return self.dbPath
+
+    def convert_to_full_path(self, file_path):
+        if file_path.startswith("."):
+            dbdir = os.path.dirname(self.dbPath)
+            return dbdir + file_path[1:]
+
+        return file_path
 
 
 
