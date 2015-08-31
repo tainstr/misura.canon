@@ -75,8 +75,10 @@ class Indexer(unittest.TestCase):
     def test_appendFile_should_save_full_path_when_no_relative_is_possible(self):
         self.indexer.appendFile(cur_dir + '/other-files/dummy3.h5')
 
-        result = self.indexer.query()
-        actual_path = result[2][0]
+        conn = sqlite3.connect(dbPath, detect_types=sqlite3.PARSE_DECLTYPES)
+        cur = conn.cursor()
+        result = cur.execute('SELECT file FROM test WHERE uid=?', ['cd3c070164561106e9b001888edc38fc']).fetchall()
+        actual_path = result[0][0]
 
         self.assertEqual(cur_dir + '/other-files/dummy3.h5', actual_path)
 
