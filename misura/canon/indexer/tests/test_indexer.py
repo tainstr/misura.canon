@@ -98,8 +98,7 @@ class Indexer(unittest.TestCase):
         full_h5path = cur_dir + '/files/dummy3.h5'
         shutil.copyfile(cur_dir + '/other-files/dummy3.h5', full_h5path)
 
-        self.assertTrue(self.indexer.appendFile(full_h5path))
-
+        self.indexer.appendFile(full_h5path)
 
         self.assertEqual(full_h5path, self.indexer.searchUID('cd3c070164561106e9b001888edc38fc'))
         self.assertEqual((full_h5path,), self.indexer.searchUID('cd3c070164561106e9b001888edc38fc', True))
