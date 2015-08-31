@@ -21,6 +21,12 @@ from .. import csutil, option
 
 from filemanager import FileManager
 
+def is_subdir(path, directory):
+    path = os.path.realpath(path)
+    directory = os.path.realpath(directory)
+    relative = os.path.relpath(path, directory)
+
+    return not relative.startswith(os.pardir)
 
 
 testColumn = ('file', 'serial', 'uid', 'id', 'date', 'instrument',
@@ -168,14 +174,18 @@ class Indexer(object):
         result = self.cur.execute('SELECT file FROM test WHERE uid=?', [str(uid)]).fetchall()
         if len(result) == 0:
             return False
+
         file_path = result[0][0]
+        if file_path.startswith("."):
+            dbdir = os.path.dirname(self.dbPath)
+            file_path = dbdir + file_path[1:]
 
         if not os.path.exists(file_path):
             self._clear_file_path(file_path)
             return False
 
         if full:
-            return result[0]
+            return (file_path,) + result[0][1:]
         return file_path
 
     @dbcom
@@ -220,33 +230,33 @@ class Indexer(object):
 
         return 'Done. Found %i tests.' % tn
 
-    def appendFile(self, fp):
-        if not os.path.exists(fp):
-            print 'File not found', fp
+    def appendFile(self, file_path):
+        if not os.path.exists(file_path):
+            print 'File not found', file_path
             return False
         r = 0
-        t = False
+        table = False
         try:
-            t = tables.openFile(fp, mode='r+')
-            if not getattr(t.root, 'conf', False):
-                self.log.debug('Tree configuration not found', fp)
-                t.close()
+            table = tables.openFile(file_path, mode='r+')
+            if not getattr(table.root, 'conf', False):
+                self.log.debug('Tree configuration not found', file_path)
+                table.close()
                 return False
-            r = self._appendFile(t, fp)
+            r = self._appendFile(table, file_path)
         except:
             print_exc()
-        if t:
-            t.close()
+        if table:
+            table.close()
         return r
 
     @dbcom
-    def _appendFile(self, t, fp):
+    def _appendFile(self, table, file_path):
         """Inserts a new file in the database"""
         # FIXME: inter-thread #412
         cur = self.cur
-        conf = getattr(t.root, 'conf', False)
+        conf = getattr(table.root, 'conf', False)
         # Load configuration
-        node = filenode.openNode(t.root.conf, 'r')
+        node = filenode.openNode(table.root.conf, 'r')
         node.seek(0)
         tree = node.read()
         node.close()
@@ -256,7 +266,11 @@ class Indexer(object):
         # Test row
         ###
         test = {}
-        test['file'] = fp
+
+        dbdir = os.path.dirname(self.dbPath)
+        relative_path = "." + file_path[len(dbdir):] if file_path.startswith(dbdir) else file_path
+        test['file'] = relative_path
+
         instrument = conf.attrs.instrument
         test['instrument'] = instrument
         if not tree.has_key(instrument):
@@ -267,7 +281,7 @@ class Indexer(object):
         for p in 'name,comment,nSamples,date,elapsed,id'.split(','):
             test[p] = tree[instrument]['measure']['self'][p]['current']
         if test['date'] <= 1:
-            test['date'] = os.stat(fp).st_ctime
+            test['date'] = os.stat(file_path).st_ctime
         test['serial'] = conf.attrs.serial
         if not getattr(conf.attrs, 'uid', False):
             self.log.debug('UID attribute not found')
@@ -280,7 +294,7 @@ class Indexer(object):
         v = []
         for k in 'file,serial,uid,id,date,instrument,flavour,name,elapsed,nSamples,comment'.split(','):
             v.append(testColConverter[k](test[k]))
-# 		ok=digisign.verify(t)
+# 		ok=digisign.verify(table)
         # Performance problem: should be only verified on request.
         ok = False
         print 'File verify:', ok
@@ -299,7 +313,7 @@ class Indexer(object):
             if s not in tree[instrument].keys():
                 break
             smp = tree[instrument][s]
-            v = [fp]
+            v = [file_path]
             for k in 'ii,index,material,name,comment,dim,height,volume,sintering,softening,sphere,halfSphere,melting'.split(','):
                 val = 0
                 if smp.has_key(k):
@@ -399,10 +413,17 @@ class Indexer(object):
         r = []
         for record in self.cur.fetchall():
             file_path = record[0]
+            if file_path.startswith("."):
+                dbdir = os.path.dirname(self.dbPath)
+                file_path = dbdir + file_path[1:]
             if not os.path.exists(file_path):
                 self.log.debug('Removing obsolete database entry: ', file_path)
                 self._clear_file_path(file_path)
             else:
+                if record[0].startswith("."):
+                    dbdir = os.path.dirname(self.dbPath)
+                    record = (dbdir + record[0][1:],) + record[1:]
+
                 r.append(record)
         return r
 

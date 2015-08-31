@@ -5,6 +5,8 @@ from misura import parameters as params
 from misura.canon import indexer
 
 import os
+import shutil
+import sqlite3
 
 cur_dir = os.path.dirname(os.path.realpath(__file__))
 
@@ -12,12 +14,19 @@ paths = [cur_dir + '/files']
 dbPath = cur_dir + '/files/test.sqlite'
 
 
+
+
 class Indexer(unittest.TestCase):
 
     def setUp(self):
+        shutil.copyfile(cur_dir + '/files/start-db.sqlite', dbPath)
+
         self.indexer = indexer.Indexer(paths=paths)
         self.indexer.open_db(dbPath)
         self.indexer.close_db()
+
+    def tearDown(self):
+        os.remove(dbPath)
 
     def test_rebuild(self):
         self.indexer.rebuild()
@@ -28,7 +37,7 @@ class Indexer(unittest.TestCase):
         self.assertEqual(['file', 'serial', 'uid', 'id', 'date', 'instrument',
                           'flavour', 'name', 'elapsed', 'nSamples', 'comment', 'verify'], header)
 
-    def test_query(self):
+    def test_query_returns_all_files(self):
         result = self.indexer.query()
         instrument = result[0][5]
 
@@ -39,12 +48,55 @@ class Indexer(unittest.TestCase):
         self.assertEqual(len(result), 0)
 
     def test_searchUID(self):
-        result = self.indexer.searchUID('eadd3abc68fa78ad64eb6df7174237a0')
-        self.assertEqual(result, cur_dir + '/files/dummy1.h5')
+        actual_path = self.indexer.searchUID('eadd3abc68fa78ad64eb6df7174237a0')
+        self.assertEqual(cur_dir + '/files/dummy1.h5', actual_path)
 
     def test_searchUIDFull(self):
-        result = self.indexer.searchUID('eadd3abc68fa78ad64eb6df7174237a0', True)
-        self.assertEqual(result, (cur_dir + '/files/dummy1.h5',))
+        actual_path = self.indexer.searchUID('eadd3abc68fa78ad64eb6df7174237a0', True)
+        self.assertEqual((cur_dir + '/files/dummy1.h5',), actual_path)
+
+    def test_appendFileNonExistingFile(self):
+        self.assertFalse(self.indexer.appendFile("non_existing_file"))
+
+    def test_appendFile_should_save_full_path_when_no_relative_is_possible(self):
+        self.indexer.appendFile(cur_dir + '/other-files/dummy3.h5')
+
+        result = self.indexer.query()
+        actual_path = result[2][0]
+
+        self.assertEqual(cur_dir + '/other-files/dummy3.h5', actual_path)
+
+    def test_appendFile_should_save_relative_path_when_possible(self):
+        full_h5path = cur_dir + '/files/dummy3.h5'
+        try:
+            shutil.copyfile(cur_dir + '/other-files/dummy3.h5', full_h5path)
+            self.indexer.appendFile(full_h5path)
+        except Exception, e:
+            raise e
+        finally:
+            os.remove(full_h5path)
+
+        conn = sqlite3.connect(dbPath, detect_types=sqlite3.PARSE_DECLTYPES)
+        cur = conn.cursor()
+
+        result = cur.execute('SELECT file FROM test WHERE uid=?', ['cd3c070164561106e9b001888edc38fc']).fetchall()
+
+        self.assertEqual("./dummy3.h5", result[0][0])
+
+    def test_path_is_always_absolute_when_reading(self):
+        full_h5path = cur_dir + '/files/dummy3.h5'
+        shutil.copyfile(cur_dir + '/other-files/dummy3.h5', full_h5path)
+
+        self.assertTrue(self.indexer.appendFile(full_h5path))
+
+
+        self.assertEqual(full_h5path, self.indexer.searchUID('cd3c070164561106e9b001888edc38fc'))
+        self.assertEqual((full_h5path,), self.indexer.searchUID('cd3c070164561106e9b001888edc38fc', True))
+        self.assertEqual(full_h5path, self.indexer.list_tests()[0][0])
+
+        os.remove(full_h5path)
+
+
 
 if __name__ == "__main__":
     unittest.main()
