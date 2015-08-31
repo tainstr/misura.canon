@@ -387,7 +387,7 @@ class Indexer(object):
             self.log.debug('Executing', cmd, vals)
             self.cur.execute(cmd, vals)
         r = self.cur.fetchall()
-        return r
+        return self.convert_query_result_to_full_path(r)
 
     @dbcom
     def get_len(self):
@@ -422,7 +422,9 @@ class Indexer(object):
 
         return file_path
 
+    def convert_query_result_to_full_path(self, query_results):
+        converted = []
+        for query_result in query_results:
+            converted.append((self.convert_to_full_path(query_result[0]),) + query_result[1:])
 
-
-
-
+        return converted
