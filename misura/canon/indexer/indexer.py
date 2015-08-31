@@ -55,13 +55,13 @@ def dbcom(func):
         finally:
             try:
                 self.close_db()
-            except: 
+            except:
                 print_exc()
             finally:
                 self._lock.acquire(False)
                 try:
                     self._lock.release()
-                except: 
+                except:
                     print_exc()
     return safedb_wrapper
 
@@ -163,18 +163,17 @@ class Indexer(object):
 
     def _searchUID(self, uid, full=False):
         """Unlocked searchUID"""
-        uid = str(uid)
-        g = self.cur.execute('SELECT file FROM test WHERE uid=?', [uid])
-        r = g.fetchall()
-        if len(r) == 0:
+        result = self.cur.execute('SELECT file FROM test WHERE uid=?', [str(uid)]).fetchall()
+        if len(result) == 0:
             return False
-        file_path = r[0][0]
+        file_path = result[0][0]
+
         if not os.path.exists(file_path):
             self._clear_file_path(file_path)
             return False
-        # Return full line
+
         if full:
-            return r[0]
+            return result[0]
         return file_path
 
     @dbcom
