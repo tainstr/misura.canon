@@ -21,6 +21,8 @@ from .. import csutil, option
 
 from filemanager import FileManager
 
+
+
 testColumn = ('file', 'serial', 'uid', 'id', 'date', 'instrument',
               'flavour', 'name', 'elapsed', 'nSamples', 'comment', 'verify')
 testColumnDefault = ['file', 'serial', 'uid', 'id', 'date',
@@ -214,17 +216,14 @@ class Indexer(object):
                         continue
                     fp = os.path.join(root, fn)
                     print 'Appending', fp
-                    tn += self.appendFile(fp, fn)
+                    tn += self.appendFile(fp)
 
         return 'Done. Found %i tests.' % tn
 
-    def appendFile(self, fp, fn=False):
-        # TODO: remove unused fn argument!!!
+    def appendFile(self, fp):
         if not os.path.exists(fp):
             print 'File not found', fp
             return False
-        if not fn:
-            fn = os.path.basename(fp)
         r = 0
         t = False
         try:
@@ -233,7 +232,7 @@ class Indexer(object):
                 self.log.debug('Tree configuration not found', fp)
                 t.close()
                 return False
-            r = self._appendFile(t, fp, fn)
+            r = self._appendFile(t, fp)
         except:
             print_exc()
         if t:
@@ -241,7 +240,7 @@ class Indexer(object):
         return r
 
     @dbcom
-    def _appendFile(self, t, fp, fn):
+    def _appendFile(self, t, fp):
         """Inserts a new file in the database"""
         # FIXME: inter-thread #412
         cur = self.cur
@@ -286,9 +285,6 @@ class Indexer(object):
         ok = False
         print 'File verify:', ok
         v.append(ok)
-
-        # Remove any old entry
-        self._clear_file_path(fn)
 
         cmd = '?,' * len(v)
         cmd = 'INSERT INTO test VALUES (' + cmd[:-1] + ')'
@@ -412,3 +408,8 @@ class Indexer(object):
 
     def get_dbpath(self):
         return self.dbPath
+
+
+
+
+
