@@ -11,6 +11,7 @@ from traceback import print_exc
 import sqlite3
 import functools
 import threading
+import datetime
 
 from misura.canon.csutil import unlockme
 
@@ -25,7 +26,7 @@ testColumn = ('file', 'serial', 'uid', 'id', 'date', 'instrument',
               'flavour', 'name', 'elapsed', 'nSamples', 'comment', 'verify')
 testColumnDefault = ['file', 'serial', 'uid', 'id', 'date',
                      'instrument', 'flavour', 'name', 1, 1, 'comment', 0]
-testColDef = ('text', 'text', 'text', 'text', 'text', 'text',
+testColDef = ('text', 'text', 'text', 'text', 'date', 'text',
               'text', 'text', 'real', 'integer', 'text', 'bool')
 testTableDef = '''(file text unique, serial text, uid text primary key,
                    id text, date text, instrument text, flavour text,
@@ -42,7 +43,9 @@ sampleTableDef = '''(file text, ii integer, idx integer, material text,
                      volume integer, sintering real, softening real,
                      sphere real, halfSphere real, melting real )'''
 testColConverter = {}
-colConverter = {'text': unicode, 'real': float, 'bool': bool, 'integer': int}
+colConverter = {'text': unicode, 'real': float, 'bool': bool, 'integer': int,
+                'date': lambda x: str(datetime.datetime.strptime(x, "%H:%M:%S, %d/%m/%Y"))}
+
 for i, n in enumerate(testColumn):
     testColConverter[n] = colConverter[testColDef[i]]
 
