@@ -22,20 +22,20 @@ from .. import csutil, option
 
 from filemanager import FileManager
 
-testColumn = ('file', 'serial', 'uid', 'id', 'date', 'instrument',
+testColumn = ('file', 'serial', 'uid', 'id', 'zerotime', 'instrument',
               'flavour', 'name', 'elapsed', 'nSamples', 'comment', 'verify')
-testColumnDefault = ['file', 'serial', 'uid', 'id', 'date',
+testColumnDefault = ['file', 'serial', 'uid', 'id', 'zerotime',
                      'instrument', 'flavour', 'name', 1, 1, 'comment', 0]
 testColDef = ('text', 'text', 'text', 'text', 'date', 'text',
               'text', 'text', 'real', 'integer', 'text', 'bool')
 testTableDef = '''(file text unique, serial text, uid text primary key,
-                   id text, date text, instrument text, flavour text,
+                   id text, zerotime text, instrument text, flavour text,
                    name text, elapsed real, nSamples integer,
                    comment text,verify bool)'''
 syncTableDef = '''(file text, serial text, uid text primary key, id text,
-                   date text, instrument text, flavour text, name text,
+                   zerotime text, instrument text, flavour text, name text,
                    elapsed real, nSamples integer, comment text,verify bool)'''
-errorTableDef = '''(file text, serial text, uid text, id text, date text,
+errorTableDef = '''(file text, serial text, uid text, id text, zerotime date,
                     instrument text, flavour text, name text, elapsed real,
                     nSamples integer, comment text,verify bool,error text)'''
 sampleTableDef = '''(file text, ii integer, idx integer, material text,
@@ -44,7 +44,7 @@ sampleTableDef = '''(file text, ii integer, idx integer, material text,
                      sphere real, halfSphere real, melting real )'''
 testColConverter = {}
 colConverter = {'text': unicode, 'real': float, 'bool': bool, 'integer': int,
-                'date': lambda x: str(datetime.datetime.strptime(x, "%H:%M:%S, %d/%m/%Y"))}
+                'date': lambda x: str(datetime.datetime.fromtimestamp(int(x)))}
 
 for i, n in enumerate(testColumn):
     testColConverter[n] = colConverter[testColDef[i]]
@@ -278,21 +278,21 @@ class Indexer(object):
             self.log.debug('Instrument tree missing')
             return False
 
-        for p in 'name,comment,nSamples,date,elapsed,id'.split(','):
+        for p in 'name,comment,nSamples,zerotime,elapsed,id'.split(','):
             test[p] = tree[instrument]['measure']['self'][p]['current']
-        if test['date'] <= 1:
-            test['date'] = os.stat(file_path).st_ctime
+        if test['zerotime'] <= 1:
+            test['zerotime'] = os.stat(file_path).st_ctime
         test['serial'] = conf.attrs.serial
         if not getattr(conf.attrs, 'uid', False):
             self.log.debug('UID attribute not found')
             sname = tree[instrument]['measure']['id']
             test['uid'] = hashlib.md5(
-                '%s_%s_%i' % (test['serial'], test['date'], sname)).hexdigest()
+                '%s_%s_%i' % (test['serial'], test['zerotime'], sname)).hexdigest()
         else:
             test['uid'] = conf.attrs.uid
         test['flavour'] = 'Standard'
         v = []
-        for k in 'file,serial,uid,id,date,instrument,flavour,name,elapsed,nSamples,comment'.split(','):
+        for k in 'file,serial,uid,id,zerotime,instrument,flavour,name,elapsed,nSamples,comment'.split(','):
             v.append(testColConverter[k](test[k]))
 # 		ok=digisign.verify(table)
         # Performance problem: should be only verified on request.
