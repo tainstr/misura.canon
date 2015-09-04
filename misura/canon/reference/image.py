@@ -5,6 +5,7 @@ from ..parameters import cfilter
 import numpy as np
 from reference import Reference
 from variable import VariableLength, binary_cast
+import binary
 import cPickle as pickle
 
 
@@ -15,7 +16,6 @@ def decode_time(node, index):
 
 class Image(VariableLength):
 
-    """DEPRECATED! Notice: should be a subclass of Binary."""
     unbound = VariableLength.unbound.copy()
     unbound['decode_time'] = decode_time
 
@@ -32,7 +32,6 @@ class Image(VariableLength):
                                     createparents=True,
                                     reference_class=self.__class__.__name__)
         self.path = self.folder + self.handle
-        self.outfile.set_node_attr(self.path, 'format', 'm4')
         return True
 
     @classmethod
@@ -87,3 +86,11 @@ class Image(VariableLength):
         t = binary_cast(flattened[:8], 'BBBBBBBB', 'd')[0]
         img = cls.decompress(flattened[8:])
         return t, img
+        
+class ImageM3(binary.Binary):
+    """Misura3 image format"""
+    pass
+
+class ImageBMP(binary.Binary):
+    """Bitmap image format"""
+    pass

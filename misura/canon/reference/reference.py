@@ -92,6 +92,12 @@ class Reference(object):
         if self.folder != '/' and self.folder.endswith('/'):
             return self.folder[:-1]
         return self.folder
+        
+    def dump(self):
+        """Deletes the reference and recreates it."""
+        self.outfile.remove_node(self.path)
+        self.outfile.flush()
+        self.create()
 
     def open(self, folder):
         """Opens an existing data structure located at `folder`"""

@@ -5,7 +5,7 @@ from array import Array, Boolean, Rect, Meta,  Point
 from log import Log
 from profile import Profile
 from binary import Binary
-from image import Image
+from image import Image, ImageM3, ImageBMP
 from obj import Object
 from variable import VariableLength, binary_cast
 from traceback import print_exc
