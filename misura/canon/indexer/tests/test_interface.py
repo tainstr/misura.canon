@@ -13,81 +13,87 @@ paths = [params.testdir + 'storage']
 dbPath = params.testdir + 'storage/db'
 
 
-def setUpModule():
-    print 'Starting', __name__, tables.__version__
-
-
 class SharedFile(unittest.TestCase):
-    #	path=params.testdir+'storage/data/flex/default'+params.ext
     path = params.testdir + 'storage/hsm_test' + params.ext
 
-    @classmethod
-    def setUpClass(c):
-        c.path = params.testdir + 'storage/hsm_test' + params.ext
-        c.store = indexer.SharedFile(c.path)
+    def setUp(self):
+        self.test_file = tempfile.mktemp('.h5')
+        shutil.copy(self.path, self.test_file)
+        self.shared_file = indexer.SharedFile(self.test_file)
+
+    def tearDown(self):
+        self.shared_file.close()
+        os.remove(self.test_file)
+
 
     def test_header(self):
-        r = self.store.header()
+        r = self.shared_file.header()
         self.assertTrue(len(r) > 1)
 
     def test_col(self):
-        r = self.store.col('/hsm/sample0/h', slice(0, 10))
+        r = self.shared_file.col('/hsm/sample0/h', slice(0, 10))
         self.assertTrue(
             len(r) == 10, 'Query [10] returned wrong length [%i]' % len(r))
 
     def test_query_time(self):
-        r = self.store.col('/hsm/sample0/h', slice(0, 10))
-        r1 = self.store.query_time('/hsm/sample0/h', r[0][0], r[-1][0])
+        r = self.shared_file.col('/hsm/sample0/h', slice(0, 10))
+        r1 = self.shared_file.query_time('/hsm/sample0/h', r[0][0], r[-1][0])
         r = r[:-1]  # escludo l'ultimo valore
         self.assertEqual(len(r), len(r1))
         self.assertEqual(r[0][0], r1[0][0])
         self.assertEqual(r[-1][0], r1[-1][0])
         # Stepping
         step = 0.3
-        r2 = self.store.query_time('/hsm/sample0/h', r[0][0], r[-1][0], step)
+        r2 = self.shared_file.query_time('/hsm/sample0/h', r[0][0], r[-1][0], step)
         self.assertLess(len(r2), len(r))
         self.assertLess(abs(r2[0][0] - r[0][0]), 0.3)
         self.assertLess(abs(r2[-1][0] - r[-1][0]), 0.3)
 
     def test_versions(self):
-        fn = tempfile.mktemp('.h5')
-        shutil.copy(self.path, fn)
-        print 'opening temporary file', fn
-        f = indexer.SharedFile(fn)
+        shared_file = indexer.SharedFile(self.test_file)
         # Empty version
-        self.assertEqual(f.get_version(), '')
-        self.assertEqual(f.get_versions().keys(), [''])
-        self.assertEqual(f.get_versions().values()[0][0], 'Original')
+        self.assertEqual(shared_file.get_version(), '')
+        self.assertEqual(shared_file.get_versions().keys(), [''])
+        self.assertEqual(shared_file.get_versions().values()[0][0], 'Original')
 
         # Create new version
-        f.create_version('pippo')
-        vd = f.get_versions()
-        self.assertEqual(f.get_version(), '/ver_1')
+        shared_file.create_version('pippo')
+        vd = shared_file.get_versions()
+        self.assertEqual(shared_file.get_version(), '/ver_1')
         self.assertEqual(set(vd.keys()), set(['', '/ver_1']))
         self.assertEqual(
             set([info[0] for info in vd.values()]), set(['Original', 'pippo']))
-        self.assertEqual(f.test.root.conf.attrs.versions, 1)
+        self.assertEqual(shared_file.test.root.conf.attrs.versions, 1)
         # Save a different /conf
-        f.load_conf()
-        oname = f.conf['name']
+        shared_file.load_conf()
+        oname = shared_file.conf['name']
         nname = oname + '_pippo'
-        f.conf['name'] = nname
-        f.save_conf()
+        shared_file.conf['name'] = nname
+        shared_file.save_conf()
         # Force reload
-        f.load_conf()
-        self.assertEqual(f.conf['name'], nname)
-        f.set_version(0)
-        self.assertEqual(f.conf['name'], oname)
+        shared_file.load_conf()
+        self.assertEqual(shared_file.conf['name'], nname)
+        shared_file.set_version(0)
         # -1 should load latest version
-        f.set_version(-1)
-        self.assertEqual(f.get_version(), '/ver_1')
-        self.assertEqual(f.conf['name'], nname)
-        f.close()
-        os.remove(fn)
+        shared_file.set_version(-1)
+        self.assertEqual(shared_file.get_version(), '/ver_1')
+        self.assertEqual(shared_file.conf['name'], nname)
 
-    @classmethod
-    def tearDownClass(c):
-        c.store.close()
+    def test_should_keep_set_version(self):
+        self.shared_file.create_version('a version')
+
+        self.assertEqual(self.shared_file.get_version(), '/ver_1')
+        self.assertEqual(self.shared_file.get_versions()['/ver_1'][0], 'a version')
+
+        self.shared_file.create_version('another version')
+        self.assertEqual(self.shared_file.get_version(), '/ver_2')
+
+        self.shared_file.set_version(1)
+        self.assertEqual(self.shared_file.get_version(), '/ver_1')
+
+        self.shared_file.set_version(2)
+        self.assertEqual(self.shared_file.get_version(), '/ver_2')
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

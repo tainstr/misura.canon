@@ -38,7 +38,7 @@ def pathnode(path):
 
 class SharedFile(CoreFile, DataOperator):
 
-    """Interface for test file access. Versioning. 
+    """Interface for test file access. Versioning.
     TODO: move xmlrpc to server-side OutFile?"""
 
     start_profiler = csutil.start_profiler
@@ -146,6 +146,7 @@ class SharedFile(CoreFile, DataOperator):
             self.version = newversion
             self.load_conf()
             return True
+
         self.version = newversion
         return True
 
