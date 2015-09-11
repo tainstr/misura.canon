@@ -17,7 +17,7 @@ def formatMsg(*msg, **po):
     if p == None:
         p = logging.NOTSET
     if o == None or o == '':
-        own = ''
+        own = ' '
         o = ''
     else:
         own = ' (%s%i): ' % (o, os.getpid())
@@ -42,7 +42,7 @@ def justPrint(*msg, **po):
 
 def toLogging(*msg, **po):
     """Send log to standard python logging library"""
-#	print 'toLogging', msg, po
+#   print 'toLogging', msg, po
     logging.log(po.get('p', 10), *msg)
 
 
