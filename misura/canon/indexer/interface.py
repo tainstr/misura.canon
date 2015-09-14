@@ -66,8 +66,8 @@ class SharedFile(CoreFile, DataOperator):
             self.log.debug('Creating in write mode', path)
             tables.openFile(path, mode='w', title=title).close()
         if not os.path.exists(path):
-            self.log.error('Open File: not found', path)
-            return False
+            raise RuntimeError("File %s not found." % path)
+
         try:
             print 'opening existing file', path, mode
             self.test = tables.openFile(path, mode=mode)
