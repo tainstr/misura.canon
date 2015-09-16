@@ -121,7 +121,7 @@ def sanitize(func):
 
 
 def func_args(func):
-    """Return a flatten list of function argument names. 
+    """Return a flatten list of function argument names.
     Correctly detect decorated functions"""
     if hasattr(func, 'wrapped'):
         w = func.wrapped
@@ -228,7 +228,7 @@ def find_nearest_brute(v, x):
 
 
 def find_nearest_val(v, t, get=False, seed=None):
-    """Finds value nearest to `t` in array `v`, assuming v is monotonic. 
+    """Finds value nearest to `t` in array `v`, assuming v is monotonic.
     Optionally use the `get` function instead of v.__getitem__, in order to retrieve single elements from the array."""
     # TODO: explore builtin bisect module!!!
     if get is False:
@@ -320,7 +320,7 @@ def toslice(v):
 
 
 def next_point(crv, row, delta=1):
-    """Search next non-event point in thermal cycle curve `crv`. 
+    """Search next non-event point in thermal cycle curve `crv`.
     Starts by checking `row` index, then adds `delta`,
     until proper value is found."""
     d = 0
@@ -341,7 +341,7 @@ def next_point(crv, row, delta=1):
 
 def lockme(func):
     """Decorator to lock/unlock method execution.
-    The class having its method decorated must expose 
+    The class having its method decorated must expose
     a _lock object compatible with threading.Lock."""
     @functools.wraps(func)
     def lockme_wrapper(self, *args, **kwargs):
@@ -372,7 +372,7 @@ def lockme(func):
 def unlockme(func):
     """Decorator to finally unlock after method execution.
     Useful if locking must be delayed.
-    The class having its method decorated must expose 
+    The class having its method decorated must expose
     a _lock object compatible with threading.Lock."""
     @functools.wraps(func)
     def unlockme_wrapper(self, *args, **kwargs):
@@ -499,3 +499,9 @@ def profile(func):
         print 'END PROFILING STATS FOR', func.__name__, ' AT ', repr(self), out
         return r
     return profile_wrapper
+
+
+def from_seconds_to_hms(seconds):
+    minutes, seconds = divmod(seconds, 60)
+    hours, minutes = divmod(minutes, 60)
+    return "%d:%02d:%02d" % (hours, minutes, seconds)
