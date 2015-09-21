@@ -281,8 +281,12 @@ class ConfigurationProxy(Scriptable, Conf):
     @property
     def samples(self):
         if not self.has_key('nSamples'):
+            print 'no nSample option!'
             return []
-        n = self['nSamples']
+        n = self.measure['nSamples']
+        if n == 0:
+            print 'no samples defined!'
+            return []
         out = []
         for i in range(n):
             s = 'smp{}'.format(i)

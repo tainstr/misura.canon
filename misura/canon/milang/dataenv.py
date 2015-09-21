@@ -5,8 +5,7 @@ Secure minimal Python language subset for conditional evaluation of numerical da
 from env import BaseEnvironment
 import numpy as np
 from scipy.interpolate import UnivariateSpline
-import functools
-from .. import reference, csutil
+from .. import csutil
 
 
 class DataEnvironment(BaseEnvironment):
@@ -22,6 +21,7 @@ class DataEnvironment(BaseEnvironment):
     """Last applied slicing interval"""
     spline_cache = {}
     """Approximating splines cache"""
+    _temperature_path = False
 
     @property
     def hdf(self):
@@ -38,8 +38,17 @@ class DataEnvironment(BaseEnvironment):
         """Retrieve curve name by adding prefix, etc. Activate time limits if needed."""
         if not isinstance(curve, str):
             return False
+        # curve is Temperature 
         if curve in ['T']:
-            curve = '/kiln/T'
+            # but unknown if a local T dataset is available in prefix
+            if not self._temperature_path:
+                curve = self.prefix + 'T'
+                if not self.hdf.has_node(curve):
+                    curve = '/kiln/T'
+                self._temperature_path = curve
+                print '########### temperature path = ', curve, self.prefix
+            # Take defined temperature path
+            curve = self._temperature_path
         else:
             curve = self.prefix + curve
         # Activate time limits for current curve

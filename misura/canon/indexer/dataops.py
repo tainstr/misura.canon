@@ -126,7 +126,7 @@ No data will be evaluate if older than zerotime."""
 
     @lockme
     def col(self, path, idx_or_slice=None, raw=False):
-        """Reads an array in the requested slice. If endIdx is not specified, reads just one point."""
+        """Reads an array in the requested slice. If an integer index is specified, reads just one point."""
         n = self._get_node(path)
         lim = self.get_limit(path)
         if lim:

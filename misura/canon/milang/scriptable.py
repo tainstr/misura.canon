@@ -13,10 +13,10 @@ class Scriptable(object):
     """A configuration object which can contain and execute Script-type options"""
 
     def __init__(self):
-        self.scripts = {}
-        self.end_scripts = {}
-        self.always_scripts = {}
-        self.all_scripts = {}
+        self.scripts = []
+        self.end_scripts = []
+        self.always_scripts = []
+        self.all_scripts = []
         self.env = DataEnvironment()
 
     def compile_scripts(self, hdf=False):
@@ -72,12 +72,17 @@ class Scriptable(object):
     def execute_scripts(self, ins=None, period=False):
         """Execute script contained in `scripts` dictionary, passing `ins` onto eval()"""
         r = True
-        if not period:
+        if period == False:
             scripts = self.scripts
-        elif period == 'end':
+        elif period == 'end' :
             scripts = self.end_scripts
         elif period == 'always':
             scripts = self.always_scripts
+        elif period == 'all':
+            scripts = self.all_scripts
+        
+        scripts = set(scripts)
+        print 'EXECUTING',scripts, self.scripts, self.end_scripts, self.always_scripts
         for handle in scripts:
             exe = self.all_scripts[handle]
             en = exe.script_env.obj.getFlags(handle).get('enabled', True)
@@ -126,9 +131,10 @@ class Scriptable(object):
             return False
         if hdf is False:
             hdf = self.outFile
-        print 'distributing scripts', hdf
+        self.log.debug('distributing scripts')
         self.measure.compile_scripts(hdf)
         for smp in self.samples:
+            self.log.debug('distributing sample scripts',smp)
             smp.compile_scripts(hdf)
     xmlrpc_distribute_scripts = distribute_scripts
 
@@ -137,6 +143,8 @@ class Scriptable(object):
         if not hasattr(self, 'measure'):
             self.log.error('Characterization makes no sense on this object')
             return False
+        self.log.debug('Executing measure scripts')
         self.measure.execute_scripts(self, period=period)
         for smp in self.samples:
+            self.log.debug('Executing sample scripts',smp)
             smp.execute_scripts(self, period=period)

@@ -370,7 +370,7 @@ class SharedFile(CoreFile, DataOperator):
         # Associate scripts to their output Meta options
         instr.outFile = self
         instr.distribute_scripts(self)
-        instr.characterization()
+        instr.characterization(period = 'all')
         return True
 
     def copy(self):
