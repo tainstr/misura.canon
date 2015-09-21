@@ -152,7 +152,7 @@ class Indexer(object):
         return True
 
     def close_db(self):
-        conn, cur = self.threads.get(tid(), (0, 0))
+        conn, cur = self.threads.pop(tid(), (0, 0))
         if cur:
             cur.close()
         if conn:
