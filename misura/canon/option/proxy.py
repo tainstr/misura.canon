@@ -4,6 +4,7 @@ from .. import logger
 from conf import Conf
 import cPickle as pickle
 from ..milang import Scriptable
+import common_proxy
 
 
 def dictRecursiveModel(base):
@@ -240,6 +241,10 @@ class ConfigurationProxy(Scriptable, Conf):
                 return None
             obj = obj.child(p)
         return obj
+
+    def from_column(self, col0):
+        return common_proxy.from_column(col0, self)
+
 
     def toMethodName(self, name):
         if name == 'MAINSERVER':
