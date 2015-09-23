@@ -16,7 +16,7 @@ class CommonProxy(unittest.TestCase):
         self.assertEqual(["another", "path", "to", "a"], toPath_passed_argument)
 
     def test_from_column_removes_prefix_from_path(self):
-        toPath_passed_argument, name = common_proxy.from_column("2:any/path/to/a/leaf2", FakeProxy())
+        toPath_passed_argument, name = common_proxy.from_column("123:any/path/to/a/leaf2", FakeProxy())
 
         self.assertEqual("leaf2", name)
         self.assertEqual(["any", "path", "to", "a"], toPath_passed_argument)
