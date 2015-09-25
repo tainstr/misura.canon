@@ -23,7 +23,7 @@ class DataOperator(object):
 
     @property
     def zerotime(self):
-        """Time at which the acquisition stats. 
+        """Time at which the acquisition stats.
 No data will be evaluate if older than zerotime."""
         if self.test is False:
             return 0
@@ -127,6 +127,7 @@ No data will be evaluate if older than zerotime."""
     @lockme
     def col(self, path, idx_or_slice=None, raw=False):
         """Reads an array in the requested slice. If an integer index is specified, reads just one point."""
+        path = self._versioned(path)
         n = self._get_node(path)
         lim = self.get_limit(path)
         if lim:
@@ -170,7 +171,7 @@ No data will be evaluate if older than zerotime."""
         return g
 
     def find_nearest_cond(self, tab, s, f=2., limit=slice(None, None, None)):
-        """Search for the nearest value to `s` in table `tab`, 
+        """Search for the nearest value to `s` in table `tab`,
         by iteratively reducing the tolerance by a factor of `f`."""
         # Try exact term
         g = tab.get_where_list('v==s', stop=limit.stop)

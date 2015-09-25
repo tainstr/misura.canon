@@ -51,6 +51,8 @@ class CoreFile(object):
         if path is not False:
             self.open_file(path, uid, mode=mode, header=header)
 
+        self.version = ''
+
     def fileno(self):
         return self.test.fileno()
 
@@ -148,13 +150,17 @@ class CoreFile(object):
 
     ######################
     # Manipulation
-    @lockme
-    def has_node(self, where, name=False):
+    def _has_node(self, where, name=False):
         if self.test is False:
             return False
         if name:
             where += '/' + name
         return where in self.test
+
+    @lockme
+    def has_node(self, where, name=False):
+        return self._has_node(where, name)
+
 
     @lockme
     def has_node_attr(self, path, attr):
@@ -366,7 +372,7 @@ class CoreFile(object):
 
         print 'DONE SharedFile.filenode_write', path
         return len(data)
-        
+
     def link(self, link_path, referred_path):
         """Create a new link from link_path to existing object referred_path"""
         if not self.has_node(referred_path):
@@ -392,3 +398,15 @@ class CoreFile(object):
         print msg
         print self.test
         return msg
+
+    def _versioned(self, path):
+        """Translate standard orig path into configured version path.
+        Eg: /conf to /ver_1/conf"""
+        p = self.version + path
+        if self._has_node(p):
+            return p
+        return path
+
+    @lockme
+    def versioned(self, path):
+        return self._versioned(path)

@@ -51,7 +51,6 @@ class SharedFile(CoreFile, DataOperator):
     def __init__(self, *a, **k):
         CoreFile.__init__(self, *a, **k)
         self.conf = False
-        self.version = ''
         self.node_cache = {}
 
     def open_file(self, path=False, uid='', mode='a', title='', header=True):
@@ -224,16 +223,6 @@ class SharedFile(CoreFile, DataOperator):
             self.set_attributes(render_path, attrs={'format': render_format})
 
         return plot_id, title, date
-
-    def versioned(self, path):
-        """Translate standard orig path into configured version path.
-        Eg: /conf to /ver_1/conf"""
-        if not self.test:
-            return path
-        p = self.version + path
-        if p in self.test:
-            return p
-        return path
 
     def getLog(self):
         # FIXME: show logging
