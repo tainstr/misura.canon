@@ -468,6 +468,9 @@ class Option(object):
                 nc = float(nc)
             elif ot == 'Button':
                 nc = ''
+            # Keep the new current if nothing else is found
+            elif old.has_key('current'):
+                nc = old['current']
             self._entry['current'] = nc
         except:
             print 'Impossible to migrate current value', old['handle'], nc, ot
