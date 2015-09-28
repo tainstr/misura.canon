@@ -84,6 +84,12 @@ class SharedFile(CoreFile, DataOperator):
                 self.conf = option.ConfigurationProxy()
             self.header(refresh=True)
         print 'done open_file', self.path
+
+        if not self.has_node('/userdata'):
+            self.create_group('/', 'userdata')
+            self.set_attributes('/userdata', attrs={'active_version': ''})
+
+
         return self.test, self.path
 
     def load_conf(self):
@@ -265,6 +271,13 @@ class SharedFile(CoreFile, DataOperator):
             a = self.get_attributes('/conf')
             self.set_attributes(self.version + '/conf', attrs=a)
         return
+
+    def save_data(self, path, data, time_data):
+        version = self.get_node_attr('/userdata', 'active_version')
+        if version is '':
+            raise RuntimeError("Original version is not writable.\nCreate or switch to a new version first.")
+
+
 
     @lockme
     def header(self, reference_classes=['Array'], startswith=False, refresh=False):
