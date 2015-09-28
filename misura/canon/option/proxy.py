@@ -243,7 +243,7 @@ class ConfigurationProxy(Scriptable, Conf):
         return obj
 
     def from_column(self, col0):
-        return common_proxy.from_column(col0, self)
+        return common_proxy.from_column(col0, self.root)
 
 
     def toMethodName(self, name):
