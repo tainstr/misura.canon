@@ -94,7 +94,7 @@ def xmlrpcSanitize(val, attr=[], otype=False):
         return r
     if hasattr(val, '__iter__') and not isinstance(val, dict):
         r = list(xmlrpcSanitize(el) for el in val)
-#		if len(r)==1: return r[0]
+#       if len(r)==1: return r[0]
         return r
     if type(val) in [type(numpy.float64(0)), type(numpy.float32(0))]:
         return float(val)
@@ -243,11 +243,11 @@ def find_nearest_val(v, t, get=False, seed=None):
     g_1 = g(-1)
     positive = g_1 > g0
     if (t < g0 and positive) or (t > g0 and not positive):
-        #		print 'premature exit',positive,t,g0
+        #       print 'premature exit',positive,t,g0
         return 0
     n = len(v) - 1
     if (t > g_1 and positive) or (t < g_1 and not positive):
-        #		print 'premature exit2',positive,t,g_1
+        #       print 'premature exit2',positive,t,g_1
         return n
     if seed is None:
         i = len(v) / 2  # starting index
@@ -259,8 +259,8 @@ def find_nearest_val(v, t, get=False, seed=None):
     bd = t * 1000  # min delta
     ok = 2  # ping-pong counter
     while ok > 0:
-        c = g(i)		# current delta
-        d = t - c		# delta
+        c = g(i)        # current delta
+        d = t - c       # delta
         b = abs(d)
         # remember best index and delta
         if b < bd:
@@ -269,11 +269,11 @@ def find_nearest_val(v, t, get=False, seed=None):
         # can't be better than that
         if d == 0:
             bi = i
-# 			print 'found zero delta',i,t,c
+#           print 'found zero delta',i,t,c
             break
         # bigger d: choose smaller index
         if (d < 0 and positive) or (d > 0 and not positive):
-            # 			print 'reducing',i,smaller
+            #           print 'reducing',i,smaller
             if i - smaller < 1:
                 break
             bigger = i
@@ -286,7 +286,7 @@ def find_nearest_val(v, t, get=False, seed=None):
                 i = smaller + (i - smaller) / 2
         # smaller d: choose bigger index
         else:
-            # 			print 'increasing',i,bigger
+            #           print 'increasing',i,bigger
             if bigger - i < 1:
                 break
             smaller = i
@@ -367,7 +367,6 @@ def lockme(func):
             except:
                 pass
     return lockme_wrapper
-
 
 def unlockme(func):
     """Decorator to finally unlock after method execution.

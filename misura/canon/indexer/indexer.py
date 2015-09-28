@@ -81,8 +81,8 @@ def tid():
 class Indexer(object):
     public = ['rebuild', 'searchUID', 'update', 'header', 'listMaterials',
               'query', 'remove', 'get_len', 'list_tests', 'get_dbpath']
-# 	cur=False
-# 	conn=False
+#   cur=False
+#   conn=False
     addr = 'LOCAL'
 
     def __init__(self, dbPath=False, paths=[], log=False):
@@ -272,6 +272,7 @@ class Indexer(object):
         test['file'] = relative_path
 
         instrument = conf.attrs.instrument
+        
         test['instrument'] = instrument
         if not tree.has_key(instrument):
             print tree.keys()
@@ -280,8 +281,19 @@ class Indexer(object):
 
         for p in 'name,comment,nSamples,zerotime,elapsed,id'.split(','):
             test[p] = tree[instrument]['measure']['self'][p]['current']
-        if test['zerotime'] <= 1:
-            test['zerotime'] = os.stat(file_path).st_ctime
+        zerotime = test['zerotime']
+        #FIXME: remove all this stuff, zerotime is now correctly handled in measure.
+        # If measure does not have a zerotime, take from instrument
+        if zerotime <= 1:
+            zerotime = tree[instrument]['self']['zerotime']['current']
+        # If instrument does not have zerotime set, use attribute
+        if zerotime <= 1:
+            zerotime = getattr(conf.attrs, 'zerotime', 0)
+        # If nothing useful is found, use file creation time.
+        if zerotime <= 1:
+            zerotime = os.stat(file_path).st_ctime
+            self.log.error('NO ZEROTIME FOUND, using conf attribute', zerotime)
+        test['zerotime'] = zerotime
         test['serial'] = conf.attrs.serial
         if not getattr(conf.attrs, 'uid', False):
             self.log.debug('UID attribute not found')
@@ -294,7 +306,7 @@ class Indexer(object):
         v = []
         for k in 'file,serial,uid,id,zerotime,instrument,flavour,name,elapsed,nSamples,comment'.split(','):
             v.append(testColConverter[k](test[k]))
-# 		ok=digisign.verify(table)
+#       ok=digisign.verify(table)
         # Performance problem: should be only verified on request.
         ok = False
         print 'File verify:', ok
@@ -386,7 +398,7 @@ class Indexer(object):
     def query(self, conditions={}):
         # FIXME: inter-thread #412
         if len(conditions) == 0:
-            self.cur.execute('SELECT * from test')
+            self.cur.execute('SELECT * from test ORDER BY zerotime DESC')
         else:
             cnd = []
             vals = []
@@ -394,7 +406,7 @@ class Indexer(object):
                 cnd.append(k + ' like ?')
                 vals.append('%' + v + '%')
             cnd = ' AND '.join(cnd)
-            cmd = 'SELECT * from test WHERE ' + cnd
+            cmd = 'SELECT * from test WHERE ' + cnd + 'ORDER BY zerotime DESC'
             self.log.debug('Executing', cmd, vals)
             self.cur.execute(cmd, vals)
         r = self.cur.fetchall()
@@ -440,3 +452,11 @@ class Indexer(object):
                 (self.convert_to_full_path(query_result[0]),) + query_result[1:])
 
         return converted
+
+if __name__ == '__main__':
+    import sys
+    print sys.argv[1]
+    sys.exit()
+    db=Indexer(sys.argv[1])
+    db.rebuild()
+    db.close()

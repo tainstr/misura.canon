@@ -64,10 +64,10 @@ class ConfigurationProxy(Scriptable, Conf):
             self._Method__name = name
         else:
             self._Method__name = parent._Method__name + self.separator + name
-# 			if parent._parent:
-# 				self._Method__name=parent._Method__name+self.separator+name
-# 			else:
-# 				self._Method__name=name
+#           if parent._parent:
+#               self._Method__name=parent._Method__name+self.separator+name
+#           else:
+#               self._Method__name=name
         self.get = self.__getitem__
         self.set = self.__setitem__
 
@@ -221,7 +221,7 @@ class ConfigurationProxy(Scriptable, Conf):
         if not self.children_obj.has_key(name):
             kb = self.kid_base + name + self.separator
             self.children_obj[name] = ConfigurationProxy(
-                self.children[name],	name=name, parent=self, kid_base=kb)
+                self.children[name],    name=name, parent=self, kid_base=kb)
         return self.children_obj[name]
 
     def parent(self):

@@ -23,13 +23,13 @@ class Array(Reference):
                                   filters=cfilter,
                                   createparents=True,
                                   reference_class=self.__class__.__name__)
-# 		print 'created',f,self.folder,self.handle
+#       print 'created',f,self.folder,self.handle
         self.path = self.folder + self.handle
-# 		print 'done',self.path
+#       print 'done',self.path
         self.outfile.flush()
         # Create the summary mirror
         if (not self.path.startswith('/summary')) and len(self.fields) == 2:
-            # 			print 'Creating summary',self.path
+            #           print 'Creating summary',self.path
             self.summary = Array(
                 self.outfile, '/summary' + self.folder, opt=self.opt)
         return True
@@ -76,11 +76,9 @@ class Array(Reference):
             oldi -= 1
         # Decode values and separate time and value vectors
         dat = self[oldi:]
-# 		print 'Getting data',self.path,dat,vt
+#       print 'Getting data',self.path,dat,vt
         dat = np.array(dat)
         dat = dat.transpose()
-        # Interpolate time and value - interp1d version
-        # f=interp1d(dat[0],dat[1],kind=kind)
         # Build a linear spline using vt points as knots
         #f=LSQUnivariateSpline(dat[0],dat[1],vt, k=kind)
         # Do a linear fitting
@@ -102,7 +100,6 @@ class Array(Reference):
             raise
         # Encode in (t,v) append-able list
         out = np.array([vt, out]).transpose()
-# 		print 'Appending',self.summary.path,len(out),out
         self.summary.commit(out)
         return True
 
