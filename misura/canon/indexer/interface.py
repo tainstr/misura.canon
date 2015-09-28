@@ -129,31 +129,25 @@ class SharedFile(CoreFile, DataOperator):
 
     def set_version(self, newversion=-1):
         """Set the current version to `newversion`"""
-        print 'setting version to ', newversion
-        # Find latest version
         if newversion < 0:
             self._lock.acquire()
-            newversion = getattr(self.test.root.conf.attrs, 'versions', 0)
+            newversion = getattr(self.test.root.conf.attrs, 'versions', '')
             self._lock.release()
-        if newversion == 0 or newversion == '':
-            print 'set_version original'
-            if self.version != '':
-                self.version = ''
-                self.load_conf()
-            self.version = ''
-            return True
-        # Convert to path
+
         if isinstance(newversion, int):
             newversion = '/ver_{}'.format(newversion)
-        if self.conf and self.version != newversion:
-            # Reload conf
-            print 'version changed: reloading', newversion, self.version
-            self.version = newversion
-            self.load_conf()
+
+        if self.version == newversion:
             return True
 
-        self.version = newversion
+        self.change_version(newversion)
         return True
+
+    def change_version(self, new_version):
+        self.version = new_version
+        self.set_attributes('/userdata', attrs={'active_version': new_version})
+        self.load_conf()
+
 
     @lockme
     def create_version(self, name=False):
@@ -275,7 +269,9 @@ class SharedFile(CoreFile, DataOperator):
     def save_data(self, path, data, time_data):
         version = self.get_node_attr('/userdata', 'active_version')
         if version is '':
-            raise RuntimeError("Original version is not writable.\nCreate or switch to a new version first.")
+            raise RuntimeError("Original version is not writable.\nCreate or switch to another version first.")
+
+        raise RuntimeError("Data save is not implemented yet.")
 
 
 
