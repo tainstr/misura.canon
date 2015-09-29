@@ -313,6 +313,9 @@ class CoreFile(object):
 
     @lockme
     def remove_node(self, path, recursive=1):
+        if not self._has_node(path):
+            return True
+
         self.test.removeNode(path, recursive=recursive)
         # Clean the cached header
         path += '/'
@@ -372,6 +375,8 @@ class CoreFile(object):
 
         print 'DONE SharedFile.filenode_write', path
         return len(data)
+
+
 
     def link(self, link_path, referred_path):
         """Create a new link from link_path to existing object referred_path"""

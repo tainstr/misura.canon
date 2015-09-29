@@ -9,6 +9,11 @@ from scipy.interpolate import interp1d, LSQUnivariateSpline
 class Array(Reference):
     fields = [('t', 'float64'), ('v', 'float64')]
 
+    def __init__(self, outfile, folder=False, opt=False, write_current=False, with_summary=True):
+        self.with_summary = with_summary
+        Reference.__init__(self, outfile, folder=folder, opt=opt, write_current=write_current)
+
+
     def create(self, fields=False):
         """Create an EArray (enlargeable array) as data storage"""
         f = Reference.create(self)
@@ -28,8 +33,8 @@ class Array(Reference):
 #       print 'done',self.path
         self.outfile.flush()
         # Create the summary mirror
-        if (not self.path.startswith('/summary')) and len(self.fields) == 2:
-            #           print 'Creating summary',self.path
+        if (not self.path.startswith('/summary')) and len(self.fields) == 2 and self.with_summary:
+            # 			print 'Creating summary',self.path
             self.summary = Array(
                 self.outfile, '/summary' + self.folder, opt=self.opt)
         return True
@@ -112,7 +117,7 @@ class Boolean(Array):
 
 class Rect(Array):
 
-    """An Array with 5 columns, one for the time, 
+    """An Array with 5 columns, one for the time,
     4 for the coordinates of a rectangle"""
     fields = [('t', 'float64'), ('x', 'uint16'),
               ('y', 'uint16'), ('w', 'uint16'), ('h', 'uint16')]
@@ -120,14 +125,14 @@ class Rect(Array):
 
 class Point(Array):
 
-    """An Array with 3 columns, one for the time, 
+    """An Array with 3 columns, one for the time,
     2 for x,y integers"""
     fields = [('t', 'float64'), ('x', 'uint16'), ('y', 'uint16')]
 
 
 class Meta(Array):
 
-    """An Array reference with 4 columns, one for the time, 
+    """An Array reference with 4 columns, one for the time,
     3 for value,time,temp keys of a Meta option type"""
     fields = [('t', 'float64'), ('value', 'float64'),
               ('time', 'float64'), ('temp', 'float64')]

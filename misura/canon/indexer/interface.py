@@ -140,13 +140,14 @@ class SharedFile(CoreFile, DataOperator):
         if self.version == newversion:
             return True
 
-        self.change_version(newversion)
+        self._change_version(newversion)
+        self.load_conf()
         return True
 
-    def change_version(self, new_version):
+    def _change_version(self, new_version):
         self.version = new_version
-        self.set_attributes('/userdata', attrs={'active_version': new_version})
-        self.load_conf()
+        self._set_attributes('/userdata', attrs={'active_version': new_version})
+
 
 
     @lockme
@@ -164,6 +165,7 @@ class SharedFile(CoreFile, DataOperator):
         # Set current version (will be empty until some transparent writing
         # occurs)
         self.version = newversion
+        self._change_version(newversion)
         self.test.flush()
         return newversion
 
@@ -271,7 +273,21 @@ class SharedFile(CoreFile, DataOperator):
         if version is '':
             raise RuntimeError("Original version is not writable.\nCreate or switch to another version first.")
 
-        raise RuntimeError("Data save is not implemented yet.")
+        path = "/summary" + path
+        parent = "/".join(path.split("/")[0:-1])
+        name = "/".join(path.split("/")[-1])
+        newparent = version + parent
+
+        data_with_time = np.transpose(np.vstack((time_data, data)))
+
+        source_path_reference = reference.Array(self, path)
+        opt = source_path_reference.get_attributes()
+        opt['handle'] = name
+        self.remove_node(newparent + "/" + name)
+        dest_path_reference = reference.Array(self, newparent, opt=opt, with_summary=False)
+        dest_path_reference.append(data_with_time)
+        self.flush()
+
 
 
 
