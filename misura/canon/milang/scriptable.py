@@ -131,7 +131,7 @@ class Scriptable(object):
             return False
         if hdf is False:
             hdf = self.outFile
-        self.log.debug('distributing scripts')
+        self.log.debug('distributing scripts',repr(self.samples))
         self.measure.compile_scripts(hdf)
         for smp in self.samples:
             self.log.debug('distributing sample scripts',smp)
@@ -145,6 +145,7 @@ class Scriptable(object):
             return False
         self.log.debug('Executing measure scripts')
         self.measure.execute_scripts(self, period=period)
+        self.log.debug('Characterization of samples: ',repr(self.samples))
         for smp in self.samples:
             self.log.debug('Executing sample scripts',smp)
             smp.execute_scripts(self, period=period)

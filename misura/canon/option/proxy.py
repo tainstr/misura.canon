@@ -288,12 +288,18 @@ class ConfigurationProxy(Scriptable, Conf):
         if not self.has_key('nSamples'):
             print 'no nSample option!'
             return []
-        n = self.measure['nSamples']
+        n = self['nSamples']
         if n == 0:
             print 'no samples defined!'
             return []
         out = []
         for i in range(n):
+            # Search direct child (instrument)
+            child = self.child('sample{}'.format(i))
+            if child:
+                out.append(child)
+                continue
+            # Search referred sample (from device)
             s = 'smp{}'.format(i)
             if not self.has_key(s):
                 print 'sample not found', s
