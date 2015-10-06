@@ -97,6 +97,14 @@ class Indexer(object):
         self.dbPath = dbPath
         if dbPath and not os.path.exists(dbPath):
             self.rebuild()
+            
+    @classmethod
+    def append_file_to_database(cls, dbpath, filepath):
+        """Append `filepath` to database in `dbpath`."""
+        db = Indexer(dbpath, [])
+        r = db.appendFile(filepath)
+        db.close()
+        return r
 
     @dbcom
     def execute(self, query, *a, **kw):
