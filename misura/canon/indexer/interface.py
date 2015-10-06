@@ -134,7 +134,7 @@ class SharedFile(CoreFile, DataOperator):
             newversion = getattr(self.test.root.conf.attrs, 'versions', '')
             self._lock.release()
 
-        if isinstance(newversion, int):
+        if not isinstance(newversion, basestring):
             newversion = '/ver_{}'.format(newversion)
 
         if self.version == newversion:
