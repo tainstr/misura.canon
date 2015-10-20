@@ -427,7 +427,7 @@ class Option(object):
         if old.has_key('attr'):
             oa = set(old['attr'])
         # Update user-modifiable attributes
-        for a in ('History', 'ExeSummary', 'ExeEnd', 'ExeAlways', 'Enabled', 'Disabled'):
+        for a in ('ExeSummary', 'ExeEnd', 'ExeAlways', 'Enabled', 'Disabled'):
             # Add if added in new
             if a in na:
                 oa.add(a)

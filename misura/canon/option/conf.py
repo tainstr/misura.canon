@@ -9,7 +9,6 @@ class Conf(object):
     kid_base = ''
 
     def __init__(self, desc=False, empty=False):
-
         self.empty = empty
         self.__contains__ = self.has_key
         self.log = logger.Log
@@ -81,13 +80,11 @@ class Conf(object):
 
     def set(self, name, nval, **k):
         """Set the current value of a key"""
-        try:
-            r = self.set_current(name, nval, **k)
-        except:
-            if not self.empty:
-                raise
-            self.sete(name, {})
-            r = self.set_current(name, nval, **k)
+        if self.empty:
+            if not self.has_key(name):
+                self.sete(name, {'factory_default': nval})
+                print 'SET EMPTY',name,nval
+        r = self.set_current(name, nval, **k)
         return r
 
     def has_key(self, key):

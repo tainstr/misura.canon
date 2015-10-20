@@ -318,10 +318,28 @@ def toslice(v):
         return slice(*r)
     return tuple(r)
 
+def decode_cool_event(event):
+    """Decode a ">cool,temperature,timeout" thermal cycle event"""
+    if not event.startswith('>cool'):
+        return False
+    event = event.split(',')
+    T = float(event[1])
+    if len(event)>2:
+        timeout = float(event[2])
+    return T, timeout 
 
-def next_point(crv, row, delta=1):
+def decode_checkpoint_event(event):
+    if not event.startswith('>checkpoint'):
+        return False
+    event = event.split(',')
+    delta = float(event[1])
+    if len(event)>2:
+        timeout = float(event[2])
+    return delta, timeout   
+
+def next_point(crv, row, delta=1, events=False):
     """Search next non-event point in thermal cycle curve `crv`.
-    Starts by checking `row` index, then adds `delta`,
+    Starts by checking `row` index, then adds `delta` (+-1),
     until proper value is found."""
     d = 0
     c = True
@@ -329,6 +347,9 @@ def next_point(crv, row, delta=1):
     while c and 0 <= row < N:
         ent = crv[row]
         c = isinstance(ent[1], basestring)
+        # Decode natural cooling event
+        if c and events and ent[1].startswith('>cool'):
+            c = False
         if c:
             row += delta
     if row < 0:

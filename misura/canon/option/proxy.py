@@ -71,12 +71,6 @@ class ConfigurationProxy(Scriptable, Conf):
         self.get = self.__getitem__
         self.set = self.__setitem__
 
-    def check_read(self, opt):
-        return self.desc[opt]['readLevel'] <= self._readLevel
-
-    def check_write(self, opt):
-        return self.desc[opt]['writeLevel'] <= self._writeLevel
-
     @property
     def root(self):
         if not self._parent:
