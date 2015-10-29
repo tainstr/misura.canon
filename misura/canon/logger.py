@@ -42,8 +42,9 @@ def justPrint(*msg, **po):
 
 def toLogging(*msg, **po):
     """Send log to standard python logging library"""
-#   print 'toLogging', msg, po
+    justPrint(*msg, **po)
     logging.log(po.get('p', 10), *msg)
+
 
 
 class BaseLogger(object):
@@ -95,5 +96,4 @@ class SubLogger(BaseLogger):
 
 global Log, log
 Log = BaseLogger(log=toLogging)
-Log = BaseLogger(log=justPrint)
 log = Log.log

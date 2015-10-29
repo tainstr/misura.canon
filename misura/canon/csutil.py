@@ -326,7 +326,7 @@ def decode_cool_event(event):
     T = float(event[1])
     if len(event)>2:
         timeout = float(event[2])
-    return T, timeout 
+    return T, timeout
 
 def decode_checkpoint_event(event):
     if not event.startswith('>checkpoint'):
@@ -335,7 +335,7 @@ def decode_checkpoint_event(event):
     delta = float(event[1])
     if len(event)>2:
         timeout = float(event[2])
-    return delta, timeout   
+    return delta, timeout
 
 def next_point(crv, row, delta=1, events=False):
     """Search next non-event point in thermal cycle curve `crv`.
@@ -525,3 +525,9 @@ def from_seconds_to_hms(seconds):
     minutes, seconds = divmod(seconds, 60)
     hours, minutes = divmod(minutes, 60)
     return "%d:%02d:%02d" % (hours, minutes, seconds)
+
+
+def ensure_directory_existence(path):
+        directory = os.path.dirname(path)
+        if not os.path.exists(directory):
+            os.makedirs(directory)
