@@ -42,7 +42,6 @@ def justPrint(*msg, **po):
 
 def toLogging(*msg, **po):
     """Send log to standard python logging library"""
-    justPrint(*msg, **po)
     logging.log(po.get('p', 10), *msg)
 
 
