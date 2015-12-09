@@ -187,7 +187,7 @@ class Indexer(object):
         file_path = self.convert_to_full_path(result[0][0])
 
         if not os.path.exists(file_path):
-            self._clear_file_path(file_path)
+            self._clear_file_path(result[0][0])
             return False
 
         if full:
@@ -369,12 +369,11 @@ class Indexer(object):
             return False
         return self.remove_file(fn)
 
-    def _clear_file_path(self, file_path):
-        """Remove file in `file_path` from db"""
-        e = self.cur.execute('delete from test where file=?', (file_path,))
-        print 'Deleted from test', e.rowcount
-        e = self.cur.execute('delete from sample where file=?', (file_path,))
-        print 'Deleted from sample', e.rowcount
+    def _clear_file_path(self, relative_file_path):
+        """Remove file in `relative_file_path` from db"""
+        self.log.debug('Removing obsolete database entry: ', relative_file_path)
+        e = self.cur.execute('delete from test where file=?', (relative_file_path,))
+        e = self.cur.execute('delete from sample where file=?', (relative_file_path,))
         self.conn.commit()
         return True
 
@@ -435,8 +434,7 @@ class Indexer(object):
             file_path = self.convert_to_full_path(record[0])
 
             if not os.path.exists(file_path):
-                self.log.debug('Removing obsolete database entry: ', file_path)
-                self._clear_file_path(file_path)
+                self._clear_file_path(record[0])
             else:
                 record = (file_path,) + record[1:]
                 r.append(record)
