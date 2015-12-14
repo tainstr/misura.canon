@@ -227,17 +227,26 @@ class Indexer(object):
         conn.commit()
         self.close_db()
         self._lock.release()
-        tn = 0
+
+        tests_filenames = self.tests_filenames_sorted_by_date()
+
+        for f in tests_filenames:
+            self.appendFile(f)
+
+        return 'Done. Found %i tests.' % len(tests_filenames)
+
+    def tests_filenames_sorted_by_date(self):
+        tests_filenames = []
+
         for path in self.paths:
             for root, dirs, files in os.walk(path):
                 for fn in files:
                     if not fn.endswith(ext):
                         continue
                     fp = os.path.join(root, fn)
-                    print 'Appending', fp
-                    tn += self.appendFile(fp)
+                    tests_filenames.append(fp)
 
-        return 'Done. Found %i tests.' % tn
+        return sorted(tests_filenames, key=os.path.getctime)
 
     def appendFile(self, file_path):
         if not os.path.exists(file_path):
@@ -293,18 +302,6 @@ class Indexer(object):
         for p in 'name,comment,nSamples,zerotime,elapsed,id'.split(','):
             test[p] = tree[instrument]['measure']['self'][p]['current']
         zerotime = test['zerotime']
-        #FIXME: remove all this stuff, zerotime is now correctly handled in measure.
-        # If measure does not have a zerotime, take from instrument
-        if zerotime <= 1:
-            zerotime = tree[instrument]['self']['zerotime']['current']
-        # If instrument does not have zerotime set, use attribute
-        if zerotime <= 1:
-            zerotime = getattr(conf.attrs, 'zerotime', 0)
-        # If nothing useful is found, use file creation time.
-        if zerotime <= 1:
-            zerotime = os.stat(file_path).st_ctime
-            self.log.error('NO ZEROTIME FOUND, using conf attribute', zerotime)
-        test['zerotime'] = zerotime
         test['serial'] = conf.attrs.serial
         if not getattr(conf.attrs, 'uid', False):
             self.log.debug('UID attribute not found')
@@ -400,8 +397,17 @@ class Indexer(object):
     def header(self):
         self.cur.execute('PRAGMA table_info(test)')
         r = self.cur.fetchall()
-        print 'Indexer.header', r
-        return [str(col[1]) for col in r]
+        test_header = [str(col[1]) for col in r]
+
+        self.cur.execute('PRAGMA table_info(incremental_ids)')
+        r = self.cur.fetchall()
+        incremental_ids_header = [str(col[1]) for col in r]
+
+        for h in incremental_ids_header:
+            if h not in test_header:
+                test_header.append(h)
+
+        return test_header
 
     @dbcom
     def listMaterials(self):
@@ -417,7 +423,7 @@ class Indexer(object):
     def query(self, conditions={}):
         # FIXME: inter-thread #412
         if len(conditions) == 0:
-            self.cur.execute('SELECT * from test ORDER BY zerotime DESC')
+            self.cur.execute('SELECT * from test natural join incremental_ids ORDER BY zerotime DESC')
         else:
             cnd = []
             vals = []
@@ -425,7 +431,7 @@ class Indexer(object):
                 cnd.append(k + ' like ?')
                 vals.append('%' + v + '%')
             cnd = ' AND '.join(cnd)
-            cmd = 'SELECT * from test WHERE ' + cnd + 'ORDER BY zerotime DESC'
+            cmd = 'SELECT * from test natural join incremental_ids WHERE ' + cnd + 'ORDER BY zerotime DESC'
             self.log.debug('Executing', cmd, vals)
             self.cur.execute(cmd, vals)
         r = self.cur.fetchall()
