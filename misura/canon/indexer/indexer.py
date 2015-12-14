@@ -32,6 +32,7 @@ testTableDef = '''(file text unique, serial text, uid text primary key,
                    id text, zerotime text, instrument text, flavour text,
                    name text, elapsed real, nSamples integer,
                    comment text,verify bool)'''
+incrementalIdsTableDef = '''(incremental_id INTEGER PRIMARY KEY AUTOINCREMENT, uid text unique)'''
 syncTableDef = '''(file text, serial text, uid text primary key, id text,
                    zerotime text, instrument text, flavour text, name text,
                    elapsed real, nSamples integer, comment text,verify bool)'''
@@ -97,7 +98,7 @@ class Indexer(object):
         self.dbPath = dbPath
         if dbPath and not os.path.exists(dbPath):
             self.rebuild()
-            
+
     @classmethod
     def append_file_to_database(cls, dbpath, filepath):
         """Append `filepath` to database in `dbpath`."""
@@ -156,6 +157,8 @@ class Indexer(object):
         cur.execute("create table if not exists sync_queue " + syncTableDef)
         cur.execute("create table if not exists sync_approve " + syncTableDef)
         cur.execute("create table if not exists sync_error " + errorTableDef)
+
+        cur.execute("create table if not exists incremental_ids " + incrementalIdsTableDef)
         conn.commit()
         return True
 
@@ -204,8 +207,8 @@ class Indexer(object):
         """Completely recreate the SQLite Database indexing all test files."""
         if not self.dbPath:
             return False
-        if os.path.exists(self.dbPath):
-            os.remove(self.dbPath)
+        # if os.path.exists(self.dbPath):
+        #     os.remove(self.dbPath)
         if not self._lock.acquire(False):
             self.log.error('Cannot lock database for rebuild')
             return False
@@ -280,7 +283,7 @@ class Indexer(object):
         test['file'] = relative_path
 
         instrument = conf.attrs.instrument
-        
+
         test['instrument'] = instrument
         if not tree.has_key(instrument):
             print tree.keys()
@@ -344,6 +347,8 @@ class Indexer(object):
             cur.execute(cmd, v)
             r = cur.fetchall()
             print 'Result:', r
+
+        self.add_incremental_id(cur, test['uid'])
         self.conn.commit()
 
         ###
@@ -355,6 +360,13 @@ class Indexer(object):
         s.write_tree(tree, preset=test['uid'])
         self.conn.commit()
         return True
+
+    def add_incremental_id(self, cursor, uid):
+        try:
+            cursor.execute("insert into incremental_ids(uid) values (?)", (uid,))
+        except sqlite3.IntegrityError:
+            self.log.debug('uid ' + uid + ' already exists in incremental_ids table: no big deal')
+
 
     def update(self):
         """Updates the database by inserting new files and removing deleted files"""
