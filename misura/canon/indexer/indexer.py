@@ -231,7 +231,7 @@ class Indexer(object):
         tests_filenames = self.tests_filenames_sorted_by_date()
 
         for f in tests_filenames:
-            self.appendFile(f)
+            self.appendFile(f, False)
 
         self.recalculate_incremental_ids()
 
@@ -239,10 +239,6 @@ class Indexer(object):
 
     @dbcom
     def recalculate_incremental_ids(self):
-        self.cur.execute("DROP TABLE IF EXISTS incremental_ids")
-        self.cur.execute("CREATE TABLE incremental_ids " + incrementalIdsTableDef)
-        self.conn.commit()
-
         self.cur.execute("select uid from test order by zerotime")
         uids = self.cur.fetchall()
         for uid in uids:
@@ -263,7 +259,7 @@ class Indexer(object):
 
         return sorted(tests_filenames, key=os.path.getctime)
 
-    def appendFile(self, file_path):
+    def appendFile(self, file_path, add_uid_to_incremental_ids_table=True):
         if not os.path.exists(file_path):
             print 'File not found', file_path
             return False
@@ -275,7 +271,7 @@ class Indexer(object):
                 self.log.debug('Tree configuration not found', file_path)
                 table.close()
                 return False
-            r = self._appendFile(table, file_path)
+            r = self._appendFile(table, file_path, add_uid_to_incremental_ids_table)
         except:
             print_exc()
         if table:
@@ -283,7 +279,7 @@ class Indexer(object):
         return r
 
     @dbcom
-    def _appendFile(self, table, file_path):
+    def _appendFile(self, table, file_path, add_uid_to_incremental_ids_table):
         """Inserts a new file in the database"""
         # FIXME: inter-thread #412
         cur = self.cur
@@ -360,7 +356,8 @@ class Indexer(object):
             r = cur.fetchall()
             print 'Result:', r
 
-        self.add_incremental_id(cur, test['uid'])
+        if add_uid_to_incremental_ids_table:
+            self.add_incremental_id(cur, test['uid'])
         self.conn.commit()
 
         ###
