@@ -11,6 +11,7 @@ from traceback import print_exc
 import sqlite3
 import functools
 import threading
+import multiprocessing
 import datetime
 
 from misura.canon.csutil import unlockme
@@ -56,7 +57,7 @@ def dbcom(func):
     @functools.wraps(func)
     def safedb_wrapper(self, *args, **kwargs):
         try:
-            r = self._lock.acquire(False)
+            r = self._lock.acquire(timeout=10)
             if not r:
                 raise BaseException('Impossible to lock database')
             self.open_db()
@@ -87,7 +88,7 @@ class Indexer(object):
     addr = 'LOCAL'
 
     def __init__(self, dbPath=False, paths=[], log=False):
-        self._lock = threading.Lock()
+        self._lock = multiprocessing.Lock()
         self.threads = {}
         self.dbPath = dbPath
         self.paths = paths
