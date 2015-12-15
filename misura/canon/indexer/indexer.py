@@ -57,6 +57,7 @@ def dbcom(func):
     @functools.wraps(func)
     def safedb_wrapper(self, *args, **kwargs):
         try:
+            print 'Locking database', self.dbPath
             r = self._lock.acquire(timeout=10)
             if not r:
                 raise BaseException('Impossible to lock database')
@@ -71,6 +72,7 @@ def dbcom(func):
                 self._lock.acquire(False)
                 try:
                     self._lock.release()
+                    print 'Released database', self.dbPath
                 except:
                     print_exc()
     return safedb_wrapper
@@ -146,11 +148,12 @@ class Indexer(object):
             except sqlite3.ProgrammingError:
                 conn = False
         if not conn:
+            print "creating new connection", self.dbPath, tid()
             conn = sqlite3.connect(
                 self.dbPath, detect_types=sqlite3.PARSE_DECLTYPES)
             cur = conn.cursor()
             self.threads[tid()] = (conn, cur)
-
+        print self.threads
         cur.execute("CREATE TABLE if not exists test " + testTableDef)
         cur.execute("CREATE TABLE if not exists sample " + sampleTableDef)
         # Sync tables
@@ -161,6 +164,7 @@ class Indexer(object):
 
         cur.execute("create table if not exists incremental_ids " + incrementalIdsTableDef)
         conn.commit()
+        print 'done open_db', tid()
         return True
 
     def close_db(self):
@@ -210,7 +214,7 @@ class Indexer(object):
             return False
         # if os.path.exists(self.dbPath):
         #     os.remove(self.dbPath)
-        if not self._lock.acquire(False):
+        if not self._lock.acquire(timeout=10):
             self.log.error('Cannot lock database for rebuild')
             return False
         self.open_db(self.dbPath)
@@ -228,14 +232,13 @@ class Indexer(object):
         conn.commit()
         self.close_db()
         self._lock.release()
-
         tests_filenames = self.tests_filenames_sorted_by_date()
 
         for f in tests_filenames:
             self.appendFile(f, False)
 
         self.recalculate_incremental_ids()
-
+        
         return 'Done. Found %i tests.' % len(tests_filenames)
 
     @dbcom
@@ -292,15 +295,16 @@ class Indexer(object):
         node.close()
         tree = pickle.loads(tree)
 
-        ###
+        # ##
         # Test row
-        ###
+        # ##
         test = {}
 
         dbdir = os.path.dirname(self.dbPath)
         relative_path = "." + \
             file_path[len(dbdir):] if file_path.startswith(
                 dbdir) else file_path
+        relative_path = '/'.join(relative_path.split(os.sep))
         test['file'] = relative_path
 
         instrument = conf.attrs.instrument
@@ -337,9 +341,9 @@ class Indexer(object):
         print 'Executing', cmd, v
         self.cur.execute(cmd, v)
         r = cur.fetchall()
-        ###
+        # ##
         # Sample Rows
-        ###
+        # ##
         for i in range(8):
             s = 'sample%i' % i
             if s not in tree[instrument].keys():
@@ -361,9 +365,9 @@ class Indexer(object):
             self.add_incremental_id(cur, test['uid'])
         self.conn.commit()
 
-        ###
+        # ##
         # Options
-        ###
+        # ##
         return True
         s = option.SqlStore()
         s.cursor = cur
@@ -477,8 +481,12 @@ class Indexer(object):
 
     def convert_to_full_path(self, file_path):
         if file_path.startswith("."):
+            if file_path.startswith('.\\'):
+                file_path='/'.join(file_path.split('\\'))
             dbdir = os.path.dirname(self.dbPath)
-            return dbdir + file_path[1:]
+            relative_path = [dbdir]+file_path[2:].split('/')
+            relative_path = os.path.join(*relative_path)
+            return relative_path
 
         return file_path
 
@@ -494,6 +502,6 @@ if __name__ == '__main__':
     import sys
     print sys.argv[1]
     sys.exit()
-    db=Indexer(sys.argv[1])
+    db = Indexer(sys.argv[1])
     db.rebuild()
     db.close()
