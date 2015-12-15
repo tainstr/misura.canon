@@ -233,7 +233,22 @@ class Indexer(object):
         for f in tests_filenames:
             self.appendFile(f)
 
+        self.recalculate_incremental_ids()
+
         return 'Done. Found %i tests.' % len(tests_filenames)
+
+    @dbcom
+    def recalculate_incremental_ids(self):
+        self.cur.execute("DROP TABLE IF EXISTS incremental_ids")
+        self.cur.execute("CREATE TABLE incremental_ids " + incrementalIdsTableDef)
+        self.conn.commit()
+
+        self.cur.execute("select uid from test order by zerotime")
+        uids = self.cur.fetchall()
+        for uid in uids:
+            self.add_incremental_id(self.cur, uid[0])
+
+        self.conn.commit()
 
     def tests_filenames_sorted_by_date(self):
         tests_filenames = []
