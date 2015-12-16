@@ -49,7 +49,7 @@ class Indexer(unittest.TestCase):
     def test_header(self):
         header = self.indexer.header()
         self.assertEqual(['file', 'serial', 'uid', 'id', 'date', 'instrument',
-                          'flavour', 'name', 'elapsed', 'nSamples', 'comment', 'verify'], header)
+                          'flavour', 'name', 'elapsed', 'nSamples', 'comment', 'verify', 'incremental_id'], header)
 
     def test_query_returns_all_files(self):
         result = self.indexer.query()

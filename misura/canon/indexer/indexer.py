@@ -25,6 +25,9 @@ from filemanager import FileManager
 
 testColumn = ('file', 'serial', 'uid', 'id', 'zerotime', 'instrument',
               'flavour', 'name', 'elapsed', 'nSamples', 'comment', 'verify')
+
+columns_to_translate = testColumn + ('incremental_id',)
+
 testColumnDefault = ['file', 'serial', 'uid', 'id', 'zerotime',
                      'instrument', 'flavour', 'name', 1, 1, 'comment', 0]
 testColDef = ('text', 'text', 'text', 'text', 'date', 'text',
@@ -34,6 +37,7 @@ testTableDef = '''(file text unique, serial text, uid text primary key,
                    name text, elapsed real, nSamples integer,
                    comment text,verify bool)'''
 incrementalIdsTableDef = '''(incremental_id INTEGER PRIMARY KEY AUTOINCREMENT, uid text unique)'''
+
 syncTableDef = '''(file text, serial text, uid text primary key, id text,
                    zerotime text, instrument text, flavour text, name text,
                    elapsed real, nSamples integer, comment text,verify bool)'''
@@ -238,7 +242,7 @@ class Indexer(object):
             self.appendFile(f, False)
 
         self.recalculate_incremental_ids()
-        
+
         return 'Done. Found %i tests.' % len(tests_filenames)
 
     @dbcom
