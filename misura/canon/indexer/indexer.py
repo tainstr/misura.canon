@@ -22,6 +22,7 @@ from tables.nodes import filenode
 from .. import csutil, option
 
 from filemanager import FileManager
+from misura.canon.indexer.interface import SharedFile
 
 testColumn = ('file', 'serial', 'uid', 'id', 'zerotime', 'instrument',
               'flavour', 'name', 'elapsed', 'nSamples', 'comment', 'verify')
@@ -103,6 +104,7 @@ class Indexer(object):
         self.log = log
         self.test = FileManager(self)
         self.dbPath = dbPath
+
         if dbPath and not os.path.exists(dbPath):
             self.rebuild()
 
@@ -384,6 +386,28 @@ class Indexer(object):
             cursor.execute("insert into incremental_ids(uid) values (?)", (uid,))
         except sqlite3.IntegrityError:
             self.log.debug('uid ' + uid + ' already exists in incremental_ids table: no big deal')
+
+    def change_name(self, new_name, uid, hdf_file_name):
+        if not new_name:
+            return 0
+        hdf_file = SharedFile(path=hdf_file_name, uid=uid)
+        hdf_file.create_version()
+        hdf_file.load_conf()
+
+        instrument_name = hdf_file.test.root.conf.attrs.instrument
+        getattr(hdf_file.conf, instrument_name).measure['name'] = new_name
+
+
+        hdf_file.save_conf()
+        hdf_file.close()
+
+        return self.change_name_on_database(new_name, uid)
+
+    @dbcom
+    def change_name_on_database(self, new_name, uid):
+        self.cur.execute("update test set name = ? where uid = ?", (new_name, uid,))
+        self.conn.commit()
+        return len(self.cur.fetchall())
 
 
     def update(self):
