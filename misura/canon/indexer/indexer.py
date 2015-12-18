@@ -294,8 +294,14 @@ class Indexer(object):
         # FIXME: inter-thread #412
         cur = self.cur
         conf = getattr(table.root, 'conf', False)
+        if '/userdata' in table:
+            active_version = table.get_node_attr('/userdata', 'active_version')
+            if active_version.strip() != '':
+                version_node = getattr(table.root, str(active_version))
+                conf = version_node.conf
+
         # Load configuration
-        node = filenode.openNode(table.root.conf, 'r')
+        node = filenode.openNode(conf, 'r')
         node.seek(0)
         tree = node.read()
         node.close()
