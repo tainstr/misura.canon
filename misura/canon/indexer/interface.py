@@ -269,7 +269,7 @@ class SharedFile(CoreFile, DataOperator):
         return
 
     def save_data(self, path, data, time_data):
-        version = self.get_node_attr('/userdata', 'active_version')
+        version = self.active_version()
         if version is '':
             raise RuntimeError("Original version is not writable.\nCreate or switch to another version first.")
 
@@ -287,6 +287,9 @@ class SharedFile(CoreFile, DataOperator):
         dest_path_reference = reference.Array(self, newparent, opt=opt, with_summary=False)
         dest_path_reference.append(data_with_time)
         self.flush()
+
+    def active_version(self):
+        return self.get_node_attr('/userdata', 'active_version')
 
 
 

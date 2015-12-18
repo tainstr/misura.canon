@@ -391,8 +391,10 @@ class Indexer(object):
         if not new_name:
             return 0
         hdf_file = SharedFile(path=hdf_file_name, uid=uid)
+        active_version = hdf_file.active_version()
+        if active_version:
+            hdf_file.set_version(active_version)
         hdf_file.create_version()
-        hdf_file.load_conf()
 
         instrument_name = hdf_file.test.root.conf.attrs.instrument
         getattr(hdf_file.conf, instrument_name).measure['name'] = new_name
