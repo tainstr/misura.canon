@@ -131,7 +131,10 @@ class SharedFile(CoreFile, DataOperator):
         """Set the current version to `newversion`"""
         if newversion < 0:
             self._lock.acquire()
-            newversion = getattr(self.test.root.conf.attrs, 'versions', '')
+            if '/userdata' in self.test:
+                newversion = self.test.get_node_attr('/userdata', 'active_version')
+            else:
+                newversion = getattr(self.test.root.conf.attrs, 'versions', '')
             self._lock.release()
 
         if not isinstance(newversion, basestring):
