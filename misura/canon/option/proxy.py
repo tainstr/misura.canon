@@ -282,7 +282,7 @@ class ConfigurationProxy(Scriptable, Conf):
         if not self.has_key('nSamples'):
             print 'no nSample option!'
             return []
-        n = self['nSamples']
+        n = self.measure['nSamples']
         if n == 0:
             print 'no samples defined!'
             return []
