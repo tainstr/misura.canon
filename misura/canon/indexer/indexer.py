@@ -520,7 +520,7 @@ class Indexer(object):
             if file_path.startswith('.\\'):
                 file_path='/'.join(file_path.split('\\'))
             dbdir = os.path.dirname(self.dbPath)
-            relative_path = [dbdir]+file_path[2:].split('/')
+            relative_path = [dbdir]+file_path[1:].split('/')
             relative_path = os.path.join(*relative_path)
             return relative_path
 
