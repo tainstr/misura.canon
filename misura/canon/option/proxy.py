@@ -279,7 +279,7 @@ class ConfigurationProxy(Scriptable, Conf):
 
     @property
     def samples(self):
-        if not self.has_key('nSamples'):
+        if not self.measure.has_key('nSamples'):
             print 'no nSample option!'
             return []
         n = self.measure['nSamples']
