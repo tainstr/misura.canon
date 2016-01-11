@@ -62,7 +62,6 @@ def dbcom(func):
     @functools.wraps(func)
     def safedb_wrapper(self, *args, **kwargs):
         try:
-            print 'Locking database', self.dbPath
             r = self._lock.acquire(timeout=10)
             if not r:
                 raise BaseException('Impossible to lock database')
@@ -77,7 +76,6 @@ def dbcom(func):
                 self._lock.acquire(False)
                 try:
                     self._lock.release()
-                    print 'Released database', self.dbPath
                 except:
                     print_exc()
     return safedb_wrapper
@@ -154,12 +152,10 @@ class Indexer(object):
             except sqlite3.ProgrammingError:
                 conn = False
         if not conn:
-            print "creating new connection", self.dbPath, tid()
             conn = sqlite3.connect(
                 self.dbPath, detect_types=sqlite3.PARSE_DECLTYPES)
             cur = conn.cursor()
             self.threads[tid()] = (conn, cur)
-        print self.threads
         cur.execute("CREATE TABLE if not exists test " + testTableDef)
         cur.execute("CREATE TABLE if not exists sample " + sampleTableDef)
         # Sync tables
@@ -170,7 +166,6 @@ class Indexer(object):
 
         cur.execute("create table if not exists incremental_ids " + incrementalIdsTableDef)
         conn.commit()
-        print 'done open_db', tid()
         return True
 
     def close_db(self):
@@ -295,9 +290,9 @@ class Indexer(object):
         cur = self.cur
         conf = getattr(table.root, 'conf', False)
         if '/userdata' in table:
-            active_version = table.get_node_attr('/userdata', 'active_version')
-            if active_version.strip() != '':
-                version_node = getattr(table.root, str(active_version))
+            active_version = str(table.get_node_attr('/userdata', 'active_version')).strip()
+            if active_version:
+                version_node = getattr(table.root, active_version)
                 conf = version_node.conf
 
         # Load configuration
