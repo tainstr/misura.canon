@@ -148,7 +148,7 @@ class SharedFile(CoreFile, DataOperator):
         return True
 
     def _change_version(self, new_version):
-        self.version = new_version
+        self.version = str(new_version)
         self._set_attributes('/userdata', attrs={'active_version': new_version})
 
 
