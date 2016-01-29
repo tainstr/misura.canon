@@ -292,8 +292,9 @@ class Indexer(object):
         if '/userdata' in table:
             active_version = str(table.get_node_attr('/userdata', 'active_version')).strip()
             if active_version:
-                version_node = getattr(table.root, active_version)
-                conf = version_node.conf
+                version_node = getattr(table.root, active_version, False)
+                if version_node is not False:
+                    conf = version_node.conf
 
         # Load configuration
         node = filenode.openNode(conf, 'r')
