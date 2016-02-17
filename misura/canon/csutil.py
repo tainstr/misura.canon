@@ -531,3 +531,21 @@ def ensure_directory_existence(path):
         directory = os.path.dirname(path)
         if not os.path.exists(directory):
             os.makedirs(directory)
+            
+# LOCALE CONTEXT MANAGER
+from datetime import datetime
+from contextlib import contextmanager
+import locale
+import threading
+LOCALE_LOCK = threading.Lock()
+
+@contextmanager
+def setlocale(name):
+    """Temporary locale context manager. For datetime.strptime with Qt
+    From: http://stackoverflow.com/a/24070673/1645874"""
+    with LOCALE_LOCK:
+        saved = locale.setlocale(locale.LC_ALL)
+        try:
+            yield locale.setlocale(locale.LC_ALL, name)
+        finally:
+            locale.setlocale(locale.LC_ALL, saved)
