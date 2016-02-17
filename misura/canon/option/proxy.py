@@ -209,6 +209,7 @@ class ConfigurationProxy(Scriptable, Conf):
             origin.update(out)
             out = origin
         self.sete(out['handle'], out)
+        return out
 
     def getFlags(self, opt):
         if not self.desc[opt].has_key('flags'):
