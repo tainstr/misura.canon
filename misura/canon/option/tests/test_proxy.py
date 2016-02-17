@@ -18,6 +18,9 @@ class ConfigurationProxy(unittest.TestCase):
         sh = indexer.SharedFile(path)
         sh.load_conf()
         sh.run_scripts(sh.conf.hsm)
+        sh.close()
+        sh.conf.kiln.add_option('testOpt','Boolean',True,'Test option')
+        self.assertTrue(sh.conf.kiln['testOpt'])
 
 
 if __name__ == "__main__":

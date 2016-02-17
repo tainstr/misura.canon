@@ -5,7 +5,7 @@ from conf import Conf
 import cPickle as pickle
 from ..milang import Scriptable
 import common_proxy
-
+from .option import ao
 
 def dictRecursiveModel(base):
     """BUild a dictionary configuration tree from ConfigurationProxy `base`"""
@@ -37,7 +37,9 @@ def print_tree(tree, level=0):
         msg += '{}|: {} = {}\n'.format(pre, k, v)
     return msg
 
-
+# TODO: parametrize in user conf
+# 0=always visible; 1=user ; 2=expert ; 3=advanced ; 4=technician ;
+# 5=developer; 6=never visible
 class ConfigurationProxy(Scriptable, Conf):
 
     """A configuration object behaving like a live server"""
@@ -45,13 +47,13 @@ class ConfigurationProxy(Scriptable, Conf):
     _readLevel = 5
     _writeLevel = 5
 
-    def __init__(self, desc={'self': {}}, name='MAINSERVER', parent=False, readLevel=5, writeLevel=5, kid_base='/'):
+    def __init__(self, desc={'self': {}}, name='MAINSERVER', parent=False, readLevel=2, writeLevel=5, kid_base='/'):
         Scriptable.__init__(self)
         self.log = logger.BaseLogger()
         self.kid_base = kid_base
         Conf.__init__(self, desc['self'])
         self._readLevel = readLevel
-        self._writeLevel = writeLevel
+        self._writeLevel = writeLevel      
         self.children = desc.copy()
         """Child configuration dictionaries"""
         self.children_obj = {}
@@ -195,6 +197,18 @@ class ConfigurationProxy(Scriptable, Conf):
 
     def sete(self, key, val):
         self.desc[key] = val
+        
+    def add_option(self, *args, **kwargs):
+        out = {}
+        ao(out, *args, **kwargs)
+        out = out.values()[0]
+        key = out['handle']
+        # If option was already defined, update old one with new values
+        if self.has_key(key):
+            origin = self.gete(key).entry
+            origin.update(out)
+            out = origin
+        self.sete(out['handle'], out)
 
     def getFlags(self, opt):
         if not self.desc[opt].has_key('flags'):
@@ -215,7 +229,7 @@ class ConfigurationProxy(Scriptable, Conf):
         if not self.children_obj.has_key(name):
             kb = self.kid_base + name + self.separator
             self.children_obj[name] = ConfigurationProxy(
-                self.children[name],    name=name, parent=self, kid_base=kb)
+                self.children[name], name=name, parent=self, kid_base=kb)
         return self.children_obj[name]
 
     def parent(self):
