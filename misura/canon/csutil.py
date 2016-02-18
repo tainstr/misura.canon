@@ -162,10 +162,6 @@ def iter_cron_sort(top, field=1, reverse=False):
     r = []
     for root, dirs, files in os.walk(top):
         for name in files:
-            if not name.endswith('.h5'):
-                continue
-            if '/calibration/' in root:
-                continue
             f = os.path.join(root, name)
             s = os.stat(f)
             r.append((f, s.st_ctime, s.st_size))
@@ -531,7 +527,7 @@ def ensure_directory_existence(path):
         directory = os.path.dirname(path)
         if not os.path.exists(directory):
             os.makedirs(directory)
-            
+
 # LOCALE CONTEXT MANAGER
 from datetime import datetime
 from contextlib import contextmanager
@@ -549,3 +545,10 @@ def setlocale(name):
             yield locale.setlocale(locale.LC_ALL, name)
         finally:
             locale.setlocale(locale.LC_ALL, saved)
+
+
+def filter_calibration_filenames(filenames):
+    return [filename for filename in filenames if not '/calibration/' in filename.lower()]
+
+def only_hdf_files(filenames):
+    return [filename for filename in filenames if filename.endswith('.h5')]
