@@ -529,7 +529,6 @@ def ensure_directory_existence(path):
             os.makedirs(directory)
 
 # LOCALE CONTEXT MANAGER
-from datetime import datetime
 from contextlib import contextmanager
 import locale
 import threading
