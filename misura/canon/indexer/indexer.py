@@ -266,11 +266,12 @@ class Indexer(object):
 
     def appendFile(self, file_path, add_uid_to_incremental_ids_table=True):
         if not os.path.exists(file_path):
-            print 'File not found', file_path
+            self.log.warning('File not found', file_path)
             return False
         r = 0
         table = False
         try:
+            self.log.debug('Appending',  file_path)
             table = tables.openFile(file_path, mode='r+')
             if not getattr(table.root, 'conf', False):
                 self.log.debug('Tree configuration not found', file_path)
