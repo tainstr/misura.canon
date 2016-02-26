@@ -2,8 +2,12 @@
 """Utilities for importing data into Misura HDF file format"""
 import os
 from fnmatch import fnmatch
-from misura.canon.option import ao
-from misura.canon.logger import Log as logging
+
+import numpy as np
+
+from .option import ao
+from .logger import Log as logging
+from . import reference
 
 registry = []
 
@@ -128,6 +132,22 @@ class Converter(object):
         """Override this to do the real conversion"""
         assert False,'Unimplemented'
         
+def create_dataset(outFile, node_path, opt, timecol, data, cls=reference.Array):
+    """Create on outFile, in group node_path, a dataset for option `opt`.
+    Writes `timecol` and `data`. """
+    ref = cls(
+        outFile, node_path, opt)
+    # Recreate the reference so the data is clean
+    ref.dump()
+    path = ref.path
+    base_path = path[8:]
+    # Create hard links
+    if not outFile.has_node(base_path):
+        outFile.link(base_path, path)
+    ref.append(
+        np.array([timecol[:len(data)], data]).transpose())
+    return ref
+        
 def search_registry(filename):
     """Find a matching converter for filename"""
     for converter in registry:
@@ -144,3 +164,5 @@ def convert_file(path):
     converter = converter_class()
     outpath = converter.convert(path)
     return outpath
+
+        
