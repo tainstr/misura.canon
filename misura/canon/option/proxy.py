@@ -199,6 +199,7 @@ class ConfigurationProxy(Scriptable, Conf):
         self.desc[key] = val
         
     def add_option(self, *args, **kwargs):
+        """Creates a new option using the ao() utility function"""
         out = {}
         ao(out, *args, **kwargs)
         out = out.values()[0]
@@ -210,6 +211,16 @@ class ConfigurationProxy(Scriptable, Conf):
             out = origin
         self.sete(out['handle'], out)
         return out
+    
+    def add_child(self, name, desc):
+        """Inserts a sub-object `name` with object tree dictionary `desc`.
+        Returns a ConfigurationProxy to the new child."""
+        # If desc is the description dictionary and not the object tree dictionary,
+        # encapsulate it in a 'self' dict
+        if not 'self' in desc:
+            desc = {'self': desc}
+        self.children[name] = desc
+        return self.child(name)
 
     def getFlags(self, opt):
         if not self.desc[opt].has_key('flags'):
