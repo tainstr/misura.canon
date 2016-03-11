@@ -93,7 +93,9 @@ class CoreFile(object):
                 n = False
         if n is False:
             n = self.test.get_node(path)
-            self.node_cache[path] = n
+            kid = getattr(n.attrs, 'kid', False)
+            if not kid or kid==path:
+                self.node_cache[path] = n
         return n
 
     @lockme

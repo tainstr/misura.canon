@@ -406,5 +406,3 @@ class SharedFile(CoreFile, DataOperator):
         """Return if a method name should be decoded client-side"""
         return hasattr(self, 'xmlrpc_' + method)
 
-    def empty_cache(self):
-        self.node_cache = {}
