@@ -93,6 +93,7 @@ class CoreFile(object):
                 n = False
         if n is False:
             n = self.test.get_node(path)
+            # Never cache hard links
             kid = getattr(n.attrs, 'kid', False)
             if not kid or kid==path:
                 self.node_cache[path] = n

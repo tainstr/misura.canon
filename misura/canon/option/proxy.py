@@ -243,6 +243,10 @@ class ConfigurationProxy(Scriptable, Conf):
             self.children_obj[name] = ConfigurationProxy(
                 self.children[name], name=name, parent=self, kid_base=kb)
         return self.children_obj[name]
+    
+    @property
+    def devices(self):
+        return [self.child(name) for name in self.children.keys()]
 
     def parent(self):
         return self._parent
