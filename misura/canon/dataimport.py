@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """Utilities for importing data into Misura HDF file format"""
 import os
+from time import time
 from fnmatch import fnmatch
 
 import numpy as np
@@ -114,12 +115,26 @@ def create_tree(outFile, tree, path='/'):
 class Converter(object):
     name = 'Base Converter'
     file_pattern = '*'
+    log_ref = False
     
     def __init__(self):
         self.outpath = ''
         self.interrupt = False
         self.progress = 0
         self.outFile = False
+        self.conversion_start_time = time()
+        
+    def log(self, msg, priority=10):
+        # TODO: check zerotime
+        logging.info(msg)
+        # Create log reference if missing
+        if not self.log_ref and self.outFile:
+            log_opt = ao({}, 'log', 'Log')['log']
+            self.log_ref = reference.Log(self.outFile, '/', log_opt)
+        # Append to log reference
+        if self.log_ref:
+            t = time() - self.conversion_start_time
+            self.log_ref.commit([[t, (priority, msg)]])
     
     def cancel(self):
         """Interrupt conversion and remove output file"""

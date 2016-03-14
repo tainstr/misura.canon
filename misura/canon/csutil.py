@@ -544,6 +544,14 @@ def setlocale(name):
             yield locale.setlocale(locale.LC_ALL, name)
         finally:
             locale.setlocale(locale.LC_ALL, saved)
+          
+
+from datetime import datetime  
+def decode_datetime(val, format='%a %b %d %H:%M:%S %Y'):
+    #Wed Nov 11 18:35:36 2015
+    with setlocale('C'):
+        ret = datetime.strptime(val, format)
+    return ret
 
 
 def filter_calibration_filenames(filenames):
