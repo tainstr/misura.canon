@@ -4,6 +4,7 @@
 defined_attr = {'Binary': 'Binary blob',
                 'Runtime': 'Do not save this value',
                 'History': 'Chronological changes are recorded during acquisition',
+                'Event': 'Recorded changes are to be considered independent events (not sampling of a continuous change)',
                 'Hardware': 'Value should be synced with external device upon configuration load',
                 'Hot': 'Read from memory during acquisition',
                 'ReadOnly': 'The client cannot change this value',
