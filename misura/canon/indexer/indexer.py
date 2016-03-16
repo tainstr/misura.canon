@@ -6,6 +6,7 @@ ext = '.h5'
 
 import hashlib
 import os
+from time import time, sleep
 import cPickle as pickle
 from traceback import print_exc
 import sqlite3
@@ -84,6 +85,37 @@ def dbcom(func):
 def tid():
     return threading.current_thread().ident
 
+class FileSystemLock(object):
+    def __init__(self,  path=False):
+        self._lock = multiprocessing.Lock()
+        self.path = path
+        
+    def set_path(self, path):
+        self.path = path+'.lock'
+        
+    def acquire(self,  block=True,  timeout=0):
+        r=self._lock.acquire(block)
+        if not r or not self.path:
+            return r
+        t0 = time()
+        while os.path.exists(self.path):
+            if not block:
+                return False
+            if timeout>0 and (time()-t0)>timeout:
+                raise BaseException('Lock timed out')
+        os.mkdir(self.path)
+        return True
+        
+    def release(self):
+        if not self.path:
+            return self._lock.release()
+        if not os.path.exists(self.path):
+            self._lock.release()
+            raise BaseException('Releasing a released lock')
+        os.rmdir(self.path)
+        return self._lock.release()
+        
+
 
 class Indexer(object):
     public = ['rebuild', 'searchUID', 'update', 'header', 'listMaterials',
@@ -93,7 +125,7 @@ class Indexer(object):
     addr = 'LOCAL'
 
     def __init__(self, dbPath=False, paths=[], log=False):
-        self._lock = multiprocessing.Lock()
+        self._lock = FileSystemLock()
         self.threads = {}
         self.dbPath = dbPath
         self.paths = paths
@@ -101,8 +133,7 @@ class Indexer(object):
             log = csutil.FakeLogger()
         self.log = log
         self.test = FileManager(self)
-        self.dbPath = dbPath
-
+        self._lock.set_path(dbPath)
         if dbPath and not os.path.exists(dbPath):
             self.rebuild()
 
@@ -144,7 +175,7 @@ class Indexer(object):
         if not self.dbPath:
             print 'Indexer: no dbpath set!'
             return False
-
+        self._lock.set_path(db)
         conn, cur = self.threads.get(tid(), (False, False))
         if conn:
             try:
