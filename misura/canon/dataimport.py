@@ -115,13 +115,13 @@ def create_tree(outFile, tree, path='/'):
 class Converter(object):
     name = 'Base Converter'
     file_pattern = '*'
-    log_ref = False
+    pid = 'Data conversion'
     
     def __init__(self):
         self.outpath = ''
         self.interrupt = False
-        self.progress = 0
         self.outFile = False
+        self.log_ref = False
         self.conversion_start_time = time()
         
     def log(self, msg, priority=10):
@@ -172,12 +172,14 @@ def search_registry(filename):
     print 'No converter found', filename
     return False
 
-def convert_file(path):
-    """Do the conversion"""
-    #TODO: implement threading and progress notification
+def get_converter(path):
     converter_class = search_registry(path)
-    converter = converter_class()
-    outpath = converter.convert(path)
+    return converter_class()
+    
+def convert_file(path, *args, **kwargs):
+    """Do the conversion"""
+    converter = get_converter(path)
+    outpath = converter.convert(path, *args, **kwargs)
     return outpath
 
         
