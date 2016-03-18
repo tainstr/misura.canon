@@ -11,6 +11,7 @@ addons:
     packages:
     - python-scipy
     - python-numpy
+    - python-tables
 before_install:
   - pip install -U pip setuptools tables
 install:
