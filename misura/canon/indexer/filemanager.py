@@ -10,7 +10,7 @@ from interface import SharedFile
 
 class FileManager(object):
 
-    def __init__(self, store=False, prefix=''):
+    def __init__(self, store=False):
         if store is False:
             self.log = csutil.FakeLogger()
         else:
