@@ -93,7 +93,9 @@ class FileSystemLock(object):
         self.path = path
         
     def set_path(self, path):
-        self.path = path+'.lock'
+        self.path = path
+        if path:
+            self.path += '.lock'
         
     def acquire(self,  block=True,  timeout=0):
         r=self._lock.acquire(block)

@@ -1,0 +1,24 @@
+
+language: python
+sudo: false
+branches:
+  only:
+    - master
+python:
+  - "2.7"
+addons:
+  apt:
+    packages:
+    - python-scipy
+    - python-numpy
+before_install:
+  - pip install -U pip setuptools tables
+install:
+    - echo "Empty"
+script:
+  - source misura/canon/canondefine.sh
+  - nosetests misura.canon
+cache:
+  - apt
+  - directories:
+    - $HOME/.cache/pip
