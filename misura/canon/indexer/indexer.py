@@ -101,7 +101,7 @@ class FileSystemLock(object):
             return r
         t0 = time()
         while os.path.exists(self.path):
-            if t0-os.path.getctime(file) > self.stale_file_timeout:
+            if t0-os.path.getctime(self.path) > self.stale_file_timeout:
                 os.rmdir(self.path)
                 raise BaseException('Stale FileSystemLock detected: ' + self.path)
             if not block:
