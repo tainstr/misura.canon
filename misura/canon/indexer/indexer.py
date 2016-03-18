@@ -86,6 +86,8 @@ def tid():
     return threading.current_thread().ident
 
 class FileSystemLock(object):
+    stale_file_timeout = 10
+    
     def __init__(self,  path=False):
         self._lock = multiprocessing.Lock()
         self.path = path
@@ -99,6 +101,9 @@ class FileSystemLock(object):
             return r
         t0 = time()
         while os.path.exists(self.path):
+            if t0-os.path.getctime(file) > self.stale_file_timeout:
+                os.rmdir(self.path)
+                raise BaseException('Stale FileSystemLock detected: ' + self.path)
             if not block:
                 return False
             if timeout>0 and (time()-t0)>timeout:
