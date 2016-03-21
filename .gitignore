@@ -60,3 +60,7 @@ docs/_build/
 
 # PyBuilder
 target/
+/misura/canon/option/tests/out.csv
+/misura/canon/tests/storage/db
+/misura/canon/tests/storage/tmpdb
+/misura/canon/tests/storage/tmpfile
