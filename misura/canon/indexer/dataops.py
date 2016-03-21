@@ -249,12 +249,9 @@ No data will be evaluate if older than zerotime."""
                     continue
                 break
 
-            print 'get_where_list', path, cond, m, last, limit
             if last is None or len(last) == 0:
-                print 'FAILED SEARCH', path, cond, m, limit
                 return False
             last = last[0]
-        print 'done searching', path, last, len(y), x[last], y[last], m,  cond
         return last, x[last], y[last]
 
     def max(self, path):

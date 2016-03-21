@@ -1,20 +1,21 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 import unittest
-from misura import parameters as params
+
+from misura.canon.tests import testdir
 from misura.canon import indexer
 import shutil
 import os
 import tempfile
-import tables
+
 print 'Importing', __name__
 
-paths = [params.testdir + 'storage']
-dbPath = params.testdir + 'storage/db'
+paths = [testdir + 'storage']
+dbPath = testdir + 'storage/db'
 
 
 class SharedFile(unittest.TestCase):
-    path = params.testdir + 'storage/hsm_test' + params.ext
+    path = testdir + 'storage/hsm_test.h5' 
 
     def setUp(self):
         self.test_file = tempfile.mktemp('.h5')

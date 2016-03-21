@@ -85,34 +85,40 @@ def dbcom(func):
 def tid():
     return threading.current_thread().ident
 
+
 class FileSystemLock(object):
     stale_file_timeout = 10
-    
+
     def __init__(self,  path=False):
         self._lock = multiprocessing.Lock()
         self.path = path
-        
+
     def set_path(self, path):
         self.path = path
         if path:
             self.path += '.lock'
-        
+
     def acquire(self,  block=True,  timeout=0):
-        r=self._lock.acquire(block)
+        r = self._lock.acquire(block)
         if not r or not self.path:
             return r
         t0 = time()
+        try:
+            t1 = os.path.getctime(self.path)
+        except:
+            t1 = t0
         while os.path.exists(self.path):
-            if t0-os.path.getctime(self.path) > self.stale_file_timeout:
+            if t0 - t1 > self.stale_file_timeout:
                 os.rmdir(self.path)
-                raise BaseException('Stale FileSystemLock detected: ' + self.path)
+                raise BaseException(
+                    'Stale FileSystemLock detected: ' + self.path)
             if not block:
                 return False
-            if timeout>0 and (time()-t0)>timeout:
+            if timeout > 0 and (time() - t0) > timeout:
                 raise BaseException('Lock timed out')
         os.mkdir(self.path)
         return True
-        
+
     def release(self):
         if not self.path:
             return self._lock.release()
@@ -121,7 +127,6 @@ class FileSystemLock(object):
             raise BaseException('Releasing a released lock')
         os.rmdir(self.path)
         return self._lock.release()
-        
 
 
 class Indexer(object):
@@ -202,7 +207,8 @@ class Indexer(object):
         cur.execute("create table if not exists sync_approve " + syncTableDef)
         cur.execute("create table if not exists sync_error " + errorTableDef)
 
-        cur.execute("create table if not exists incremental_ids " + incrementalIdsTableDef)
+        cur.execute(
+            "create table if not exists incremental_ids " + incrementalIdsTableDef)
         conn.commit()
         return True
 
@@ -315,7 +321,8 @@ class Indexer(object):
                 self.log.debug('Tree configuration not found', file_path)
                 table.close()
                 return False
-            r = self._appendFile(table, file_path, add_uid_to_incremental_ids_table)
+            r = self._appendFile(
+                table, file_path, add_uid_to_incremental_ids_table)
         except:
             print_exc()
         if table:
@@ -329,7 +336,8 @@ class Indexer(object):
         cur = self.cur
         conf = getattr(table.root, 'conf', False)
         if '/userdata' in table:
-            active_version = str(table.get_node_attr('/userdata', 'active_version')).strip()
+            active_version = str(
+                table.get_node_attr('/userdata', 'active_version')).strip()
             if active_version:
                 version_node = getattr(table.root, active_version, False)
                 if version_node is not False:
@@ -424,9 +432,11 @@ class Indexer(object):
 
     def add_incremental_id(self, cursor, uid):
         try:
-            cursor.execute("insert into incremental_ids(uid) values (?)", (uid,))
+            cursor.execute(
+                "insert into incremental_ids(uid) values (?)", (uid,))
         except sqlite3.IntegrityError:
-            self.log.debug('uid ' + uid + ' already exists in incremental_ids table: no big deal')
+            self.log.debug(
+                'uid ' + uid + ' already exists in incremental_ids table: no big deal')
 
     def change_name(self, new_name, uid, hdf_file_name):
         if not new_name:
@@ -440,7 +450,6 @@ class Indexer(object):
         instrument_name = hdf_file.test.root.conf.attrs.instrument
         getattr(hdf_file.conf, instrument_name).measure['name'] = new_name
 
-
         hdf_file.save_conf()
         hdf_file.close()
 
@@ -448,10 +457,10 @@ class Indexer(object):
 
     @dbcom
     def change_name_on_database(self, new_name, uid):
-        self.cur.execute("update test set name = ? where uid = ?", (new_name, uid,))
+        self.cur.execute(
+            "update test set name = ? where uid = ?", (new_name, uid,))
         self.conn.commit()
         return len(self.cur.fetchall())
-
 
     def update(self):
         """Updates the database by inserting new files and removing deleted files"""
@@ -468,9 +477,12 @@ class Indexer(object):
 
     def _clear_file_path(self, relative_file_path):
         """Remove file in `relative_file_path` from db"""
-        self.log.debug('Removing obsolete database entry: ', relative_file_path)
-        e = self.cur.execute('delete from test where file=?', (relative_file_path,))
-        e = self.cur.execute('delete from sample where file=?', (relative_file_path,))
+        self.log.debug(
+            'Removing obsolete database entry: ', relative_file_path)
+        e = self.cur.execute(
+            'delete from test where file=?', (relative_file_path,))
+        e = self.cur.execute(
+            'delete from sample where file=?', (relative_file_path,))
         self.conn.commit()
         return True
 
@@ -511,7 +523,8 @@ class Indexer(object):
     def query(self, conditions={}):
         # FIXME: inter-thread #412
         if len(conditions) == 0:
-            self.cur.execute('SELECT * from test natural join incremental_ids ORDER BY zerotime DESC')
+            self.cur.execute(
+                'SELECT * from test natural join incremental_ids ORDER BY zerotime DESC')
         else:
             cnd = []
             vals = []
@@ -519,7 +532,8 @@ class Indexer(object):
                 cnd.append(k + ' like ?')
                 vals.append('%' + v + '%')
             cnd = ' AND '.join(cnd)
-            cmd = 'SELECT * from test natural join incremental_ids WHERE ' + cnd + 'ORDER BY zerotime DESC'
+            cmd = 'SELECT * from test natural join incremental_ids WHERE ' + \
+                cnd + 'ORDER BY zerotime DESC'
             self.log.debug('Executing', cmd, vals)
             self.cur.execute(cmd, vals)
         r = self.cur.fetchall()
@@ -553,9 +567,9 @@ class Indexer(object):
     def convert_to_full_path(self, file_path):
         if file_path.startswith("."):
             if file_path.startswith('.\\'):
-                file_path='/'.join(file_path.split('\\'))
+                file_path = '/'.join(file_path.split('\\'))
             dbdir = os.path.dirname(self.dbPath)
-            relative_path = [dbdir]+file_path[1:].split('/')
+            relative_path = [dbdir] + file_path[1:].split('/')
             relative_path = os.path.join(*relative_path)
             return relative_path
 

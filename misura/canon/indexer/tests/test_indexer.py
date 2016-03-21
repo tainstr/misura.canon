@@ -1,7 +1,6 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 import unittest
-from misura import parameters as params
 from misura.canon import indexer
 
 import os

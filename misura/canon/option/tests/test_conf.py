@@ -1,17 +1,12 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 import unittest
-from misura import parameters as params
 from misura.canon import option
+from misura.canon.tests import testdir
 
 
-c1 = params.testdir + 'storage/Conf.csv'
-c2 = params.testdir + 'storage/Conf2.csv'
-tmp = params.testdir + 'storage/tmpfile'
-db = params.testdir + 'storage/tmpdb'
+c1 = testdir + 'storage/Conf.csv'
 
-c3 = params.mdir + 'conf/MeasureFlex.csv'
-c4 = params.mdir + 'conf/Standard.csv'
 
 
 class Conf(unittest.TestCase):

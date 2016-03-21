@@ -5,10 +5,10 @@ import os
 from misura.canon import option
 from misura.canon.option import get_typed_cols, get_insert_cmd, base_col_def, print_tree
 import sqlite3
-from misura import parameters as params
+from misura.canon.tests import testdir
 
-db = params.testdir + 'storage/tmpdb'
-c1 = params.testdir + 'storage/Conf.csv'
+db = testdir + 'storage/tmpdb'
+c1 = testdir + 'storage/Conf.csv'
 
 
 def go(t):

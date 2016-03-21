@@ -2,16 +2,12 @@
 # -*- coding: utf-8 -*-
 import unittest
 from misura.canon import option
-from misura import parameters as params
+from misura.canon.tests import testdir
 
 
-c1 = params.testdir + 'storage/Conf.csv'
-c2 = params.testdir + 'storage/Conf2.csv'
-tmp = params.testdir + 'storage/tmpfile'
-
-
-c3 = params.mdir + 'conf/MeasureFlex.csv'
-c4 = params.mdir + 'conf/Standard.csv'
+c1 = testdir + 'storage/Conf.csv'
+c2 = testdir + 'storage/Conf2.csv'
+tmp = testdir + 'storage/tmpfile'
 
 
 class CsvStore(unittest.TestCase):
@@ -33,18 +29,18 @@ class CsvStore(unittest.TestCase):
 #	@unittest.skip('')
     def test_imports(self):
         st = option.CsvStore(kid='ciao')
-        st.read_file(c3)
+        st.read_file(c1)
 
 #	@unittest.skip('')
     def test_multiline(self):
         """Controlla che lettura e salvataggio multiline funzionino correttamente"""
         st = option.CsvStore(kid='ciao')
         # Standard contiene molti multiline per via degli Script
-        st.read_file(c4)
-        opt0 = st.desc['maxT']
+        st.read_file(c2)
+        opt0 = st.desc['maxLevel']
         st.write_file('out.csv')
         st.read_file('out.csv')
-        opt1 = st.desc['maxT']
+        opt1 = st.desc['maxLevel']
         self.assertEqual(opt0, opt1)
         print opt0
         print opt1

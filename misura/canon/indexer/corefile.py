@@ -5,10 +5,9 @@
 ext = '.h5'
 
 import os
-from cPickle import dumps, loads
+from cPickle import dumps
 from traceback import format_exc
 import functools
-import tables
 from tables.nodes import filenode
 from .. import csutil
 from traceback import print_exc

@@ -2,13 +2,14 @@
 # -*- coding: utf-8 -*-
 import os
 import unittest
-from misura.canon import reference
+
 import tempfile
 import tables
 import numpy as np
+
 from misura.canon import indexer
 from misura.canon.csutil import flatten as flat
-
+from misura.canon import reference
 #@unittest.skip('')
 
 

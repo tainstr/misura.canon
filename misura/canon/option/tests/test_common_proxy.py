@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 import unittest
-from misura import parameters as params
+
 from misura.canon.option import common_proxy
 
 class FakeProxy():

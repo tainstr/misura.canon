@@ -1,0 +1,58 @@
+#############
+## General Analytical Options
+#############
+priority=>0|;|handle=>'name'|;|name=>'Analyzer'|;|current=>'HSM Image Analyzer'|;|factory_default=>'dummy name'|;|type=>'String'|;|attr=>['ReadOnly']
+
+handle=>'ExcessROI'|;|name=>'ROI % Area Excess'|;|current=>60|;|maximum=>100|;|step=>1|;|minimum=>20|;|type=>'Integer'
+handle=>'VarROI'|;|name=>'ROI Maximum % variability between frames'|;|current=>1|;|maximum=>50|;|step=>1|;|minimum=>0|;|type=>'Integer'
+handle=>'DrawROI'|;|name=>'Draw ROI'|;|current=>False|;|type=>'Boolean'
+
+handle=>'Stats'|;|name=>'Draw analysis statistics'|;|current=>False|;|factory_default=>False|;|type=>'Boolean'
+
+# Total Contours drawing
+handle=>'Contours'|;|name=>'View total detected Suzuki Contours (SC)'|;|current=>False|;|factory_default=>False|;|type=>'Boolean'
+handle=>'extColor'|;|name=>'SC External region color'|;|maximum=>255|;|current=>255|;|step=>1|;|minimum=>0|;|factory_default=>255|;|type=>'Integer'
+handle=>'holeColor'|;|name=>'SC Hole color'|;|maximum=>255|;|current=>0|;|step=>1|;|minimum=>0|;|factory_default=>0|;|type=>'Integer'
+handle=>'maxLevel'|;|name=>'SC max level of contours drawed'|;|maximum=>255|;|current=>5|;|step=>1|;|minimum=>-1|;|factory_default=>0|;|type=>'Integer'
+
+# Longest contour drawing
+handle=>'DrawLongest'|;|name=>'Show longest contour'|;|current=>False|;|factory_default=>False|;|type=>'Boolean'
+handle=>'bound'|;|name=>'Image borders for contour exclusion'|;|maximum=>100|;|current=>5|;|step=>1|;|minimum=>0|;|type=>'Integer'
+
+
+###
+# Sample Analysis
+###
+
+handle=>'DrawWH'|;|name=>'Draw Base and Height'|;|current=>False|;|type=>'Boolean'
+handle=>'DrawAutorotated'|;|name=>'Draw Autorotated Contour'|;|current=>False|;|type=>'Boolean'
+
+handle=>'PreRotation'|;|name=>'Perform contour pre-rotation'|;|current=>True|;|type=>'Boolean'
+handle=>'dRes'|;|name=>'Derivative resolution (% length)'|;|maximum=>3|;|current=>0.5|;|step=>0.01|;|minimum=>0.01|;|type=>'Float'
+handle=>'Refining'|;|name=>'Sample detection refining (% length)'|;|maximum=>30|;|current=>10|;|step=>1|;|minimum=>0|;|type=>'Integer'
+
+
+
+# Sphericity
+handle=>'CalcSphericity'|;|name=>'Calculate sphericity'|;|current=>True|;|type=>'Boolean'
+handle=>'DrawCircle'|;|name=>'Draw best approximating circle'|;|current=>True|;|type=>'Boolean'
+handle=>'CircleFitPrecision'|;|name=>'Circle fitting precision (% of perimeter to use)'|;|maximum=>100|;|current=>20|;|step=>1|;|minimum=>1|;|type=>'Integer'
+handle=>'CircleFitIterations'|;|name=>'Circle fitting iterations for Levenberg-Marquardt'|;|maximum=>5000|;|current=>500|;|step=>1|;|minimum=>50|;|type=>'Integer'
+handle=>'DrawCircle'|;|name=>'Draw circle fit'|;|current=>False|;|type=>'Boolean'
+
+# Roughness
+handle=>'CalcRoughness'|;|name=>'Calculate roughness'|;|current=>True|;|type=>'Boolean'
+handle=>'RoughnessPrecision'|;|name=>'Roughness knots number for spline approximation (% perimeter)'|;|maximum=>100|;|current=>10|;|step=>1|;|minimum=>1|;|type=>'Integer'
+handle=>'RoughnessGrade'|;|name=>'Roughness interpolation grade for B-spline'|;|maximum=>5|;|current=>1|;|step=>1|;|minimum=>1|;|type=>'Integer'
+
+# Derivates drawing (developer options)
+handle=>'DrawDerivate'|;|name=>'Show contour derivative (D)'|;|current=>'None'|;|options=>['None','Mixed','X','Y']|;|type=>'Chooser'
+handle=>'order'|;|name=>'D order'|;|maximum=>2|;|current=>1|;|step=>1|;|minimum=>1|;|type=>'Integer'
+handle=>'gain'|;|name=>'D gain in graph'|;|maximum=>100|;|current=>0|;|step=>1|;|minimum=>0|;|type=>'Integer'
+
+# Findbase
+handle=>'FindBaseHist'|;|name=>'Find base using histogram method (FBH)'|;|current=>False|;|type=>'Boolean'
+handle=>'fbhRes'|;|name=>'FBH resolution (pixels)'|;|maximum=>480|;|current=>1|;|step=>1|;|minimum=>1|;|type=>'Integer'
+
+
+# ... Other configuration options are added at runtime.

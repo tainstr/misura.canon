@@ -1,0 +1,61 @@
+handle=>'name'|;|name=>'Choose a name'|;|current=>'Simulator'|;|factory_default=>'dummy name'|;|type=>'String'
+handle=>'comment'|;|name=>'Add a comment'|;|current=>'dummy com'|;|factory_default=>'dummy com'|;|type=>'String'
+
+
+handle=>'devpath'|;|name=>'Device path'|;|current=>'none'|;|factory_default=>False|;|type=>'ReadOnly'
+handle=>'dev'|;|name=>'Device node'|;|current=>'dummy name'|;|factory_default=>'dummy name'|;|type=>'ReadOnly'
+
+
+handle=>'temp'|;|name=>'Temperature'|;|current=>25|;|type=>'Float'|;|attr=>['History']
+handle=>'power'|;|name=>u'Power'|;|current=>0|;|step=>0.1|;|factory_default=>0|;|min=>0|;|max=>100|;|type=>'Float'|;|attr=>['History']
+
+handle=>'Ta'|;|name=>u'Room Temperature'|;|current=>25|;|type=>'Float'|;|attr=>['History']
+handle=>'Terr'|;|name=>u'Read error'|;|current=>2|;|type=>'Float'|;|attr=>['History']
+handle=>'C'|;|name=>u'Thermal Capacity'|;|current=>110000|;|type=>'Integer'|;|attr=>['History']
+handle=>'D'|;|name=>u'Dissipative Coefficient'|;|current=>70|;|type=>'Float'|;|attr=>['History']
+handle=>'Derr'|;|name=>u'Dissipative error'|;|current=>1|;|type=>'Float'|;|attr=>['History']
+handle=>'PQF'|;|name=>u'Power-to-Heat conversion factor'|;|current=>1500|;|type=>'Float'|;|attr=>['History']
+handle=>'delay'|;|name=>u'Heat propagation delay'|;|current=>600|;|type=>'Float'|;|attr=>['History']
+handle=>'Q'|;|name=>u'Internal Heat'|;|current=>0|;|type=>'Float'|;|attr=>['History']
+handle=>'Qe'|;|name=>u'Effective Heat'|;|current=>0|;|type=>'Float'|;|attr=>['History']
+handle=>'epf'|;|name=>u'Exponential propagation factor'|;|current=>3|;|type=>'Float'
+handle=>'slp'|;|name=>u'Iteration interval'|;|current=>0.1|;|type=>'Float'
+
+handle=>'scale'|;|name=>u'Time acceleration factor'|;|current=>1|;|type=>'Float'
+
+handle=>u'Perturbation_Ta'|;|name=>u'Perturbate Environmental Temperature'|;|current=>True|;|type=>'Boolean'
+handle=>u'Perturbation_TaAmp'|;|name=>u'Env.T. Amplitude (°C)'|;|current=>50|;|type=>'Float'
+handle=>u'Perturbation_TaPeriod'|;|name=>u'Env.T. Period (sec)'|;|current=>600|;|type=>'Float'
+handle=>u'Perturbation_TaPhase'|;|name=>u'Env.T. Phase (sec)'|;|current=>0|;|type=>'Float'
+handle=>u'Perturbation_Ta0'|;|name=>u'Env.T. Amplitude (°C)'|;|current=>50|;|type=>'Float'
+
+handle=>u'Perturbation_D'|;|name=>u'Perturbate Dissipative Constant'|;|current=>True|;|type=>'Boolean'
+handle=>u'Perturbation_DAmp'|;|name=>u'D Amplitude (°C)'|;|current=>30|;|type=>'Float'
+handle=>u'Perturbation_DPeriod'|;|name=>u'D Period (sec)'|;|current=>900|;|type=>'Float'
+handle=>u'Perturbation_DPhase'|;|name=>u'D Phase (sec)'|;|current=>50|;|type=>'Float'
+handle=>u'Perturbation_D0'|;|name=>u'D Amplitude (°C)'|;|current=>50|;|type=>'Float'
+
+
+handle=>u'Perturbation_epf'|;|name=>u'Perturbate Exponential propagation factor'|;|current=>True|;|type=>'Boolean'
+handle=>u'Perturbation_epfAmp'|;|name=>u'EPF Amplitude (°C)'|;|current=>2|;|type=>'Float'
+handle=>u'Perturbation_epfPeriod'|;|name=>u'EPF Period (sec)'|;|current=>1200|;|type=>'Float'
+handle=>u'Perturbation_epfPhase'|;|name=>u'EPF Phase (sec)'|;|current=>600|;|type=>'Float'
+handle=>u'Perturbation_epf0'|;|name=>u'EPF Amplitude (°C)'|;|current=>50|;|type=>'Float'
+
+
+handle=>u'Perturbation_delay'|;|name=>u'Perturbate Delay time'|;|current=>True|;|type=>'Boolean'
+handle=>u'Perturbation_delayAmp'|;|name=>u'Delay Amplitude (°C)'|;|current=>300|;|type=>'Float'
+handle=>u'Perturbation_delayPeriod'|;|name=>u'Delay Period (sec)'|;|current=>800|;|type=>'Float'
+handle=>u'Perturbation_delayPhase'|;|name=>u'Delay Phase (sec)'|;|current=>200|;|type=>'Float'
+handle=>u'Perturbation_delay0'|;|name=>u'Delay Amplitude (°C)'|;|current=>110|;|type=>'Float'
+
+handle=>'tcs'|;|name=>'Sample Thermocouple'|;|writeLevel=>1|;|options=>['heatload', 'default', 'simulator/heatload::temp']|;|flags=>{}|;|readLevel=>0|;|type=>'RoleIO'|;|attr=>[]
+
+options=>['heatload', 'default', 'simulator/heatload::power']|;|handle=>'powerOut'|;|name=>'Power Output'|;|writeLevel=>1|;|flags=>{}|;|readLevel=>0|;|type=>'RoleIO'|;|attr=>[]
+
+handle=>u'meta'|;|name=>u'Meta sample'|;|current=>{'value':1,'time':2,'temp':3}|;|type=>'Meta'
+handle=>u'point'|;|name=>u'Point sample'|;|current=>[1,2]|;|type=>'Point'
+handle=>u'rect'|;|name=>u'Rect sample'|;|current=>[1,2,3,4]|;|type=>'Rect'
+
+
+

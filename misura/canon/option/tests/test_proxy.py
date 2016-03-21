@@ -1,11 +1,11 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 import unittest
-from misura import parameters as params
 from misura.canon import indexer
 from misura.canon import dataimport
+from misura.canon.tests import testdir
 
-path = params.testdir + 'storage/hsm_test' + params.ext
+path = testdir + 'storage/hsm_test.h5'
 # path='/opt/shared_data/hsm/test_polvere_18.h5'
 
 

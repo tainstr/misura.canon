@@ -1,12 +1,13 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 import unittest
-from misura import parameters as params
+
+from misura.canon.tests import testdir
 from misura.canon import indexer
 print 'Importing test_indexer'
 
-paths = [params.testdir + 'storage']
-dbPath = params.testdir + 'storage/db'
+paths = [testdir + 'storage']
+dbPath = testdir + 'storage/db'
 
 
 def setUpModule():

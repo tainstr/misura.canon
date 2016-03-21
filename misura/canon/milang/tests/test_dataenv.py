@@ -4,10 +4,9 @@
 ura Language."""
 import unittest
 import numpy
-from misura import utils_testing as ut
 from misura.canon import milang, indexer
-from misura.canon import logger
-from misura import parameters as params
+
+from misura.canon.tests import testdir, DummyInstrument, verify_point
 
 np = numpy
 
@@ -48,7 +47,7 @@ mi.t(i)
 """
 
 # FIXME: for this to work, we need real data here!
-path = params.testdir + 'storage/hsm_test' + params.ext
+path = testdir + 'storage/hsm_test.h5'
 
 
 class DataEnvironment(unittest.TestCase):
@@ -65,16 +64,16 @@ class DataEnvironment(unittest.TestCase):
     def test_simple(self):
         mi = milang.MiLang(data_scr, env=self.env)
         self.assertTrue(mi.code)
-        mi.ins_env.obj = ut.DummyInstrument()
+        mi.ins_env.obj = DummyInstrument()
         mi.do()
         print 'verify point', mi.env.time, mi.env.temp, mi.env.value
-        ut.verify_point(self, mi.env, 1402241667.782006,
+        verify_point(self, mi.env, 1402241667.782006,
                         20.01248106656483,  215.33565530223945, 'Ciao')
 
     def test_Select(self):
         mi = milang.MiLang(cooling0_scr, env=self.env)
         self.assertTrue(mi.code)
-        mi.ins_env.obj = ut.DummyInstrument()
+        mi.ins_env.obj = DummyInstrument()
         mi.do()
 
 
