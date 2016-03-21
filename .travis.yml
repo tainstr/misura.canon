@@ -25,7 +25,6 @@ install:
   # Replace dep1 dep2 ... with your dependencies
   - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION numpy scipy pytables 
   - source activate test-environment
-  - python setup.py install
 script:
   - source misura/canon/canondefine.sh
   - nosetests-2.7
