@@ -16,7 +16,7 @@ install:
   - conda update -q --yes conda
   # Useful for debugging any issues with conda
   - conda info -a
-  - conda create -q -n test-environment python=2.7 nose numpy scipy pytables pycrypto
+  - conda create -q -n test-environment python=2.7 numpy scipy pytables nose
 script:
   - source activate test-environment
   - python -c "import tables; print dir(tables)" 
