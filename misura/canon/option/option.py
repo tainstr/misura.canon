@@ -445,7 +445,7 @@ class Option(object):
             old_def = [h[1] for h in old['current'][0]]
             if new_def != old_def:
                 print 'Incompatible table definition', self['handle'], new_def, old_def
-                self._entry['current']=[old['current'][0]]
+                self._entry['current']=[self['current'][0]]
         # No type change: exit
         if ot == nt:
             return

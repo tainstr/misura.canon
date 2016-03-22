@@ -15,7 +15,7 @@ def setUpModule():
 
 
 class FileManager(unittest.TestCase):
-    uid = 'd03bc400d91fd0a4f2399571f8052808'
+    uid = '5ed0a9b710d7f3030d0af3380e7129fe'
 
     @classmethod
     def setUpClass(c):

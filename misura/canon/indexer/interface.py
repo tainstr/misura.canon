@@ -129,6 +129,7 @@ class SharedFile(CoreFile, DataOperator):
 
     def set_version(self, newversion=-1):
         """Set the current version to `newversion`"""
+        # Load the last used version
         if newversion < 0:
             self._lock.acquire()
             if '/userdata' in self.test:
@@ -139,7 +140,7 @@ class SharedFile(CoreFile, DataOperator):
 
         if not isinstance(newversion, basestring):
             newversion = '/ver_{}'.format(newversion)
-
+        
         if self.version == newversion:
             return True
 

@@ -75,7 +75,9 @@ class SharedFile(unittest.TestCase):
         shared_file.load_conf()
         self.assertEqual(shared_file.conf['name'], nname)
         shared_file.set_version(0)
-        # -1 should load latest version
+        self.assertEqual(shared_file.get_version(), '/ver_0')
+        shared_file.set_version(1)
+        # -1 should load lastly active version (0)
         shared_file.set_version(-1)
         self.assertEqual(shared_file.get_version(), '/ver_1')
         self.assertEqual(shared_file.conf['name'], nname)

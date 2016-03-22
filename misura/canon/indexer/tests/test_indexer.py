@@ -37,6 +37,7 @@ class Indexer(unittest.TestCase):
         self.indexer = indexer.Indexer(paths=paths)
         self.indexer.open_db(dbPath)
         self.indexer.close_db()
+        self.indexer.rebuild()
 
     def tearDown(self):
         os.remove(dbPath)
@@ -47,7 +48,7 @@ class Indexer(unittest.TestCase):
 
     def test_header(self):
         header = self.indexer.header()
-        self.assertEqual(['file', 'serial', 'uid', 'id', 'date', 'instrument',
+        self.assertEqual(['file', 'serial', 'uid', 'id', 'zerotime', 'instrument',
                           'flavour', 'name', 'elapsed', 'nSamples', 'comment', 'verify', 'incremental_id'], header)
 
     def test_query_returns_all_files(self):

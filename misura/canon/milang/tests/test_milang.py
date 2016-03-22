@@ -23,7 +23,7 @@ x,y=mi.xy('w')
 
 class MiLang(unittest.TestCase):
     mi = milang.MiLang(data_scr)
-
+    @unittest.skip('TODO')
     def test_todo(self):
         assert False
 

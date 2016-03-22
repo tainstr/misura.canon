@@ -69,16 +69,20 @@ class ListStore(unittest.TestCase):
     def test_read_list(self):
         s = option.ListStore(self.lst)
         self.assertTrue(s.desc.has_key('opt'))
+        s.desc['opt']['kid'] = self.teor['opt']['kid']
         self.assertEqual(s.desc, self.teor)
 
     def test_read(self):
         s = option.ListStore.read(self.lst)
         self.assertTrue(s.has_key('opt'))
+        # Reset autokid
+        s['opt']['kid'] = self.teor['opt']['kid']
         self.assertEqual(s, self.teor)
         # Current updating  feature
         self.lst.append({'opt': 1})
         self.teor['opt']['current'] = 1
         s = option.ListStore.read(self.lst)
+        s['opt']['kid'] = self.teor['opt']['kid']
         self.assertEqual(s, self.teor)
 
 
