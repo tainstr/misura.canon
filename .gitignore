@@ -64,3 +64,6 @@ target/
 /misura/canon/tests/storage/db
 /misura/canon/tests/storage/tmpdb
 /misura/canon/tests/storage/tmpfile
+/misura/canon/option/out.csv
+/misura/canon/out.csv
+/misura/out.csv

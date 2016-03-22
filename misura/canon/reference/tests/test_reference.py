@@ -42,8 +42,6 @@ def mkfile():
     f.close()
     return indexer.SharedFile(path)
 
-#@unittest.skip('')
-
 
 class OutFile(unittest.TestCase):
 
@@ -52,6 +50,11 @@ class OutFile(unittest.TestCase):
     refClass = False
     _outfile = False
     keep = False
+    __test__ = False #nosetests will ignore this
+    
+    def rand(self):
+        """Reimplement in specific files to obtain random data"""
+        assert False
 
     def mkfile(self):
         self.outfile = mkfile()
@@ -125,19 +128,16 @@ class OutFile(unittest.TestCase):
         print 'copied', cp
 
 
-#@unittest.skip('')
 class Array(OutFile):
     refClass = reference.Array
-
+    __test__ = True
     @classmethod
     def rand(cls, t):
         return [t, t * 10]
 
-#@unittest.skip('')
-
 
 class VariableLength(object):
-
+    
     def test_compress(self):
         data = np.random.random(10, 10)
         dataz = reference.VariableLength.compress(data)
@@ -146,6 +146,7 @@ class VariableLength(object):
 
 
 class Rect(OutFile):
+    __test__ = True
     refClass = reference.Rect
 
     @classmethod
@@ -165,6 +166,7 @@ class Meta(OutFile):
 
 @unittest.skip('')
 class Image(OutFile):
+    __test__ = True
     refClass = reference.Image
 
     @classmethod
@@ -195,6 +197,7 @@ class Image(OutFile):
 
 
 class Profile(OutFile):
+    __test__ = True
     refClass = reference.Profile
 
     @classmethod
@@ -221,6 +224,7 @@ class Profile(OutFile):
 
 
 class Binary(OutFile):
+    __test__ = True
     refClass = reference.Binary
 
     @classmethod
@@ -229,7 +233,7 @@ class Binary(OutFile):
         if t < 0:
             t = np.random.random() * 1000
         idat = np.random.random(1000) * 255
-        idat = idat.astype('I8')
+        idat = idat.astype(np.uint8)
         data = ''.join(map(chr, idat))
         return t, data
 
@@ -241,6 +245,7 @@ class Binary(OutFile):
 
 
 class Log(OutFile):
+    __test__ = True
     refClass = reference.Log
 
     @classmethod

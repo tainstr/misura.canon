@@ -3,7 +3,6 @@
 from ..parameters import cfilter
 from reference import Reference
 import numpy as np
-from scipy.interpolate import interp1d, LSQUnivariateSpline
 
 
 class Array(Reference):
