@@ -15,7 +15,7 @@ def list_references(parent, h=False):
     and append their path to `h`,"""
     if h is False:
         h = {}
-    print 'Listing references', parent._v_pathname
+    #print 'Listing references', parent._v_pathname
     for child in parent._f_listNodes():
         # Do not list versioned paths
         if child._v_pathname.startswith('/ver_'):
