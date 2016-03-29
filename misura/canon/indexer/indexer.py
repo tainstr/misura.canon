@@ -15,7 +15,7 @@ import threading
 import multiprocessing
 import datetime
 
-from misura.canon.csutil import unlockme
+from misura.canon.csutil import unlockme, lockme
 
 import tables
 from tables.nodes import filenode
@@ -131,7 +131,8 @@ class FileSystemLock(object):
 
 class Indexer(object):
     public = ['rebuild', 'searchUID', 'update', 'header', 'listMaterials',
-              'query', 'remove', 'get_len', 'list_tests', 'get_dbpath']
+              'query', 'remove', 'get_len', 'list_tests', 'get_dbpath',
+              'refresh']
 #   cur=False
 #   conn=False
     addr = 'LOCAL'
@@ -285,6 +286,7 @@ class Indexer(object):
         self.recalculate_incremental_ids()
 
         return 'Done. Found %i tests.' % len(tests_filenames)
+        
 
     @dbcom
     def recalculate_incremental_ids(self):
@@ -462,10 +464,23 @@ class Indexer(object):
         self.conn.commit()
         return len(self.cur.fetchall())
 
-    def update(self):
+    def refresh(self):
         """Updates the database by inserting new files and removing deleted files"""
-        # TODO
-        pass
+        filesystem = self.tests_filenames_sorted_by_date()
+        database = self.execute_fetchall("select file, uid from test")
+        for relative_file_path, uid in database:
+            absolute_file_path = self.convert_to_full_path(relative_file_path)
+            if not os.path.exists(absolute_file_path):
+                self.log.info("Deleting references to non-existent test data:", absolute_file_path, uid)
+                self.clear_file_path(relative_file_path)
+                continue
+            if absolute_file_path in filesystem:
+                filesystem.remove(absolute_file_path)
+        self.log.debug("Done clearing missing files. Appending {} new files.".format(len(filesystem)))
+        for absolute_file_path in filesystem:
+            self.appendFile(absolute_file_path)
+        self.log.debug('Done updating index.')
+            
 
     @dbcom
     def remove(self, uid):
@@ -485,6 +500,11 @@ class Indexer(object):
             'delete from sample where file=?', (relative_file_path,))
         self.conn.commit()
         return True
+    
+    @dbcom
+    def clear_file_path(self, relative_file_path):
+        """Implicit connection and locked version of _clear_file_path"""
+        self._clear_file_path(relative_file_path)
 
     @dbcom
     def remove_file(self, file_path):
