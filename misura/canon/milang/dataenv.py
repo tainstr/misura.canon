@@ -137,6 +137,7 @@ class DataEnvironment(BaseEnvironment):
         """Limit every function between time start and time end"""
         self.limit = (start, end)
         self.hdf.set_time_limit(start, end)
+        print 'Activated limit', self.limit
         return True
 
     def Start(self):

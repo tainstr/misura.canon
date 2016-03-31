@@ -95,7 +95,7 @@ class Scriptable(object):
             print 'INTERPRETING', handle, exe, exe.env._hdf, exe.obj_env._hdf,  exe.ins_env._hdf, exe.kiln_env._hdf, exe.script_env._hdf, exe.measure_env._hdf
             u = exe.eval(self, ins=ins)
             r = r and u
-            print 'DONE', handle, r
+            print 'DONE', handle, r, exe.env.time, exe.env.temp, exe.env.value
         return r
 
     def validate_script(self, handle):

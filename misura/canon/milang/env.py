@@ -67,7 +67,8 @@ class BaseEnvironment(MiLangEnvironment):
     def Value(self, v):
         self.value = float(v)
 
-    def Log(self, s):
+    def Log(self, *s):
+        s=' '.join([str(e) for e in s])
         self.comment = str(s)
         print self.comment
 
