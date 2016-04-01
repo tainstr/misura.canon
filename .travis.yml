@@ -17,8 +17,11 @@ install:
   - conda create -q -n test-environment python=2.7 nose numpy scipy pytables pycrypto
 script:
   - source activate test-environment
-  - nosetests
+  - pip install python-coveralls
+  - nosetests --with-coverage --cover-package=misura
 cache:
   - apt
   - directories:
     - $HOME/.cache/pip
+after_success:
+  - coveralls
