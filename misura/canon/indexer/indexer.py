@@ -28,6 +28,10 @@ from misura.canon.indexer.interface import SharedFile
 testColumn = ('file', 'serial', 'uid', 'id', 'zerotime', 'instrument',
               'flavour', 'name', 'elapsed', 'nSamples', 'comment', 'verify')
 
+col_uid = testColumn.index('uid')
+col_serial = testColumn.index('serial')
+
+
 columns_to_translate = testColumn + ('incremental_id',)
 
 testColumnDefault = ['file', 'serial', 'uid', 'id', 'zerotime',
@@ -131,7 +135,7 @@ class FileSystemLock(object):
 
 class Indexer(object):
     public = ['rebuild', 'searchUID', 'update', 'header', 'listMaterials',
-              'query', 'remove', 'get_len', 'list_tests', 'get_dbpath',
+              'query', 'remove_uid', 'get_len', 'list_tests', 'get_dbpath',
               'refresh']
 #   cur=False
 #   conn=False
@@ -482,12 +486,12 @@ class Indexer(object):
         self.log.debug('Done updating index.')
             
 
-    @dbcom
-    def remove(self, uid):
-        fn = self._searchUID(uid)
+    def remove_uid(self, uid):
+        fn = self.searchUID(uid)
         if not fn:
             self.log.error('Impossible delete:', uid, 'not found.')
             return False
+        self.log.debug('Removing file by uid:', uid, fn)
         return self.remove_file(fn)
 
     def _clear_file_path(self, relative_file_path):
@@ -508,10 +512,14 @@ class Indexer(object):
 
     @dbcom
     def remove_file(self, file_path):
-        r = self._clear_by_file_path(file_path)
+        self._clear_file_path(file_path)
         if os.path.exists(file_path):
+            self.log.debug('Removing existing data file:', file_path)
             os.remove(file_path)
-        return r
+            return True
+        else:
+            self.log.info('Asked to delete a non-existing file:', file_path)
+            return False
 
     @dbcom
     def header(self):
