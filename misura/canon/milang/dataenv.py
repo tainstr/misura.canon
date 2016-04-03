@@ -52,12 +52,7 @@ class DataEnvironment(BaseEnvironment):
         else:
             curve = self.prefix + curve
         # Activate time limits for current curve
-        if self.limit != (0, -1):
-            print '_cname enabling limit', curve, self.limit
-            self.hdf.set_limit(curve, True)
-        else:
-            print '_cname disabling limit', curve, self.limit
-            self.hdf.set_limit(curve, False)
+        self.hdf.set_limit(curve)
         print '_cname returning', curve
         return curve
 
@@ -66,7 +61,7 @@ class DataEnvironment(BaseEnvironment):
         The curve is already sliced.
         If `curve` is not a string, returns the unchanged object."""
         curve = self._cname(curve0)
-        if not curve:
+        if curve is False:
             return curve0
         print 'getting column', curve
         c = self.hdf.col(curve)
@@ -91,7 +86,7 @@ class DataEnvironment(BaseEnvironment):
             pt = self.AtTime('T', t)
         self.t(pt[0])
         self.T(pt[1])
-        if not curve:
+        if curve is False:
             return
         val = self.At(curve, t)
         self.Value(val)
@@ -188,9 +183,10 @@ class DataEnvironment(BaseEnvironment):
     def minmax(self, curve0, op=1):
         """Search global minimum/maximum value of curve."""
         curve = self._cname(curve0)
-        if not curve:  # curve is array
+        if curve is False:  # curve is array
             ops = (min, max)
-            return ops[op](curve0[self.limit[0]:self.limit[1]])
+            #FIXME: time limits are not applied in this case!
+            return ops[op](curve0)
         else:  # curve is an hdf path
             ops = (self.hdf.min, self.hdf.max)
             idx, t, v = ops[op](curve)
@@ -207,9 +203,10 @@ class DataEnvironment(BaseEnvironment):
     def Ini(self, curve):
         """Initial value of curve"""
         c = self._cname(curve)
-        if not c:
+        if c is False:
             return curve[0]
-        return self.hdf.col(c, 0)
+        limit = self.hdf.get_limit(c)
+        return self.hdf.col(c, limit.start)
 
     def Equals(self, curve0, val):
         """Returns time of curve where its value is val"""
@@ -229,12 +226,14 @@ class DataEnvironment(BaseEnvironment):
         curve = self._cname(curve0)
         if curve is not False:
             return self.hdf.drops(curve, val)
+        # TODO: array was passed
 
     def Raises(self, curve0, val):
         """Returns time where curve value raises above val"""
         curve = self._cname(curve0)
         if curve is not False:
             return self.hdf.rises(curve, val)
+        # TODO: array was passed
 
     def Len(self, curve0):
         """Length of the curve, according to the current selection"""

@@ -5,7 +5,6 @@ API for common data operations on local or remote HDF files.
 """
 
 from scipy.interpolate import UnivariateSpline, interp1d
-import tables
 import numpy as np
 import functools
 import numexpr as ne
@@ -17,9 +16,8 @@ ne.set_num_threads(8)
 
 class DataOperator(object):
     _zerotime = -1
-    tlimit = False
-    limit = {}
-    limit_enabled = set([])
+    tlimit = False # Global time limit
+    limit = {} # Cached time limits
 
     @property
     def zerotime(self):
@@ -40,6 +38,7 @@ No data will be evaluate if older than zerotime."""
         return self.zerotime
 
     def set_time_limit(self, start_time=0, end_time=-1):
+        """Set global time limit"""
         if start_time == 0 and end_time == -1:
             self.tlimit = False
             self.limit = {}
@@ -58,19 +57,13 @@ No data will be evaluate if older than zerotime."""
         return self.tlimit
 
     @lockme
-    def set_limit(self, path, enable=False):
-        """Enable time limits for data operations on `path`."""
-        # unbound get_time
-        if path in self.limit_enabled:
-            self.limit_enabled.remove(path)
-        if not enable:
-            return enable
+    def set_limit(self, path):
+        """Enable time limits for data operations on `path`"""
         if not self.tlimit or self.tlimit == (0, -1):
             print 'no time limits defined'
             self.tlimit = False
             return False
         if self.limit.has_key(path):
-            self.limit_enabled.add(path)
             print 'returning cached limit', path, self.limit[path]
             return self.limit[path]
 
@@ -82,14 +75,11 @@ No data will be evaluate if older than zerotime."""
             end = None
         print 'enabled limit', path, start, end
         self.limit[path] = slice(start, end)
-        self.limit_enabled.add(path)
-        return enable
+        return self.limit[path]
 
     def get_limit(self, path):
         """Get current time and index limits for curve path"""
         if not self.tlimit:
-            return False
-        if path not in self.limit_enabled:
             return False
         r = self.limit.get(path, False)
         if r is False:
@@ -97,8 +87,7 @@ No data will be evaluate if older than zerotime."""
                 self._lock.release()
             except:
                 pass
-            self.set_limit(path, True)
-            return self.limit[path]
+            return self.set_limit(path)
         return r
 
     def _xy(self, path=False, arr=False):
@@ -214,7 +203,7 @@ No data will be evaluate if older than zerotime."""
         print 'searching in ', path, cond
         tab = self._get_node(path)
         x, y = tab.cols.t, tab.cols.v
-        limit = self.limit.get(path, slice(None, None, None))
+        limit = self.get_limit(path)
         y, m = op(y)
         last = -1
         # Handle special cases
@@ -292,6 +281,10 @@ No data will be evaluate if older than zerotime."""
 
     def _get_time(self, path, t, get=False, seed=None):
         """Optimized search of the nearest index to time `t` using the getter function `get` and starting from `seed` index."""
+        if self.tlimit and t<self.tlimit[0]:
+            t = self.tlimit[0]
+        elif self.tlimit and t> self.tlimit[1]:
+            t = self.tlimit[1]
         n = self._get_node(path)
 #		lim=self.get_limit(path)
 #		if lim:
