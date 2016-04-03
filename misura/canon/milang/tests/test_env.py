@@ -14,6 +14,10 @@ def setUpModule():
 
 class BaseEnvironment(unittest.TestCase):
     env = milang.BaseEnvironment()
+    
+    def test_Log(self):
+        self.env.Log('hello', 1, None)
+        self.assertEqual(self.env.comment, 'hello 1 None')
 
     def test_Value(self):
         self.env.value = 1

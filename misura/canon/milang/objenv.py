@@ -37,12 +37,12 @@ class InterfaceEnvironment(DataEnvironment):
         else:
             obj.log.debug('object fullpath not found!', obj)
 
-    def Log(self, s):
+    def Log(self, *s):
         """Log a message both on MiLang and on the interfaced object"""
-        DataEnvironment.Log(self, s)
+        DataEnvironment.Log(self, *s)
         log = getattr(self.obj, 'log', False)
         if log:
-            self.obj.log(s)
+            self.obj.log(*s)
 
     def Opt(self, name):
         """Returns any option by its `name`"""

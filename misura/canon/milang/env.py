@@ -70,7 +70,7 @@ class BaseEnvironment(MiLangEnvironment):
     def Log(self, *s):
         s=' '.join([str(e) for e in s])
         self.comment = str(s)
-        print self.comment
+        return self.comment
 
     def Where(self, cond):
         """Returns the first truth value of cond"""

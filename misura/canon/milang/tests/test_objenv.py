@@ -1,10 +1,10 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-"""Test per Mis
-ura Language."""
+"""Test for Misura Language."""
 import unittest
 import numpy
 from misura.canon import milang
+from misura.canon import option
 from misura.canon import logger
 np = numpy
 
@@ -23,13 +23,16 @@ class DummyInterface(dict):
 
     def __init__(self):
         dict.__init__(self, {'Meta_ciao': {
-                      'value': 1, 'point': 'None', 'time': 9, 'temp': 10}, 'fullpath': '/ciao/'})
+                      'value': 1, 'point': 'None', 'time': 9, 'temp': 10}, 'fullpath': '/ciao/', 'log':[0,'']})
 
     def child(self, name):
         r = self.get(name, None)
         if r is not None:
             return r
         return getattr(self, name, None)
+    
+    def log(self, *s):
+        self['log'] = [0, ' '.join([str(e) for e in s])]
 
 
 class InterfaceEnvironment(unittest.TestCase):
@@ -37,6 +40,11 @@ class InterfaceEnvironment(unittest.TestCase):
     ie = milang.InterfaceEnvironment()
     ie.obj = obj
     env = milang.BaseEnvironment()
+    
+    def test_Log(self):
+        self.ie.Log('hello', 1, None)
+        self.assertEqual(self.ie.comment, 'hello 1 None')
+        self.assertEqual(self.obj['log'][1], 'hello 1 None')   
 
     def test_Opt(self):
         self.assertEqual(self.ie.Opt('Meta_ciao'), self.obj['Meta_ciao'])
