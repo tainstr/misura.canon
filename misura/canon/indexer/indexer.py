@@ -124,13 +124,9 @@ class FileSystemLock(object):
         return True
 
     def release(self):
-        if not self.path:
-            return self._lock.release()
-        if not os.path.exists(self.path):
-            self._lock.release()
-            raise BaseException('Releasing a released lock')
+        r = self._lock.release()
         os.rmdir(self.path)
-        return self._lock.release()
+        return r
 
 
 class Indexer(object):
