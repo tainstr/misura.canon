@@ -80,14 +80,19 @@ No data will be evaluate if older than zerotime."""
     def get_limit(self, path):
         """Get current time and index limits for curve path"""
         if not self.tlimit:
-            return False
-        r = self.limit.get(path, False)
+            return slice(None, None, None)
+        r = self.limit.get(path, slice(None, None, None))
+
         if r is False:
             try:
                 self._lock.release()
             except:
                 pass
             return self.set_limit(path)
+
+        if not isinstance(r  , slice):
+            r = slice(None, r, None)
+
         return r
 
     def _xy(self, path=False, arr=False):
@@ -119,10 +124,8 @@ No data will be evaluate if older than zerotime."""
         path = self._versioned(path)
         n = self._get_node(path)
         lim = self.get_limit(path)
-        if lim:
-            n = n[lim]
-        else:
-            n = n[:]
+        n = n[lim]
+
         # Convert to regular array (we could convert to dict for fields?)
         if not raw:
             try:
@@ -286,9 +289,6 @@ No data will be evaluate if older than zerotime."""
         elif self.tlimit and t> self.tlimit[1]:
             t = self.tlimit[1]
         n = self._get_node(path)
-#		lim=self.get_limit(path)
-#		if lim:
-#			n=n[lim]
         if get is False:
             get = lambda i: n[i][0]
         else:
