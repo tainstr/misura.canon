@@ -38,11 +38,7 @@ print 'Getting Max'
 maxT=mi.Max('T')
 print 'Equals'
 imaxT=mi.Equals('T',maxT)
-print 'Select'
-mi.Select(imaxT,-1)
-print 'Drops'
-i=mi.Drops('T',78)
-print 'Setting time'
+i=mi.Drops('T',78, imaxT)
 mi.t(i)
 """
 

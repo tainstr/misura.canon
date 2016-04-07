@@ -12,8 +12,8 @@ def decode_time(node, index):
 
 class Reference(object):
 
-    """Reference to a location on an output file, 
-    methods for creating it 
+    """Reference to a location on an output file,
+    methods for creating it
     and for committing new data."""
     unbound = {'decode_time': decode_time}
     mtime = 0
@@ -79,7 +79,7 @@ class Reference(object):
 
     def create(self):
         """Creates the data structure on the output file.
-        Returns the folder into which the data was created. 
+        Returns the folder into which the data was created.
         Returns False if the structure was already present.
         To be overridden."""
         ref = self.folder + self.handle
@@ -92,7 +92,7 @@ class Reference(object):
         if self.folder != '/' and self.folder.endswith('/'):
             return self.folder[:-1]
         return self.folder
-        
+
     def dump(self):
         """Deletes the reference and recreates it."""
         self.outfile.remove_node(self.path)
@@ -180,7 +180,7 @@ class Reference(object):
         return n
 
     def interpolate(self, step=1):
-        """Synchronize the internal interpolated summary reference. 
+        """Synchronize the internal interpolated summary reference.
         Returns False if no summary is defined, or the time vector for interpolation"""
         # Nothing to interpolate
         if self.summary is False:
@@ -189,7 +189,6 @@ class Reference(object):
         if len(self) < 10:
             #			print 'Not enough data',self.path,len(self)
             return False
-        self.outfile.set_time_limit(0, -1)
         last = self[-1]
         if len(self.summary) == 0:
             # No summary: start from the first point in self

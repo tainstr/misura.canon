@@ -16,8 +16,6 @@ ne.set_num_threads(8)
 
 class DataOperator(object):
     _zerotime = -1
-    tlimit = False # Global time limit
-    limit = {} # Cached time limits
 
     @property
     def zerotime(self):
@@ -37,64 +35,6 @@ No data will be evaluate if older than zerotime."""
         print 'get_zerotime'
         return self.zerotime
 
-    def set_time_limit(self, start_time=0, end_time=-1):
-        """Set global time limit"""
-        if start_time == 0 and end_time == -1:
-            self.tlimit = False
-            self.limit = {}
-            return
-        print 'setting time limit', start_time, end_time
-        if start_time <= self.zerotime:
-            start_time = self.zerotime
-        if self.tlimit and abs(self.tlimit[0] - start_time) + abs(self.tlimit[1] - end_time) > 10e-6:
-            # Erase all recorded limits!
-            self.limit = {}
-        self.tlimit = (start_time, end_time)
-        print 'time limit set to', self.tlimit
-        return True
-
-    def get_time_limit(self):
-        return self.tlimit
-
-    @lockme
-    def set_limit(self, path):
-        """Enable time limits for data operations on `path`"""
-        if not self.tlimit or self.tlimit == (0, -1):
-            print 'no time limits defined'
-            self.tlimit = False
-            return False
-        if self.limit.has_key(path):
-            print 'returning cached limit', path, self.limit[path]
-            return self.limit[path]
-
-        start_time, end_time = self.tlimit
-        start = self._get_time(path, start_time)
-        if end_time > start_time:
-            end = self._get_time(path, end_time)
-        else:
-            end = None
-        print 'enabled limit', path, start, end
-        self.limit[path] = slice(start, end)
-        return self.limit[path]
-
-    def get_limit(self, path):
-        """Get current time and index limits for curve path"""
-        if not self.tlimit:
-            return slice(None, None, None)
-        r = self.limit.get(path, slice(None, None, None))
-
-        if r is False:
-            try:
-                self._lock.release()
-            except:
-                pass
-            return self.set_limit(path)
-
-        if not isinstance(r  , slice):
-            r = slice(None, r, None)
-
-        return r
-
     def _xy(self, path=False, arr=False):
         """limit: limiting slice"""
         x = False
@@ -112,10 +52,6 @@ No data will be evaluate if older than zerotime."""
             return False, False
         if x is False:
             return False, False
-        limit = self.limit.get(path, False)
-        if limit:
-            print 'limiting', len(x), limit
-            return x[limit], y[limit]
         return x, y
 
     @lockme
@@ -123,20 +59,18 @@ No data will be evaluate if older than zerotime."""
         """Reads an array in the requested slice. If an integer index is specified, reads just one point."""
         path = self._versioned(path)
         n = self._get_node(path)
-        lim = self.get_limit(path)
-        n = n[lim]
 
         # Convert to regular array (we could convert to dict for fields?)
         if not raw:
             try:
-                n = n.view(np.float64).reshape(n.shape + (-1,))
+                n = n[:].view(np.float64).reshape(n.shape + (-1,))
             except:
                 print 'SHAPE', path, n.shape
                 raise
 
-        slc = False
         if idx_or_slice is not None:
             slc = csutil.toslice(idx_or_slice)
+
             n = n[slc]
         return n
 
@@ -145,7 +79,7 @@ No data will be evaluate if older than zerotime."""
         node = self._get_node(path)
         n = node[idx]
         if not raw:
-            n = n.view(np.float64).reshape(n.shape + (-1,))
+            n = n[:].view(np.float64).reshape(n.shape + (-1,))
         return n
 
     @lockme
@@ -162,12 +96,14 @@ No data will be evaluate if older than zerotime."""
             break
         return g
 
-    def find_nearest_cond(self, tab, s, f=2., limit=slice(None, None, None)):
+    def find_nearest_cond(self, tab, s, f=2., start_time=0, end_time=np.inf):
         """Search for the nearest value to `s` in table `tab`,
         by iteratively reducing the tolerance by a factor of `f`."""
+        start_index = self._get_time(path, start_time)
+        end_index = self._get_time(path, end_time)
         # Try exact term
-        g = tab.get_where_list('v==s', stop=limit.stop)
-        g = self.clean_start(g, limit.start)
+        g = tab.get_where_list('v==s', stop=end_index)
+        g = self.clean_start(g, start_index)
         if len(g) > 0:
             return g[0]
 
@@ -179,19 +115,19 @@ No data will be evaluate if older than zerotime."""
             # Tighten upper/lower ranges
             ur /= f
             lr /= f
-            g = tab.get_where_list('((s-lr)<v) & (v<(s+ur))', stop=limit.stop)
+            g = tab.get_where_list('((s-lr)<v) & (v<(s+ur))', stop=end_index)
             # Found!
             if g is None or len(g) == 0:
                 if last is None:
                     return None
                 return last[0]
             # FIXME: Cut start limit
-            while limit.start:
+            while True:
                 if len(g) == 0:
                     if last is None:
                         return None
                     return last[0]
-                if g[0] < limit.start:
+                if g[0] < start_index:
                     g.pop(0)
                     continue
                 break
@@ -201,13 +137,14 @@ No data will be evaluate if older than zerotime."""
                 return None
 
     @lockme
-    def search(self, path, op, cond='x==y', pos=-1):
+    def search(self, path, op, cond='x==y', pos=-1, start_time=0, end_time=np.inf):
         """Search dataset path with operator `op` for condition `cond`"""
         print 'searching in ', path, cond
         tab = self._get_node(path)
         x, y = tab.cols.t, tab.cols.v
-        limit = self.get_limit(path)
         y, m = op(y)
+        start_index = self._get_time(path, start_time)
+        end_index = self._get_time(path, end_time)
         last = -1
         # Handle special cases
         if cond == 'x>y':  # raises
@@ -223,20 +160,21 @@ No data will be evaluate if older than zerotime."""
                 return False
             cond = 'y<m'
         elif cond == 'x~y':
-            last = self.find_nearest_cond(tab, m, limit=limit)
+            last = self.find_nearest_cond(tab, m, limit=slice(start_index, end_index))
             if last is None:
                 return False
         else:
             cond = 'y==m'
+
         if last < 0:
-            last = tab.get_where_list(cond, stop=limit.stop)
+            last = list(tab.get_where_list(cond, stop=end_index))
             # WARNING: start selector is not working.
             # TODO: Send bug to pytables!
-            while limit.start:
+            while start_index:
                 if len(last) == 0:
                     last = None
                     break
-                if last[0] < limit.start:
+                if last[0] < start_index:
                     last.pop(0)
                     continue
                 break
@@ -244,6 +182,7 @@ No data will be evaluate if older than zerotime."""
             if last is None or len(last) == 0:
                 return False
             last = last[0]
+
         return last, x[last], y[last]
 
     def max(self, path):
@@ -268,32 +207,28 @@ No data will be evaluate if older than zerotime."""
             return False
         return i, xi, yi
 
-    def drops(self, path, val):
-        #		cond=lambda a,b: a<b
+    def drops(self, path, val, start_time=0):
         cond = 'x<y'
         op = lambda y: (y, val)
         print 'drops', path, val
-        return self.search(path, op, cond, pos=0)
+        return self.search(path, op, cond, pos=0, start_time=start_time)
 
-    def rises(self, path, val):
+    def rises(self, path, val, start_time=0):
         #		cond=lambda a,b: a>b
         cond = 'x>y'
         op = lambda y: (y, val)
         print 'rises', path, val
-        return self.search(path, op, cond, pos=0)
+        return self.search(path, op, cond, pos=0, start_time=start_time)
 
     def _get_time(self, path, t, get=False, seed=None):
         """Optimized search of the nearest index to time `t` using the getter function `get` and starting from `seed` index."""
-        if self.tlimit and t<self.tlimit[0]:
-            t = self.tlimit[0]
-        elif self.tlimit and t> self.tlimit[1]:
-            t = self.tlimit[1]
         n = self._get_node(path)
         if get is False:
             get = lambda i: n[i][0]
         else:
             get = functools.partial(get, n)
         idx = csutil.find_nearest_val(n, t, get=get, seed=seed)
+
         return idx
 
     @lockme

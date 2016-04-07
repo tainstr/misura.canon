@@ -1,6 +1,6 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-"""Misura Language or Mini Language. 
+"""Misura Language or Mini Language.
 Secure minimal Python language subset for conditional evaluation of numerical datasets."""
 from env import BaseEnvironment
 import numpy as np
@@ -13,10 +13,8 @@ class DataEnvironment(BaseEnvironment):
     whitelist = BaseEnvironment.whitelist + ['std', 'get', 'set']
     _hdf = False
     """SharedFile instance"""
-    prefix = ''
+    prefix = '/'
     """Prefix to be applied to all curves. E.g.: /hsm/sample0/"""
-    limit = (0, -1)
-    """Current limit selection expressed as time limits"""
     lslice = slice(None, None)
     """Last applied slicing interval"""
     spline_cache = {}
@@ -35,43 +33,42 @@ class DataEnvironment(BaseEnvironment):
         self._hdf = f
 
     def _cname(self, curve):
-        """Retrieve curve name by adding prefix, etc. Activate time limits if needed."""
+        """Retrieve curve name by adding prefix, etc."""
         if not isinstance(curve, str):
             return False
-        # curve is Temperature 
+        # curve is Temperature
         if curve in ['T']:
             # but unknown if a local T dataset is available in prefix
             if not self._temperature_path:
                 curve = self.prefix + 'T'
+                print curve
                 if not self.hdf.has_node(curve):
                     curve = '/kiln/T'
                 self._temperature_path = curve
-                print '########### temperature path = ', curve, self.prefix
             # Take defined temperature path
             curve = self._temperature_path
         else:
             curve = self.prefix + curve
-        # Activate time limits for current curve
-        self.hdf.set_limit(curve)
         print '_cname returning', curve
         return curve
 
-    def _c(self, curve0):
+    def _c(self, curve0, start_time=0):
         """Returns the array object located at prefix+`curve` on the hdf file.
         The curve is already sliced.
         If `curve` is not a string, returns the unchanged object."""
         curve = self._cname(curve0)
         if curve is False:
             return curve0
-        print 'getting column', curve
-        c = self.hdf.col(curve)
-        print 'got column', curve, len(c)
+
+        limit_slice = slice(self.hdf._get_time(curve, start_time), None)
+        c = self.hdf.col(curve, limit_slice)
         return c
     Curve = _c
 
-    def xy(self, curve):
+    def xy(self, curve, start_time=0):
         """Separately return x and y arrays as tuples"""
-        n = self._c(curve)
+        n = self._c(curve, start_time)
+
         print 'xy', type(n)
         return n[:, 0], n[:, 1]
 
@@ -106,13 +103,6 @@ class DataEnvironment(BaseEnvironment):
         spline = UnivariateSpline(x, y)
         return spline
 
-    def ValueWhere(self, cond, values):
-        """Returns the first truth value of cond"""
-        i = self.Where(cond)
-        if i < 0:
-            return -1
-        return values[i]
-
     def _x(self, curve):
         """Retrieve the `x` array constituting the UnivariateSpline of curve"""
         return self._c(curve)[:, 0]
@@ -123,36 +113,13 @@ class DataEnvironment(BaseEnvironment):
 
     def _reset(self):
         BaseEnvironment._reset(self)
-        self.limit = (0, -1)
-        if self._hdf:
-            self.hdf.set_time_limit(*self.limit)
         self.spline_cache = {}
 
-    def Select(self, start=0, end=-1):
-        """Limit every function between time start and time end"""
-        self.limit = (start, end)
-        self.hdf.set_time_limit(start, end)
-        print 'Activated limit', self.limit
-        return True
-
-    def Start(self):
-        """Returns the start of the selection"""
-        return self.limit[0]
-
-    def End(self):
-        """Returns the end of the selection"""
-        return self.limit[1]
-
-    def SelectCooling(self):
-        """Set selection to the cooling part of the test"""
-        # TODO: verificare che dopo questo massimo, non torni a scendere e a
-        # salire
+    def GetCoolingTimeAndIndex(self):
         idx, t, T = self.hdf.max('/kiln/T')
         if idx + 1 >= self.hdf.len('/kiln/T'):
             return False
-        self.limit = [t, -1]
-        self.hdf.set_time_limit(t, -1)
-        return True
+        return t, idx
 
     def AtTime(self, curve0, t):
         """t,val of curve at nearest time `t`."""
@@ -160,8 +127,9 @@ class DataEnvironment(BaseEnvironment):
         if curve is False:
             idx = csutil.find_nearest_val(curve0[:, 0], t)
             return curve0[idx]
+
         idx = self.hdf.get_time(curve, t)
-        return self.hdf.col(curve, idx)
+        return self.hdf.col_at(curve, idx, raw=True)
 
     def AtIndex(self, curve0, idx):
         """t,val of curve at index `idx`."""
@@ -175,17 +143,11 @@ class DataEnvironment(BaseEnvironment):
         p = self.AtTime(curve, t)
         return p[1]
 
-    def SetCurve(self, curve, t, val):
-        """Sets the value of `curve` at the specified time `t` to `val`"""
-        # TODO: SetCurve
-        pass
-
     def minmax(self, curve0, op=1):
         """Search global minimum/maximum value of curve."""
         curve = self._cname(curve0)
         if curve is False:  # curve is array
             ops = (min, max)
-            #FIXME: time limits are not applied in this case!
             return ops[op](curve0)
         else:  # curve is an hdf path
             ops = (self.hdf.min, self.hdf.max)
@@ -200,14 +162,6 @@ class DataEnvironment(BaseEnvironment):
         """Global minimum value of curve"""
         return self.minmax(curve, 0)
 
-    def Ini(self, curve):
-        """Initial value of curve"""
-        c = self._cname(curve)
-        if c is False:
-            return curve[0]
-        limit = self.hdf.get_limit(c)
-        return self.hdf.col(c, limit.start)
-
     def Equals(self, curve0, val):
         """Returns time of curve where its value is val"""
         curve = self._cname(curve0)
@@ -221,30 +175,30 @@ class DataEnvironment(BaseEnvironment):
             return self.hdf.nearest(curve, val)
         # TODO: array was passed
 
-    def Drops(self, curve0, val):
+    def Drops(self, curve0, val, start_time=0):
         """Returns time where curve value drops below val"""
         curve = self._cname(curve0)
         if curve is not False:
-            return self.hdf.drops(curve, val)
+            return self.hdf.drops(curve, val, start_time)
         # TODO: array was passed
 
-    def Raises(self, curve0, val):
+    def Raises(self, curve0, val, start_time=0):
         """Returns time where curve value raises above val"""
         curve = self._cname(curve0)
         if curve is not False:
-            return self.hdf.rises(curve, val)
+            return self.hdf.rises(curve, val, start_time)
         # TODO: array was passed
 
     def Len(self, curve0):
-        """Length of the curve, according to the current selection"""
+        """Length of the curve"""
         curve = self._cname(curve0)
         if curve is not False:
             return self.hdf.len(curve)
         return len(curve)
 
-    def TimeDerivative(self, curve):
+    def TimeDerivative(self, curve, start_time=0):
         """Numerical derivative of curve with respect to its time"""
-        x, y = self.xy(curve)
+        x, y = self.xy(curve, start_time=0)
         if len(x) < 2:
             return np.array([])
         r = np.gradient(y) / np.gradient(x)
