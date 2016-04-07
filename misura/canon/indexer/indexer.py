@@ -47,9 +47,8 @@ incrementalIdsTableDef = '''(incremental_id INTEGER PRIMARY KEY AUTOINCREMENT, u
 syncTableDef = '''(file text, serial text, uid text primary key, id text,
                    zerotime text, instrument text, flavour text, name text,
                    elapsed real, nSamples integer, comment text,verify bool)'''
-errorTableDef = '''(file text, serial text, uid text, id text, zerotime date,
-                    instrument text, flavour text, name text, elapsed real,
-                    nSamples integer, comment text,verify bool,error text)'''
+errorTableDef = syncTableDef[:-1] + ', error text)'
+
 sampleTableDef = '''(file text, ii integer, idx integer, material text,
                      name text, comment text, dim integer, height integer,
                      volume integer, sintering real, softening real,
