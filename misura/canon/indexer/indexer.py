@@ -285,7 +285,7 @@ class Indexer(object):
         self.recalculate_incremental_ids()
 
         return 'Done. Found %i tests.' % len(tests_filenames)
-        
+
 
     @dbcom
     def recalculate_incremental_ids(self):
@@ -439,8 +439,14 @@ class Indexer(object):
             self.log.debug(
                 'uid ' + uid + ' already exists in incremental_ids table: no big deal')
 
-    def change_name(self, new_name, uid, hdf_file_name):
-        if not new_name:
+
+    def change_column(self,
+                      column_name,
+                      update_function,
+                      new_value,
+                      uid,
+                      hdf_file_name):
+        if not new_value:
             return 0
         hdf_file = SharedFile(path=hdf_file_name, uid=uid)
         active_version = hdf_file.active_version()
@@ -449,19 +455,39 @@ class Indexer(object):
         hdf_file.create_version()
 
         instrument_name = hdf_file.test.root.conf.attrs.instrument
-        getattr(hdf_file.conf, instrument_name).measure['name'] = new_name
+        getattr(hdf_file.conf, instrument_name).measure[column_name] = new_value
 
         hdf_file.save_conf()
         hdf_file.close()
 
-        return self.change_name_on_database(new_name, uid)
+        return update_function(new_value, uid)
+
+    def change_name(self, new_name, uid, hdf_file_name):
+        return self.change_column('name',
+                                  self.change_name_on_database,
+                                  new_name,
+                                  uid,
+                                  hdf_file_name)
+
+    def change_comment(self, new_comment, uid, hdf_file_name):
+        return self.change_column('comment',
+                                  self.change_comment_on_database,
+                                  new_comment,
+                                  uid,
+                                  hdf_file_name)
 
     @dbcom
-    def change_name_on_database(self, new_name, uid):
+    def change_column_on_database(self, column_name, new_value, uid):
         self.cur.execute(
-            "update test set name = ? where uid = ?", (new_name, uid,))
+            "update test set " + column_name + " = ? where uid = ?", (new_value, uid,))
         self.conn.commit()
         return len(self.cur.fetchall())
+
+    def change_name_on_database(self, new_name, uid):
+        return self.change_column_on_database('name', new_name, uid)
+
+    def change_comment_on_database(self, new_comment, uid):
+        return self.change_column_on_database('comment', new_comment, uid)
 
     def refresh(self):
         """Updates the database by inserting new files and removing deleted files"""
@@ -479,7 +505,7 @@ class Indexer(object):
         for absolute_file_path in filesystem:
             self.appendFile(absolute_file_path)
         self.log.debug('Done updating index.')
-            
+
 
     def remove_uid(self, uid):
         fn = self.searchUID(uid)
@@ -499,7 +525,7 @@ class Indexer(object):
             'delete from sample where file=?', (relative_file_path,))
         self.conn.commit()
         return True
-    
+
     @dbcom
     def clear_file_path(self, relative_file_path):
         """Implicit connection and locked version of _clear_file_path"""
