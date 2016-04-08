@@ -6,7 +6,7 @@ ext = '.h5'
 
 import hashlib
 import os
-from time import time, sleep
+from time import time
 import cPickle as pickle
 from traceback import print_exc
 import sqlite3

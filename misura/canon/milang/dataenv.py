@@ -60,7 +60,7 @@ class DataEnvironment(BaseEnvironment):
         if curve is False:
             return curve0
 
-        limit_slice = slice(self.hdf._get_time(curve, start_time), None)
+        limit_slice = slice(self.hdf.get_time(curve, start_time), None)
         c = self.hdf.col(curve, limit_slice)
         return c
     Curve = _c
