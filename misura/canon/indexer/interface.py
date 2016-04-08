@@ -140,8 +140,8 @@ class SharedFile(CoreFile, DataOperator):
 
         if not isinstance(newversion, basestring):
             newversion = '/ver_{}'.format(newversion)
-        
-        if self.version == newversion:
+
+        if self.version == newversion and self.conf:
             return True
 
         self._change_version(newversion)
@@ -406,4 +406,3 @@ class SharedFile(CoreFile, DataOperator):
     def decode(self, method):
         """Return if a method name should be decoded client-side"""
         return hasattr(self, 'xmlrpc_' + method)
-

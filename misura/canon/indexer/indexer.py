@@ -446,13 +446,11 @@ class Indexer(object):
                       new_value,
                       uid,
                       hdf_file_name):
-        if not new_value:
-            return 0
+
         hdf_file = SharedFile(path=hdf_file_name, uid=uid)
-        active_version = hdf_file.active_version()
-        if active_version:
-            hdf_file.set_version(active_version)
-        hdf_file.create_version()
+        hdf_file.set_version()
+        if hdf_file.get_version() == '':
+            hdf_file.create_version()
 
         instrument_name = hdf_file.test.root.conf.attrs.instrument
         getattr(hdf_file.conf, instrument_name).measure[column_name] = new_value
@@ -463,6 +461,9 @@ class Indexer(object):
         return update_function(new_value, uid)
 
     def change_name(self, new_name, uid, hdf_file_name):
+        if not new_name:
+            return 0
+
         return self.change_column('name',
                                   self.change_name_on_database,
                                   new_name,
