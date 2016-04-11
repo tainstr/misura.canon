@@ -9,6 +9,7 @@ from interface import SharedFile
 
 
 class FileManager(object):
+    file_class = SharedFile
 
     def __init__(self, store=False):
         if store is False:
@@ -43,7 +44,7 @@ class FileManager(object):
         return f
 
     def open_uid(self, uid, readLevel=3):
-        """Open a file corresponding to `uid` and associates it to the current session"""
+        """Opens a file corresponding to `uid` and associates it to the current session"""
         # Search the filename corresponding to the requested UID
         fn = self.uids.get(uid, False)
         if (fn is False) and self.store:
@@ -58,7 +59,7 @@ class FileManager(object):
         # Close and reopen it
         if s:
             s.close()
-        s = SharedFile(fn, uid=uid, log=self.log)
+        s = self.file_class(fn, uid=uid, log=self.log)
         self.tests[uid] = s
         self.uids[uid] = fn
         self.paths[fn] = uid
@@ -69,7 +70,7 @@ class FileManager(object):
         if not os.path.exists(fpath):
             self.log.error('Requested file does not exist', fpath)
             return False
-        s = SharedFile(fpath, uid=uid, log=self.log)
+        s = self.file_class(fpath, uid=uid, log=self.log)
         # Read updated uid
         uid = s.get_uid()
         self.tests[uid] = s
@@ -88,22 +89,14 @@ class FileManager(object):
             return u
         return self.tests.get(u, False)
 
-    def purge(self, hdf):
-        """Remove hdf from registry"""
-        uid = hdf.get_uid()
-        path = hdf.get_path()
-        if hdf.isopen():
-            hdf.close()
-        if self.uid.has_key(uid):
-            del self.uid[uid]
-        if self.path.has_key(path):
-            del self.path[path]
-        return uid, path
-
     def close_uid(self, uid):
         f = self.uid(uid)
         if f:
             f.close()
+        if uid in self.tests:
+            self.tests.pop(uid)
+        if uid in self.uids:
+            self.uids.pop(uid)
         return True
 
     def close(self):
