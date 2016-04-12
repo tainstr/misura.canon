@@ -11,6 +11,7 @@ from .logger import Log as logging
 from . import reference
 
 registry = []
+navigator_domains = set([])
 
 def base_dict():
     """Returns a dictionary containing typical options for a legal configurable object"""

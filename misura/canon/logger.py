@@ -2,7 +2,6 @@
 """Generalized logging utilities"""
 import os
 import logging
-from traceback import print_exc
 from datetime import datetime
 import csutil
 
