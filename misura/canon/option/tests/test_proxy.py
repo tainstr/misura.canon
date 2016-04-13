@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 import unittest
 from misura.canon import indexer
-from misura.canon import dataimport
+from misura.canon.plugin import dataimport
 from misura.canon.tests import testdir
 
 path = testdir + 'storage/hsm_test.h5'

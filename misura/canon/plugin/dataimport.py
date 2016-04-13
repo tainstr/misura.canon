@@ -6,12 +6,9 @@ from fnmatch import fnmatch
 
 import numpy as np
 
-from .option import ao
-from .logger import Log as logging
-from . import reference
-
-registry = []
-navigator_domains = set([])
+from ..option import ao
+from ..logger import Log as logging
+from .. import reference
 
 def base_dict():
     """Returns a dictionary containing typical options for a legal configurable object"""
@@ -163,10 +160,12 @@ def create_dataset(outFile, node_path, opt, timecol, data, cls=reference.Array):
     ref.append(
         np.array([timecol[:len(data)], data]).transpose())
     return ref
+
+data_importers = set([])
         
 def search_registry(filename):
     """Find a matching converter for filename"""
-    for converter in registry:
+    for converter in data_importers:
         if fnmatch(filename, converter.file_pattern):
             print 'Found converter', filename, converter.file_pattern
             return converter

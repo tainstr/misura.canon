@@ -11,3 +11,4 @@ from . import indexer
 from . import milang
 from . import option
 from . import reference
+from . import plugin
