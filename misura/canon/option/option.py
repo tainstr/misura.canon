@@ -413,7 +413,7 @@ class Option(object):
         return Option(**self._entry)
 
     def migrate_from(self, old):
-        """Migrate Option from `old`. 
+        """Migrate Option from `old`.
         Notice: the first migration always happens between hard-coded `old` and saved configuration file in self."""
         # These keys can only change on software updates.
         # So, their `old` value cannot be overwritten and must be retained
@@ -447,6 +447,7 @@ class Option(object):
                 print 'Incompatible table definition', self['handle'], new_def, old_def
                 self._entry['current']=[self['current'][0]]
         # No type change: exit
+        self._entry['parent'] = old['parent']
         if ot == nt:
             return
         # Hard-coded 'old' type differs from configured type:
