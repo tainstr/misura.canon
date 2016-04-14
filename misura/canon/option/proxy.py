@@ -199,7 +199,8 @@ class ConfigurationProxy(Scriptable, Conf):
         self.desc[key] = val
         
     def add_option(self, *args, **kwargs):
-        """Creates a new option using the ao() utility function"""
+        """Creates a new option using the ao() utility function. 
+        Migrate old one if existing."""
         out = {}
         ao(out, *args, **kwargs)
         out = out.values()[0]
@@ -211,6 +212,7 @@ class ConfigurationProxy(Scriptable, Conf):
             out = origin
         self.sete(out['handle'], out)
         return out
+        
     
     def add_child(self, name, desc):
         """Inserts a sub-object `name` with object tree dictionary `desc`.
