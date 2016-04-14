@@ -492,20 +492,22 @@ class Indexer(object):
 
     def refresh(self):
         """Updates the database by inserting new files and removing deleted files"""
-        filesystem = self.tests_filenames_sorted_by_date()
         database = self.execute_fetchall("select file, uid from test")
-        for relative_file_path, uid in database:
+        self.delete_not_existing_files(database)
+        all_files = self.tests_filenames_sorted_by_date()
+        self.add_new_files(all_files, database)
+
+    def delete_not_existing_files(self, database):
+        for relative_file_path, _ in database:
             absolute_file_path = self.convert_to_full_path(relative_file_path)
             if not os.path.exists(absolute_file_path):
-                self.log.info("Deleting references to non-existent test data:", absolute_file_path, uid)
                 self.clear_file_path(relative_file_path)
-                continue
-            if absolute_file_path in filesystem:
-                filesystem.remove(absolute_file_path)
-        self.log.debug("Done clearing missing files. Appending {} new files.".format(len(filesystem)))
-        for absolute_file_path in filesystem:
-            self.appendFile(absolute_file_path)
-        self.log.debug('Done updating index.')
+
+    def add_new_files(self, all_files, database):
+        file_names_in_database = map(lambda data: self.convert_to_full_path(data[0]), database)
+        for f in all_files:
+            if f not in file_names_in_database:
+                self.appendFile(f)
 
 
     def remove_uid(self, uid):
