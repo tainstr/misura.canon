@@ -330,11 +330,7 @@ class Indexer(object):
             table.close()
         return r
 
-    @dbcom
-    def _appendFile(self, table, file_path, add_uid_to_incremental_ids_table):
-        """Inserts a new file in the database"""
-        # FIXME: inter-thread #412
-        cur = self.cur
+    def get_test_data(self, table, file_path, add_uid_to_incremental_ids_table):
         conf = getattr(table.root, 'conf', False)
         if '/userdata' in table:
             active_version = str(
@@ -392,6 +388,15 @@ class Indexer(object):
         print 'File verify:', ok
         v.append(ok)
 
+        return v, tree, instrument
+
+    @dbcom
+    def _appendFile(self, table, file_path, add_uid_to_incremental_ids_table):
+        """Inserts a new file in the database"""
+        # FIXME: inter-thread #412
+        v, tree, instrument = self.get_test_data(table, file_path, add_uid_to_incremental_ids_table)
+
+        cur = self.cur
         cmd = '?,' * len(v)
         cmd = 'INSERT INTO test VALUES (' + cmd[:-1] + ')'
         print 'Executing', cmd, v
