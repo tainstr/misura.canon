@@ -43,6 +43,7 @@ testTableDef = '''(file text unique, serial text, uid text primary key,
                    name text, elapsed real, nSamples integer,
                    comment text,verify bool)'''
 incrementalIdsTableDef = '''(incremental_id INTEGER PRIMARY KEY AUTOINCREMENT, uid text unique)'''
+modifyDatesTableDef = '''(modify_date integer, file text unique)'''
 
 syncTableDef = '''(file text, serial text, uid text primary key, id text,
                    zerotime text, instrument text, flavour text, name text,
@@ -206,9 +207,11 @@ class Indexer(object):
         cur.execute("create table if not exists sync_queue " + syncTableDef)
         cur.execute("create table if not exists sync_approve " + syncTableDef)
         cur.execute("create table if not exists sync_error " + errorTableDef)
-
         cur.execute(
             "create table if not exists incremental_ids " + incrementalIdsTableDef)
+        cur.execute(
+            "create table if not exists modify_dates " + modifyDatesTableDef)
+
         conn.commit()
         return True
 
@@ -274,6 +277,7 @@ class Indexer(object):
         cur.execute("DROP TABLE IF EXISTS sync_queue")
         cur.execute("DROP TABLE IF EXISTS sync_approve")
         cur.execute("DROP TABLE IF EXISTS sync_error")
+        cur.execute("DROP TABLE IF EXISTS modify_dates")
         conn.commit()
         self.close_db()
         self._lock.release()
@@ -388,13 +392,30 @@ class Indexer(object):
         print 'File verify:', ok
         v.append(ok)
 
-        return v, tree, instrument
+        return v, tree, instrument, test
+
+
+    def save_modify_date(self, file_name):
+        full_test_file_name = self.convert_to_full_path(file_name)
+        modify_date = int(os.path.getmtime(full_test_file_name))
+
+        query = "INSERT OR REPLACE INTO modify_dates VALUES (?, ?)"
+
+        self.cur.execute(query, (modify_date, file_name))
+        r = self.cur.fetchall()
+
+        self.conn.commit()
+
+    @dbcom
+    def get_modify_dates(self):
+        query = "select * from modify_dates"
+        self.cur.execute(query)
+        return self.cur.fetchall()
 
     @dbcom
     def _appendFile(self, table, file_path, add_uid_to_incremental_ids_table):
         """Inserts a new file in the database"""
-        # FIXME: inter-thread #412
-        v, tree, instrument = self.get_test_data(table, file_path, add_uid_to_incremental_ids_table)
+        v, tree, instrument, test = self.get_test_data(table, file_path, add_uid_to_incremental_ids_table)
 
         cur = self.cur
         cmd = '?,' * len(v)
@@ -426,6 +447,11 @@ class Indexer(object):
             self.add_incremental_id(cur, test['uid'])
         self.conn.commit()
 
+        modify_date = os.path.getmtime(self.convert_to_full_path(file_path))
+
+
+        self.save_modify_date(test['file'])
+
         # ##
         # Options
         # ##
@@ -434,6 +460,8 @@ class Indexer(object):
         s.cursor = cur
         s.write_tree(tree, preset=test['uid'])
         self.conn.commit()
+
+
         return True
 
     def add_incremental_id(self, cursor, uid):
@@ -499,8 +527,28 @@ class Indexer(object):
         """Updates the database by inserting new files and removing deleted files"""
         database = self.execute_fetchall("select file, uid from test")
         self.delete_not_existing_files(database)
+        database = self.execute_fetchall("select file, uid from test")
         all_files = self.tests_filenames_sorted_by_date()
+        self.delete_modified_files(database, all_files)
+        database = self.execute_fetchall("select file, uid from test")
         self.add_new_files(all_files, database)
+
+    def delete_modified_files(self, database, all_files):
+        modified_dates_on_db = self.get_modify_dates()
+
+        modified_dates_on_db = map(
+            lambda db_entry: (db_entry[0], self.convert_to_full_path(db_entry[1]), db_entry[1]),
+            modified_dates_on_db
+        )
+
+        old_modified_dates = {}
+        for f in all_files:
+            old_modified_dates[f] = int(os.path.getmtime(f))
+
+        for modify_date_on_db, full_test_file_name, relative_test_file_name in modified_dates_on_db:
+            old_modified_date = old_modified_dates.get(full_test_file_name, False)
+            if old_modified_date and old_modified_date != modify_date_on_db:
+                self.clear_file_path(relative_test_file_name)
 
     def delete_not_existing_files(self, database):
         for relative_file_path, _ in database:
