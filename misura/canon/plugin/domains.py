@@ -5,7 +5,7 @@ import re
 
 from ..logger import Log as logging
 
-navigator_domains = set([])
+navigator_domains = []
 
 #FIXME: hacks!
 isDataset = lambda ds: (hasattr(ds, 'dstype') and hasattr(ds, 'datatype'))

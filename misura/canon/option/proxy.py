@@ -46,6 +46,9 @@ class ConfigurationProxy(Scriptable, Conf):
     separator = '/'
     _readLevel = 5
     _writeLevel = 5
+    
+    def print_tree(self):
+        print print_tree(self.tree())
 
     def __init__(self, desc={'self': {}}, name='MAINSERVER', parent=False, readLevel=2, writeLevel=5, kid_base='/'):
         Scriptable.__init__(self)
