@@ -501,6 +501,8 @@ def profile(func):
         name = func.__name__
         if isinstance(self, object):
             name = self.__class__.__name__ + '.' + name
+        if not os.path.exists(profile_path):
+            os.makedirs(profile_path)
         out = '{}{}_{}_{}.prf'.format(profile_path,
                                       name,
                                       fp.replace('/', '_'),
