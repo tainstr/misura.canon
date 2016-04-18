@@ -143,10 +143,10 @@ class NavigatorDomain(object):
         """Check if multiple nodes selection pertain to this domain"""
         return True
     
-    def add_base_menu(self, menu, node):
+    def add_base_menu(self, menu, node=False):
         return True
 
-    def build_base_menu(self, menu, node):
+    def build_base_menu(self, menu, node=False):
         if not self.check_node(node):
             return False
         return self.add_base_menu(menu, node)
