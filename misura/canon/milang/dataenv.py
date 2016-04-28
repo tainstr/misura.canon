@@ -116,7 +116,11 @@ class DataEnvironment(BaseEnvironment):
         self.spline_cache = {}
 
     def GetCoolingTimeAndIndex(self):
-        idx, t, T = self.hdf.max('/kiln/T')
+        ret = self.hdf.max('/kiln/T')
+        if not ret:
+            print 'Cannot find node /kiln/T'
+            return False
+        idx, t, T = ret
         if idx + 1 >= self.hdf.len('/kiln/T'):
             return False
         return t, idx

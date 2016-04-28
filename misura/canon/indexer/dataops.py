@@ -137,14 +137,20 @@ No data will be evaluate if older than zerotime."""
                 return None
 
     @lockme
-    def search(self, path, op, cond='x==y', pos=-1, start_time=0, end_time=np.inf):
+    def search(self, path, op, cond='x==y', pos=-1, start_time=0, end_time=-1):
         """Search dataset path with operator `op` for condition `cond`"""
         print 'searching in ', path, cond
         tab = self._get_node(path)
         x, y = tab.cols.t, tab.cols.v
         y, m = op(y)
-        start_index = self._get_time(path, start_time)
-        end_index = self._get_time(path, end_time)
+        if start_time == 0:
+            start_index = 0
+        else:
+            start_index = self._get_time(path, start_time)
+        if end_time == -1:
+            end_index = len(y)
+        else:
+            end_index = self._get_time(path, end_time)
         last = -1
         # Handle special cases
         if cond == 'x>y':  # raises
@@ -160,7 +166,8 @@ No data will be evaluate if older than zerotime."""
                 return False
             cond = 'y<m'
         elif cond == 'x~y':
-            last = self.find_nearest_cond(tab, m, limit=slice(start_index, end_index))
+            last = self.find_nearest_cond(
+                tab, m, limit=slice(start_index, end_index))
             if last is None:
                 return False
         else:
@@ -168,6 +175,7 @@ No data will be evaluate if older than zerotime."""
 
         if last < 0:
             last = list(tab.get_where_list(cond, stop=end_index))
+            last0 = last[:]
             # WARNING: start selector is not working.
             # TODO: Send bug to pytables!
             while start_index:
@@ -180,6 +188,7 @@ No data will be evaluate if older than zerotime."""
                 break
 
             if last is None or len(last) == 0:
+                print 'DataOps.search FAILED', path, cond, start_index, end_index, m, len(y), last0, last
                 return False
             last = last[0]
 
@@ -187,11 +196,11 @@ No data will be evaluate if older than zerotime."""
 
     def max(self, path):
         op = lambda y: (y, max(y))
-        return self.search(path, op)
+        return self.search(path, op, cond='x==y')
 
     def min(self, path):
         op = lambda y: (y, min(y))
-        return self.search(path, op)
+        return self.search(path, op, cond='x==y')
 
     def nearest(self, path, val):
         op = lambda y: (y, val)
