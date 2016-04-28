@@ -86,6 +86,17 @@ class Conf(object):
                 print 'SET EMPTY',name,nval
         r = self.set_current(name, nval, **k)
         return r
+    
+    def coerce(self, name, value):
+        """Conform `value` type to option `name` type before setting it"""
+        t = self.desc[name]['type']
+        if t=='Float':
+            value = float(value)
+        elif t=='Integer':
+            value = int(value)
+        elif t in ('String','TextArea'):
+            value = unicode(value)
+        return self.set(name, value)
 
     def has_key(self, key):
         """Check  `key`"""
