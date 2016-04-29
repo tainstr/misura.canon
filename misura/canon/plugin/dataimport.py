@@ -16,6 +16,7 @@ def base_dict():
     ao(out, 'name', 'String', 'Name', name='Name')
     ao(out, 'mro', 'List', name='mro', attr=['Hidden'])
     ao(out, 'comment', 'String', '')
+    ao(out, 'preset', 'Preset', '', attr=['Hidden'])
     ao(out, 'dev', 'String', attr=['Hidden'])
     ao(out, 'devpath', 'String', attr=['Hidden'])
     ao(out, 'fullpath', 'String', attr=['Hidden'])
