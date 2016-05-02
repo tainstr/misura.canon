@@ -205,11 +205,14 @@ class ConfigurationProxy(Scriptable, Conf):
         """Creates a new option using the ao() utility function. 
         Migrate old one if existing."""
         out = {}
+        overwrite = True
+        if kwargs.has_key('overwrite'):
+            overwrite = kwargs.pop('overwrite')
         ao(out, *args, **kwargs)
         out = out.values()[0]
         key = out['handle']
         # If option was already defined, update old one with new values
-        if self.has_key(key):
+        if self.has_key(key) and overwrite:
             origin = self.gete(key).entry
             origin.update(out)
             out = origin

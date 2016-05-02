@@ -128,6 +128,9 @@ class NavigatorDomain(object):
         if not self.is_loaded(node):
             return False
         return len(self.model().is_plotted(node.path)) > 0
+    
+    def double_clicked(self, node):
+        return False
 
     def check_node(self, node):
         """Check if node pertain to this domain"""
