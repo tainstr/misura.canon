@@ -32,6 +32,7 @@ def measure_dict():
     ao(out, 'id', 'String', 'Conversion source ID')
     ao(out, 'uid', 'String', 'Unique ID')
     ao(out, 'date', 'Date', '00:00:00 01/01/2000', name='Test date')
+    ao(out, 'zerotime', 'Float', name='Acquisition starting time', attr = ['Hidden'])
     ao(out, 'elapsed', 'Float', name='Test duration', unit='second')
     ao(out, 'operator', 'String', 'Operator')
     return out
@@ -66,7 +67,6 @@ def instr_dict():
     """Returns a dictionary containing typical options for generic instrument object"""
     out = base_dict()
     ao(out, 'nSamples', 'Integer', 1, attr=['Hidden'])
-    ao(out, 'camera', 'Role', ['camerapath', 'default'])
     ao(out, 'devices', 'List', attr=['Hidden'])
     ao(out, 'initTest', 'Progress', attr=['Hidden'])
     ao(out, 'closingTest', 'Progress', attr=['Hidden'])
