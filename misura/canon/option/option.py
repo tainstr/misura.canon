@@ -27,42 +27,42 @@ defined_types = {
     # Float types
     "Float": 'Float number',
     "Progress": 'Progress indicator',
-                "Time": 'Time',
+    "Time": 'Time',
 
-                # Integer types
-                "Integer": 'Integer number',
-                "Boolean": 'True/False',
+    # Integer types
+    "Integer": 'Integer number',
+    "Boolean": 'True/False',
 
-                # String types
-                "Script": 'Executable script',
-                "Section": 'Section header',
-                "FileList": 'List of file names',
-                "String": 'Text field',
-                "FilePath": 'File system path',
-                "TextArea": 'Long text field',
-                "Date": 'Date',
-                "Preset": 'Persistently saved preset name',
-                "ThermalCycle": 'Thermal cycle curve name',
-                # None types (as empty strings)
-                "Button": 'Getting this option triggers a server-side action',
+    # String types
+    "Script": 'Executable script',
+    "Section": 'Section header',
+    "FileList": 'List of file names',
+    "String": 'Text field',
+    "FilePath": 'File system path',
+    "TextArea": 'Long text field',
+    "Date": 'Date',
+    "Preset": 'Persistently saved preset name',
+    "ThermalCycle": 'Thermal cycle curve name',
+    # None types (as empty strings)
+    "Button": 'Getting this option triggers a server-side action',
 
-                # Fixed multicolumn types
-                "Meta": 'Metadata composite field (Time, Temperature, Value)',
-                'Rect': 'Rectangle x,y,w,h',
-                'Point': 'Point x,y',
-                'Log': 'Log messages',
-                "Role": 'Generic device role',
-                "RoleIO": 'Generic input/output Role',
+    # Fixed multicolumn types
+    "Meta": 'Metadata composite field (Time, Temperature, Value)',
+    'Rect': 'Rectangle x,y,w,h',
+    'Point': 'Point x,y',
+    'Log': 'Log messages',
+    "Role": 'Generic device role',
+    "RoleIO": 'Generic input/output Role',
 
-                # Variable multicolumn types
-                "Table": 'A table of data',
+    # Variable multicolumn types
+    "Table": 'A table of data',
 
-                # Pickled types
-                "ReadOnly": 'The user cannot change this',
-                "Hidden": 'Never visible to the user',
-                "Chooser": 'Predefined multiple choices',
-                "List": 'List of objects',
-                'Profile': 'Image profile',
+    # Pickled types
+    "ReadOnly": 'The user cannot change this',
+    "Hidden": 'Never visible to the user',
+    "Chooser": 'Predefined multiple choices',
+    "List": 'List of objects',
+    'Profile': 'Image profile',
 }
 
 typed_types = {'integer': ('Integer', 'Boolean'),
@@ -79,10 +79,10 @@ for k, v in typed_types.iteritems():
 
 num_types = typed_types['integer'] + typed_types['float']
 
-vkeys = "handle,name,current,factory_default,attr,type,writeLevel,readLevel,mb,step,max,min,options,parent,values,flags,unit,csunit,kid,priority".split(
+vkeys = "handle,name,current,factory_default,attr,type,writeLevel,readLevel,mb,step,max,min,options,parent,values,flags,unit,csunit,kid,priority,aggregate".split(
     ',')
 
-str_keys = ('handle', 'name', 'type', 'parent', 'unit', 'csunit', 'kid')
+str_keys = ('handle', 'name', 'type', 'parent', 'unit', 'csunit', 'kid','aggregate')
 int_keys = ('readLevel', 'writeLevel', 'mb', 'priority')
 type_keys = ('current', 'factory_default', 'min', 'max', 'step')
 repr_keys = ('attr', 'flags', 'options', 'values')  # and any other....

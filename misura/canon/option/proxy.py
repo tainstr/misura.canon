@@ -1,5 +1,9 @@
 # -*- coding: utf-8 -*-
 """Option persistence."""
+import re
+import collections
+import numpy as np
+
 from .. import logger
 from conf import Conf
 import cPickle as pickle
@@ -251,6 +255,49 @@ class ConfigurationProxy(Scriptable, Conf):
             self.children_obj[name] = ConfigurationProxy(
                 self.children[name], name=name, parent=self, kid_base=kb)
         return self.children_obj[name]
+    
+    def calc_aggregate(self, aggregation, handle=False):
+        function_name = re.search("(.+?)\(", aggregation).group(1)
+        targets = re.search("\((.+?)\)", aggregation).group(1).split(',')
+        if len(targets)==0:
+            targets = [handle]
+        values = collections.defaultdict(list)
+        for child_name in self.children.iterkeys():
+            child = self.child(child_name)
+            for target in targets:
+                if not child.has_key(target):
+                    print child.keys()
+                    continue
+                values[target].append(child[target])
+        result = None
+        if function_name == 'mean':
+            result = float(np.array(values[targets[0]]).astype(np.float32).mean())
+        elif function_name == 'sum':
+            result = float(np.array(values[targets[0]]).astype(np.float32).sum())
+        elif function_name == 'prod':
+            result = float(np.array(values[targets[0]]).astype(np.float32).prod())
+        elif function_name == 'table':
+            result = [self[handle][0]]
+            for i, x in enumerate(values[targets[0]]):
+                row = []
+                for t in targets:
+                    row.append(values[t][i])
+                result.append(row)
+        else:
+            self.log.error('Aggregate function not found:', function_name, aggregation)
+        return result
+    
+    def update_aggregates(self):
+        """Updates aggregate options"""
+        for handle, opt in self.desc.iteritems():
+            if not opt.has_key('aggregate'):
+                continue
+            aggregation = opt['aggregate']
+            result = self.calc_aggregate(aggregation, handle)
+            if result is not None:
+                self[handle] = result
+            else:
+                self.log.error('Aggregation failed for ', handle, aggregation) 
     
     @property
     def devices(self):
