@@ -258,9 +258,11 @@ class ConfigurationProxy(Scriptable, Conf):
     
     def calc_aggregate(self, aggregation, handle=False):
         function_name = re.search("(.+?)\(", aggregation).group(1)
-        targets = re.search("\((.+?)\)", aggregation).group(1).split(',')
-        if len(targets)==0:
+        targets = re.search("\((.+?)\)", aggregation)
+        if targets is None:
             targets = [handle]
+        else:
+            targets = targets.group(1).split(',')
         values = collections.defaultdict(list)
         for child_name in self.children.iterkeys():
             child = self.child(child_name)
@@ -287,7 +289,7 @@ class ConfigurationProxy(Scriptable, Conf):
             self.log.error('Aggregate function not found:', function_name, aggregation)
         return result
     
-    def update_aggregates(self):
+    def update_aggregates(self, recursive=True):
         """Updates aggregate options"""
         for handle, opt in self.desc.iteritems():
             if not opt.has_key('aggregate'):
@@ -298,6 +300,9 @@ class ConfigurationProxy(Scriptable, Conf):
                 self[handle] = result
             else:
                 self.log.error('Aggregation failed for ', handle, aggregation) 
+        if recursive:
+            self.parent().update_aggregates(recursive=True)
+                
     
     @property
     def devices(self):

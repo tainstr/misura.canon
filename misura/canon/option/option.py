@@ -79,7 +79,7 @@ for k, v in typed_types.iteritems():
 
 num_types = typed_types['integer'] + typed_types['float']
 
-vkeys = "handle,name,current,factory_default,attr,type,writeLevel,readLevel,mb,step,max,min,options,parent,values,flags,unit,csunit,kid,priority,aggregate".split(
+vkeys = "handle,name,current,factory_default,attr,type,writeLevel,readLevel,mb,step,max,min,options,parent,values,flags,unit,csunit,kid,priority".split(
     ',')
 
 str_keys = ('handle', 'name', 'type', 'parent', 'unit', 'csunit', 'kid','aggregate')

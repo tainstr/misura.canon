@@ -37,6 +37,7 @@ class ConfigurationProxy(unittest.TestCase):
         
     def test_calc_aggregate(self):
         base = option.ConfigurationProxy({'self':dataimport.base_dict()})
+        base.add_option('a','Float',-1,'Aggregate result', aggregate='sum()')
         base.add_option('sum','Float',-1,'Aggregate result', aggregate='sum(a)')
         base.add_option('mean','Float',-1,'Aggregate result', aggregate='mean(a)')
         base.add_option('prod','Float',-1,'Aggregate result', aggregate='prod(a)')
@@ -63,6 +64,7 @@ class ConfigurationProxy(unittest.TestCase):
         self.assertEqual(aval, None)
         
         base.update_aggregates()
+        self.assertEqual(base['a'], 9)
         self.assertEqual(base['sum'], 9)
         self.assertEqual(base['mean'], 3)
         self.assertEqual(base['prod'], 12)
