@@ -7,7 +7,7 @@ import numpy as np
 
 
 class Log(Reference):
-    fields = [('t', 'float64'), ('priority', 'uint8'), ('msg', 'S1000')]
+    fields = [('t', 'float64'), ('priority', 'uint8'), ('msg', 'S10000')]
 
     def create(self):
         """Create a Table instance configured for Log storage"""
