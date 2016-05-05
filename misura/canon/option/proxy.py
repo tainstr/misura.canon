@@ -54,7 +54,8 @@ class ConfigurationProxy(Scriptable, Conf):
     def print_tree(self):
         print print_tree(self.tree())
 
-    def __init__(self, desc={'self': {}}, name='MAINSERVER', parent=False, readLevel=2, writeLevel=5, kid_base='/'):
+    def __init__(self, desc=collections.OrderedDict({'self': {}}), 
+                 name='MAINSERVER', parent=False, readLevel=2, writeLevel=5, kid_base='/'):
         Scriptable.__init__(self)
         self.log = logger.BaseLogger()
         self.kid_base = kid_base
@@ -203,6 +204,9 @@ class ConfigurationProxy(Scriptable, Conf):
         return self.desc[key]
 
     def sete(self, key, val):
+        if not val.has_key('priority') or val['priority']==-1:
+            priorities = [opt.get('priority',0) for opt in self.desc.itervalues()]
+            val['priority'] = max(priorities) + 1
         self.desc[key] = val
         
     def add_option(self, *args, **kwargs):
@@ -215,11 +219,17 @@ class ConfigurationProxy(Scriptable, Conf):
         ao(out, *args, **kwargs)
         out = out.values()[0]
         key = out['handle']
+        if out['priority'] == 0:
+            out['priority'] = -1
         # If option was already defined, update old one with new values
-        if self.has_key(key) and overwrite:
+        if self.has_key(key):
+            # Do not do anything if not overwriting
+            if not overwrite:
+                return out
             origin = self.gete(key).entry
             origin.update(out)
             out = origin
+        
         self.sete(out['handle'], out)
         return out
         

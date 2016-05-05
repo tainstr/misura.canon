@@ -3,6 +3,7 @@
 import os
 from time import time
 from fnmatch import fnmatch
+from collections import OrderedDict
 
 import numpy as np
 
@@ -12,7 +13,7 @@ from .. import reference
 
 def base_dict():
     """Returns a dictionary containing typical options for a legal configurable object"""
-    out = {}
+    out = OrderedDict()
     ao(out, 'name', 'String', 'Name', name='Name')
     ao(out, 'mro', 'List', name='mro', attr=['Hidden'])
     ao(out, 'comment', 'String', '')
@@ -85,17 +86,17 @@ def server_dict():
 
 def smp_tree():
     """Tree for generical sample"""
-    return  {'self': smp_dict()}
+    return  OrderedDict({'self': smp_dict()})
 
 def instr_tree(): 
     """Tree for generical instrument"""
-    return {'self': instr_dict(),
-                'measure': {'self': measure_dict()}}
+    return OrderedDict({'self': instr_dict(),
+                'measure': {'self': measure_dict()}})
 
 def tree_dict(): 
     """Main tree"""
-    return {'self': server_dict(),
-            'kiln': {'self': kiln_dict()}}
+    return OrderedDict({'self': server_dict(),
+            'kiln': {'self': kiln_dict()}})
 
 
 def create_tree(outFile, tree, path='/'):

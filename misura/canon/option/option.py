@@ -204,7 +204,7 @@ def validate(entry):
             etype = 'Float'
         elif type(cur) in [type([]), type((1,))]:
             etype = 'List'
-        elif type(cur) == type({}):
+        elif isinstance(cur, {}):
             if set(cur.keys()) == set('temp', 'time', 'value'):
                 etype = 'Meta'
         else:

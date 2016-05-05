@@ -18,7 +18,7 @@ class Conf(object):
             for k, v in desc.iteritems():
                 if not v.has_key('handle'):
                     v['handle'] = k
-                if type(v) == type({}):
+                if isinstance(v, dict):
                     v = Option(**v)
                 self.desc[k] = v
 
@@ -116,7 +116,7 @@ class Conf(object):
             opt['type'] = 'Empty'
         if not opt.has_key('handle'):
             opt['handle'] = name
-        if type(opt) == type({}):
+        if isinstance(opt, dict):
             opt = Option(**opt)
             opt.set_base_kid(self.kid_base)
         self.desc[name] = opt
@@ -151,12 +151,6 @@ class Conf(object):
         return True
 
     # FIXME: Check if all these key-management methods has still some use...
-    def setPriority(self, name,  nval):
-        """Set the enumeration priority of option `name`"""
-        oval = self.desc[name]['priority']
-        self.desc[name]['priority'] = nval
-        return oval, nval
-
     def setFlags(self, opt, upDict):
         """Update flags for `opt` with `upDict`."""
         d = self.desc[opt]

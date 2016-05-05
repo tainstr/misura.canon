@@ -248,7 +248,7 @@ class SharedFile(CoreFile, DataOperator):
         # test
         print 'loading ', len(tree)
         d = loads(tree)
-        if type(d) != type({}):
+        if not isinstance(d, dict):
             print 'Wrong Conf Tree!'
             return False
         print 'Conf tree length:', len(tree)
