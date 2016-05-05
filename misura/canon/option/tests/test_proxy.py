@@ -60,6 +60,8 @@ class ConfigurationProxy(unittest.TestCase):
         self.assertEqual(aval, 12)
         aval = base.calc_aggregate('table(a,b)', 'table')
         self.assertEqual(aval, [[('Col A', 'Float'), ('Col B', 'Float')], [1,2],[2,4],[6,12]])
+        aval2 = base.calc_aggregate('table( a, b)', 'table')
+        self.assertEqual(aval, aval2)
         aval = base.calc_aggregate('makegold(a)')
         self.assertEqual(aval, None)
         

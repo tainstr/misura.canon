@@ -262,15 +262,21 @@ class ConfigurationProxy(Scriptable, Conf):
         if targets is None:
             targets = [handle]
         else:
-            targets = targets.group(1).split(',')
+            targets = targets.group(1).replace(' ','').split(',')
         values = collections.defaultdict(list)
         for child_name in self.children.iterkeys():
             child = self.child(child_name)
+            pack = collections.defaultdict(list)
             for target in targets:
+                # Ensure all targets exist
                 if not child.has_key(target):
-                    print child.keys()
-                    continue
-                values[target].append(child[target])
+                    print 'missing target', child_name, target, child.keys()
+                    pack = False
+                    break
+                pack[target].append(child[target])
+            if pack:
+                for t in targets:
+                    values[t]+=pack[t]
         result = None
         if function_name == 'mean':
             result = float(np.array(values[targets[0]]).astype(np.float32).mean())
@@ -279,6 +285,7 @@ class ConfigurationProxy(Scriptable, Conf):
         elif function_name == 'prod':
             result = float(np.array(values[targets[0]]).astype(np.float32).prod())
         elif function_name == 'table':
+            print handle, aggregation, values
             result = [self[handle][0]]
             for i, x in enumerate(values[targets[0]]):
                 row = []
@@ -300,9 +307,8 @@ class ConfigurationProxy(Scriptable, Conf):
                 self[handle] = result
             else:
                 self.log.error('Aggregation failed for ', handle, aggregation) 
-        if recursive:
+        if recursive and self.parent():
             self.parent().update_aggregates(recursive=True)
-                
     
     @property
     def devices(self):
