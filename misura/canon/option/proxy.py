@@ -280,7 +280,6 @@ class ConfigurationProxy(Scriptable, Conf):
             for target in targets:
                 # Ensure all targets exist
                 if not child.has_key(target):
-                    print 'missing target', child_name, target, child.keys()
                     pack = False
                     break
                 pack[target].append(child[target])
@@ -295,7 +294,6 @@ class ConfigurationProxy(Scriptable, Conf):
         elif function_name == 'prod':
             result = float(np.array(values[targets[0]]).astype(np.float32).prod())
         elif function_name == 'table':
-            print handle, aggregation, values
             result = [self[handle][0]]
             for i, x in enumerate(values[targets[0]]):
                 row = []
