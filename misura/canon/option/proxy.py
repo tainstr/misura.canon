@@ -206,7 +206,8 @@ class ConfigurationProxy(Scriptable, Conf):
     def sete(self, key, val):
         if not val.has_key('priority') or val['priority']==-1:
             priorities = [opt.get('priority',0) for opt in self.desc.itervalues()]
-            val['priority'] = max(priorities) + 1
+            if len(priorities):
+                val['priority'] = max(priorities) + 1
         self.desc[key] = val
         
     def add_option(self, *args, **kwargs):
