@@ -172,9 +172,11 @@ class ConfigurationProxy(Scriptable, Conf):
     def __nonzero__(self):
         return 1
 
-    def __getitem__(self, key):
+    def __getitem__(self, key, *a):
         if key == 'fullpath':
             return self.get_fullpath()
+        if len(a)==1 and not self.desc.has_key(key):
+            return a[0]
         return self.desc[key]['current']
 
     def __setitem__(self, key, val):

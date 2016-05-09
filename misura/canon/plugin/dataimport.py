@@ -116,6 +116,7 @@ class Converter(object):
     name = 'Base Converter'
     file_pattern = '*'
     pid = 'Data conversion'
+    confdb = {}
     
     def __init__(self):
         self.outpath = ''
