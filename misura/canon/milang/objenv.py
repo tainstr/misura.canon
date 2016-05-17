@@ -86,7 +86,9 @@ class InstrumentEnvironment(InterfaceEnvironment):
         # stop_acquisition!
         self.obj.log.info(
             'Script is requesting acquisition end. ' + self.handle)
-        self.obj.root['endStatus'] = message
+
+        if message:
+            self.obj.root['endStatus'] = message
         self.obj.root['isRunning'] = False
 
 
