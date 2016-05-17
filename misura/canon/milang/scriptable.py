@@ -89,7 +89,6 @@ class Scriptable(object):
         return r
 
     def execute_script(self, handle, ins):
-        r = True
         exe = self.all_scripts[handle]
         en = exe.script_env.obj.getFlags(handle).get('enabled', True)
         if not en:
@@ -100,11 +99,10 @@ class Scriptable(object):
             exe.set_env_outFile(ins.outFile)
         print 'INTERPRETING', handle, exe, exe.env._hdf, exe.obj_env._hdf,  exe.ins_env._hdf, exe.kiln_env._hdf, exe.script_env._hdf, exe.measure_env._hdf
         u = exe.eval(self, ins=ins)
-        r = r and u
 
-        print 'DONE', handle, r, exe.env.time, exe.env.temp, exe.env.value
+        print 'DONE', handle, u, exe.env.time, exe.env.temp, exe.env.value
 
-        return r
+        return u
 
     def validate_script(self, handle):
         """Validates a script option by name"""
