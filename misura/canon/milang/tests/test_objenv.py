@@ -30,7 +30,7 @@ class DummyInterface(dict):
         if r is not None:
             return r
         return getattr(self, name, None)
-    
+
     def log(self, *s):
         self['log'] = [0, ' '.join([str(e) for e in s])]
 
@@ -39,12 +39,14 @@ class InterfaceEnvironment(unittest.TestCase):
     obj = DummyInterface()
     ie = milang.InterfaceEnvironment()
     ie.obj = obj
+    ie.hdf = obj
+
     env = milang.BaseEnvironment()
-    
+
     def test_Log(self):
         self.ie.Log('hello', 1, None)
         self.assertEqual(self.ie.comment, 'hello 1 None')
-        self.assertEqual(self.obj['log'][1], 'hello 1 None')   
+        self.assertEqual(self.obj['log'][1], 'hello 1 None')
 
     def test_Opt(self):
         self.assertEqual(self.ie.Opt('Meta_ciao'), self.obj['Meta_ciao'])
