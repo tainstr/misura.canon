@@ -144,7 +144,7 @@ class Converter(object):
         if os.path.exists(self.outpath):
             os.remove(self.outpath)
      
-    def convert(self):
+    def convert(self, *a, **kw):
         """Override this to do the real conversion"""
         assert False,'Unimplemented'
         

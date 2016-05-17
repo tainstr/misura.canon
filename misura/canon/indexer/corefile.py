@@ -115,7 +115,7 @@ class CoreFile(object):
         return self.test.isopen
 
     def __nonzero__(self):
-        return self.test != False
+        return self.test is not False
 
     @lockme
     def close(self):
