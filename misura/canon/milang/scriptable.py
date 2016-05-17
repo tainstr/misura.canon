@@ -1,6 +1,6 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-"""Misura Language or Mini Language. 
+"""Misura Language or Mini Language.
 Secure minimal Python language subset for conditional evaluation of numerical datasets."""
 
 from dataenv import DataEnvironment
@@ -20,7 +20,7 @@ class Scriptable(object):
         self.env = DataEnvironment()
 
     def compile_scripts(self, hdf=False):
-        """Compile all Script-type options, 
+        """Compile all Script-type options,
         assigning them to the appropriate container dictionary."""
         self.scripts = []
         self.end_scripts = []
@@ -80,22 +80,30 @@ class Scriptable(object):
             scripts = self.always_scripts
         elif period == 'all':
             scripts = self.all_scripts
-        
+
         scripts = set(scripts)
         print 'EXECUTING',scripts, self.scripts, self.end_scripts, self.always_scripts
         for handle in scripts:
-            exe = self.all_scripts[handle]
-            en = exe.script_env.obj.getFlags(handle).get('enabled', True)
-            if not en:
-                print 'Disabled script, skipping:', handle
-                continue
-            # DEBUG
-            if ins:
-                exe.set_env_outFile(ins.outFile)
-            print 'INTERPRETING', handle, exe, exe.env._hdf, exe.obj_env._hdf,  exe.ins_env._hdf, exe.kiln_env._hdf, exe.script_env._hdf, exe.measure_env._hdf
-            u = exe.eval(self, ins=ins)
-            r = r and u
-            print 'DONE', handle, r, exe.env.time, exe.env.temp, exe.env.value
+            r = r and self.execute_script(handle, ins)
+
+        return r
+
+    def execute_script(self, handle, ins):
+        r = True
+        exe = self.all_scripts[handle]
+        en = exe.script_env.obj.getFlags(handle).get('enabled', True)
+        if not en:
+            print 'Disabled script, skipping:', handle
+            return True
+        # DEBUG
+        if ins:
+            exe.set_env_outFile(ins.outFile)
+        print 'INTERPRETING', handle, exe, exe.env._hdf, exe.obj_env._hdf,  exe.ins_env._hdf, exe.kiln_env._hdf, exe.script_env._hdf, exe.measure_env._hdf
+        u = exe.eval(self, ins=ins)
+        r = r and u
+
+        print 'DONE', handle, r, exe.env.time, exe.env.temp, exe.env.value
+
         return r
 
     def validate_script(self, handle):
