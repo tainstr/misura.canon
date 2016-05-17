@@ -1,6 +1,6 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-"""Misura Language or Mini Language. 
+"""Misura Language or Mini Language.
 Secure minimal Python language subset for conditional evaluation of numerical datasets."""
 
 import exceptions
@@ -25,7 +25,7 @@ class InterfaceEnvironment(DataEnvironment):
 
     @obj.setter
     def obj(self, obj):
-        """Set the object towards which the environment acts as an inteface. 
+        """Set the object towards which the environment acts as an inteface.
         Set the prefix according to obj fullpath."""
         self._obj = obj
         if obj in [None, False]:
@@ -75,17 +75,19 @@ class InterfaceEnvironment(DataEnvironment):
         # Re-instantiate any class inheriting InterfaceEnvironment
         ie = self.__class__()
         ie.obj = r
+        ie.hdf = self.hdf
         return ie
 
 
 class InstrumentEnvironment(InterfaceEnvironment):
 
-    def stop_acquisition(self, save=True):
+    def stop_acquisition(self, message=False):
         # Signal acq stop. We are in different process and cannot directly call
         # stop_acquisition!
         self.obj.log.info(
             'Script is requesting acquisition end. ' + self.handle)
-        self.obj.root.set('isRunning', False)
+        self.obj.root['endStatus'] = message
+        self.obj.root['isRunning'] = False
 
 
 class KilnEnvironment(InterfaceEnvironment):
