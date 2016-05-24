@@ -84,8 +84,8 @@ class Scriptable(object):
         scripts = set(scripts)
         print 'EXECUTING',scripts, self.scripts, self.end_scripts, self.always_scripts
         for handle in scripts:
-            r = r and self.execute_script(handle, ins)
-
+            r1 = self.execute_script(handle, ins)
+            r = r and r1 
         return r
 
     def execute_script(self, handle, ins):
@@ -99,9 +99,7 @@ class Scriptable(object):
             exe.set_env_outFile(ins.outFile)
         print 'INTERPRETING', handle, exe, exe.env._hdf, exe.obj_env._hdf,  exe.ins_env._hdf, exe.kiln_env._hdf, exe.script_env._hdf, exe.measure_env._hdf
         u = exe.eval(self, ins=ins)
-
         print 'DONE', handle, u, exe.env.time, exe.env.temp, exe.env.value
-
         return u
 
     def validate_script(self, handle):
@@ -149,9 +147,9 @@ class Scriptable(object):
         if not hasattr(self, 'measure'):
             self.log.error('Characterization makes no sense on this object')
             return False
-        self.log.debug('Executing measure scripts')
+        self.log.debug('Executing measure scripts', period)
         self.measure.execute_scripts(self, period=period)
         self.log.debug('Characterization of samples: ',repr(self.samples))
         for smp in self.samples:
-            self.log.debug('Executing sample scripts',smp)
+            self.log.debug('Executing sample scripts',smp['fullpath'], period)
             smp.execute_scripts(self, period=period)
