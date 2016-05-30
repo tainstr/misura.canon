@@ -382,7 +382,7 @@ class SharedFile(CoreFile, DataOperator):
     def run_scripts(self, instr=None):
         """Re-evaluate scripts"""
         if instr is None:
-            instr = getattr(self.conf, self.instrument_name, None)
+            instr = getattr(self.conf, self.instrument_name(), None)
         if instr is None:
             print 'Impossible to run scripts: conf is not available.'
             return False
