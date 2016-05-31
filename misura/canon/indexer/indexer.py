@@ -651,9 +651,8 @@ class Indexer(object):
         return r
 
     @dbcom
-    def list_tests(self, start=0, stop=25):
-        self.cur.execute(
-            'SELECT * FROM test ORDER BY rowid DESC LIMIT ? OFFSET ?', (stop - start, start))
+    def list_tests(self):
+        self.cur.execute('SELECT * FROM test ORDER BY zerotime')
         r = []
         for record in self.cur.fetchall():
             file_path = self.convert_to_full_path(record[0])

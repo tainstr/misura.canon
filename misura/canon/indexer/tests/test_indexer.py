@@ -127,7 +127,7 @@ class Indexer(unittest.TestCase):
 
         hdf_file = SharedFile(full_h5path)
         hdf_file.set_version()
-        saved_test_record = self.indexer.list_tests(start=0, stop=1)[0]
+        saved_test_record = self.indexer.list_tests()[0]
 
         self.assertTrue('a new comment' in saved_test_record)
         self.assertEquals('a new comment', hdf_file.conf.hsm.measure['comment'])
@@ -145,7 +145,7 @@ class Indexer(unittest.TestCase):
 
         hdf_file = SharedFile(full_h5path)
         hdf_file.set_version()
-        saved_test_record = self.indexer.list_tests(start=0, stop=1)[0]
+        saved_test_record = self.indexer.list_tests()[0]
 
         self.assertTrue('a new name' in saved_test_record)
         self.assertEquals('a new name', hdf_file.conf.hsm.measure['name'])
