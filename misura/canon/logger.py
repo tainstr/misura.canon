@@ -6,6 +6,14 @@ from datetime import datetime
 import csutil
 
 
+def concatenate_message_objects(*msg):
+    # Ensure all message tokens are actually strings
+    # (avoid "None" objects pollute the buffer!)
+    msg = list(msg)
+    for i, e in enumerate(msg):
+        msg[i] = str(e)
+    return msg
+    
 def formatMsg(*msg, **po):
     """Format the message for pretty visualization"""
     t = csutil.time()
@@ -20,11 +28,7 @@ def formatMsg(*msg, **po):
         o = ''
     else:
         own = ' (%s%i): ' % (o, os.getpid())
-    # Ensure all message tokens are actually strings
-    # (avoid "None" objects pollute the buffer!)
-    msg = list(msg)
-    for i, e in enumerate(msg):
-        msg[i] = str(e)
+    msg = concatenate_message_objects(*msg)
     smsg = ' '.join(tuple(msg))
     smsg = smsg.splitlines()
     pmsg = '%s%s' % (own, smsg[0])
