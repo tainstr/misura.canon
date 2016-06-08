@@ -102,7 +102,7 @@ class NavigatorDomain(object):
         return self.navigator.currentIndex(*a, **k)
 
     def selectedIndexes(self, *a, **k):
-        return self.navigator.selectedIndexes(*a, **k)
+        return self.navigator.selectedIndexesPublic(*a, **k)
 
     @property
     def mainwindow(self):
@@ -128,14 +128,14 @@ class NavigatorDomain(object):
         if not self.is_loaded(node):
             return False
         return len(self.model().is_plotted(node.path)) > 0
-    
+
     def double_clicked(self, node):
         return False
 
     def check_node(self, node):
         """Check if node pertain to this domain"""
         return True
-    
+
     def match_node_path(self, node, rule):
         if (not node) or (not node.path):
             return False
@@ -145,7 +145,7 @@ class NavigatorDomain(object):
     def check_nodes(self, nodes):
         """Check if multiple nodes selection pertain to this domain"""
         return True
-    
+
     def add_base_menu(self, menu, node=False):
         return True
 
@@ -161,7 +161,7 @@ class NavigatorDomain(object):
         if not self.check_node(node):
             return False
         return self.add_file_menu(menu, node)
-    
+
     def add_group_menu(self, menu, node):
         return True
 
