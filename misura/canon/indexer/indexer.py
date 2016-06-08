@@ -342,7 +342,9 @@ class Indexer(object):
             if active_version:
                 version_node = getattr(table.root, active_version, False)
                 if version_node is not False:
-                    conf = version_node.conf
+                    versioned_conf = getattr(version_node, 'conf', False)
+                    if versioned_conf is not False:
+                        conf = version_node.conf
 
         # Load configuration
         node = filenode.openNode(conf, 'r')
