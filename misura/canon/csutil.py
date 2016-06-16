@@ -442,22 +442,6 @@ class retry(object):
         return retry_loop
 
 
-class BiDict(object):
-
-    """Simple bi-directional hash table implementation."""
-
-    def __init__(self, *a, **k):
-        self.d = dict(*a, **k)
-        self.__getitem__ = self.d.__getitem__
-        self.rev = {}
-
-    def __setitem__(self, a, b):
-        self.rev[b] = a
-        self.d[a] = b
-
-    def __delitem__(self, k):
-        rk = self.d.pop(k)
-        del self.rev[rk]
 
 
 import cProfile

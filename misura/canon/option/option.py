@@ -277,6 +277,27 @@ def validate(entry):
 read_only_keys = ['handle', 'type', 'unit']
 
 
+def namingConvention(path, splt='/'):
+    """If path pertains to a sample property, returns its sample number and option name"""
+    if not splt + 'sample' in path:
+        return path, None
+    if path.endswith(splt):
+        path = path[:-1]
+    v = path.split(splt)
+    # Find sample number
+    for i, d in enumerate(v):
+        if not d.startswith('sample'):
+            continue
+        idx = int(d[6:])
+        break
+    # Find option name
+    # If it is properly a sample option
+    if v[-2].startswith('sample'):
+        return v[-1], idx
+    # Otherwise, return path starting from sample
+    return splt.join(v[i:]), idx
+
+
 class Option(object):
 
     """An Option object"""
