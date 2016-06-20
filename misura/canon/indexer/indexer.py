@@ -377,13 +377,14 @@ class Indexer(object):
             test[p] = tree[instrument]['measure']['self'][p]['current']
         zerotime = test['zerotime']
         test['serial'] = conf.attrs.serial
-        if not getattr(conf.attrs, 'uid', False):
+        uid = getattr(conf.attrs, 'uid', False)
+        if not uid or len(uid)<2:
             self.log.debug('UID attribute not found')
             sname = tree[instrument]['measure']['id']
             test['uid'] = hashlib.md5(
                 '%s_%s_%i' % (test['serial'], test['zerotime'], sname)).hexdigest()
         else:
-            test['uid'] = conf.attrs.uid
+            test['uid'] = uid
         test['flavour'] = 'Standard'
         v = []
         for k in 'file,serial,uid,id,zerotime,instrument,flavour,name,elapsed,nSamples,comment'.split(','):
@@ -393,7 +394,6 @@ class Indexer(object):
         ok = False
         print 'File verify:', ok
         v.append(ok)
-
         return v, tree, instrument, test
 
 
