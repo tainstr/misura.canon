@@ -1,9 +1,11 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 import unittest
+import tempfile
 from misura.canon.csutil import next_point
 from misura.canon.csutil import filter_calibration_filenames
 from misura.canon.csutil import only_hdf_files
+from misura.canon.csutil import incremental_filename
 
 
 class TestCsUtil(unittest.TestCase):
@@ -59,7 +61,22 @@ class TestCsUtil(unittest.TestCase):
                               'another hdf file.h5']
 
         self.assertEqual(filtered_filenames, only_hdf_files(filenames))
+        
+    def test_incremental_filename(self):
+        self.assertEqual(incremental_filename(''), '')
+        self.assertEqual(incremental_filename('asdgs'), 'asdgs')
+        self.assertEqual(incremental_filename('asdgs.exe'), 'asdgs.exe')
+        self.assertEqual(incremental_filename('a_b_1.g'), 'a_b_1.g')
+        with tempfile.NamedTemporaryFile() as f:
+            self.assertEqual(incremental_filename(f.name), f.name+'_0')
+        with tempfile.NamedTemporaryFile(suffix='_12') as f:
+            self.assertEqual(incremental_filename(f.name), f.name[:-3]+'_13')
+        with tempfile.NamedTemporaryFile(suffix='.exe') as f:
+            self.assertEqual(incremental_filename(f.name), f.name[:-4]+'_0.exe')
+        with tempfile.NamedTemporaryFile(suffix='_15.f') as f:
+            self.assertEqual(incremental_filename(f.name), f.name[:-5]+'_16.f')          
+        with tempfile.NamedTemporaryFile(suffix='_1_2_dsf_1_56_d.f') as f:
+            self.assertEqual(incremental_filename(f.name), f.name[:-2]+'_0.f')
 
-
-if" __name__ == __main__":
+if __name__ == "__main__":
     unittest.main(verbosity=2)

@@ -154,6 +154,34 @@ def validate_filename(fn, good=goodchars, bad=badchars):
     return fn
 
 
+def incremental_filename(original):
+    if not os.path.exists(original):
+        return original
+    ext = ''
+    base = original.split('.')
+    
+    if len(base)>1:
+        ext = '.'+base.pop(-1)
+    base = '.'.join(base)
+    prenum = base.split('_')
+    number = 0
+    if len(prenum)>1:
+        try:
+            number = int(prenum[-1])+1
+            prenum.pop(-1)
+        except:
+            pass
+            
+    prenum = '_'.join(prenum)
+    
+    new = prenum+'_'+str(number)+ext
+    while os.path.exists(new):
+        number += 1
+        new = prenum+'_'+str(number)+ext
+        
+    return new
+
+
 def iter_cron_sort(top, field=1, reverse=False):
     """
     Return ordered of tuples (path,ctime,size) for all files from `top` folder recursively and ordered by field.
@@ -510,9 +538,9 @@ def from_seconds_to_hms(seconds):
 
 
 def ensure_directory_existence(path):
-        directory = os.path.dirname(path)
-        if not os.path.exists(directory):
-            os.makedirs(directory)
+    directory = os.path.dirname(path)
+    if not os.path.exists(directory):
+        os.makedirs(directory)
 
 # LOCALE CONTEXT MANAGER
 from contextlib import contextmanager
