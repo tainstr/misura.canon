@@ -60,14 +60,14 @@ No data will be evaluate if older than zerotime."""
         path = self._versioned(path)
         n = self._get_node(path)
 
-        # Convert to regular array (we could convert to dict for fields?)
-        if not raw:
+        # Convert to regular array
+        if not raw and len(n):
             try:
                 n = n[:].view(np.float64).reshape(n.shape + (-1,))
             except:
                 print 'SHAPE', path, n.shape
                 raise
-
+            
         if idx_or_slice is not None:
             slc = csutil.toslice(idx_or_slice)
 
