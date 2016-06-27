@@ -11,6 +11,7 @@ from ..milang import Scriptable
 import common_proxy
 from .option import ao
 
+
 def dictRecursiveModel(base):
     """BUild a dictionary configuration tree from ConfigurationProxy `base`"""
     out = {}
@@ -80,6 +81,7 @@ class ConfigurationProxy(Scriptable, Conf):
 #               self._Method__name=name
         self.get = self.__getitem__
         self.set = self.__setitem__
+        self.autosort()
 
     @property
     def root(self):
@@ -236,7 +238,15 @@ class ConfigurationProxy(Scriptable, Conf):
         self.sete(out['handle'], out)
         return out
         
-    
+    def autosort(self):
+        def sorter(item):
+            key, val = item
+            m = [int(s) for s in key.split() if s.isdigit()]
+            if not len(m):
+                return key
+            return m[-1]
+        self.children = collections.OrderedDict(sorted(self.children.items(), key=sorter))
+            
     def add_child(self, name, desc):
         """Inserts a sub-object `name` with object tree dictionary `desc`.
         Returns a ConfigurationProxy to the new child."""
@@ -245,6 +255,7 @@ class ConfigurationProxy(Scriptable, Conf):
         if not 'self' in desc:
             desc = {'self': desc}
         self.children[name] = desc
+        self.autosort()
         return self.child(name)
 
     def getFlags(self, opt):
