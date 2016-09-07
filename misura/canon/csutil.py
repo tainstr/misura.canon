@@ -383,6 +383,27 @@ def next_point(crv, row, delta=1, events=False):
 
     return row, ent
 
+def initializeme(func):
+    """Decorator to protect a function call behind an initializing flag"""
+    @functools.wraps(func)
+    def initializeme_wrapper(self, *args, **kwargs):
+        if self['initializing']:
+            self.log.error('Already initializing: cannot exec', func)
+            raise BaseException('Already initializing: cannot execute')
+        try:
+            self['initializing'] = True
+            r = func(self, *args, **kwargs)
+            self['initializing'] = False
+            return r
+        except KeyboardInterrupt:
+            raise KeyboardInterrupt()
+        except:
+            self.log.error('initializing_flag: exc calling', func, args, kwargs, format_exc())
+            raise
+        finally:
+            self['initializing'] = False
+        return False
+    return initializeme_wrapper
 
 def lockme(func):
     """Decorator to lock/unlock method execution.
