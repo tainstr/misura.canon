@@ -81,6 +81,8 @@ class ConfigurationProxy(Scriptable, Conf):
 #               self._Method__name=name
         self.get = self.__getitem__
         self.set = self.__setitem__
+        if self.has_key('devpath'):
+            self['devpath'] = name
         self.autosort()
 
     @property
