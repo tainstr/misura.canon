@@ -249,14 +249,18 @@ class ConfigurationProxy(Scriptable, Conf):
             return m[-1]
         self.children = collections.OrderedDict(sorted(self.children.items(), key=sorter))
             
-    def add_child(self, name, desc):
+    def add_child(self, name, desc, overwrite=False):
         """Inserts a sub-object `name` with object tree dictionary `desc`.
         Returns a ConfigurationProxy to the new child."""
         # If desc is the description dictionary and not the object tree dictionary,
         # encapsulate it in a 'self' dict
         if not 'self' in desc:
             desc = {'self': desc}
-        self.children[name] = desc
+        if overwrite or name not in self.children:
+            self.children[name] = desc
+        else:
+            for key, val in desc['self'].iteritems():
+                self.children[name]['self'][key] = val
         self.autosort()
         return self.child(name)
 
