@@ -38,7 +38,7 @@ class CoreFile(object):
 
     """Low-level HDF access functions"""
 
-    def __init__(self, path=False, uid='', mode='a', title='', log=csutil.fakelogger, header=True):
+    def __init__(self, path=False, uid='', mode='a', title='', log=csutil.fakelogger, header=True, version= ''):
         self._header = {}  # static header listing
         self.node_cache = {}
         self.path = False
@@ -46,11 +46,10 @@ class CoreFile(object):
         self._test = False  # currently opened HDF file
         self.log = log
         self._lock = Lock()
+        self.version = ''
         # FIXME: open_file is defined in SharedFile...!!!!
         if path is not False:
-            self.open_file(path, uid, mode=mode, header=header)
-
-        self.version = ''
+            self.open_file(path, uid, mode=mode, header=header, version=version)
 
     def fileno(self):
         return self.test.fileno()
@@ -409,9 +408,10 @@ class CoreFile(object):
     def _versioned(self, path):
         """Translate standard orig path into configured version path.
         Eg: /conf to /ver_1/conf"""
-        p = self.version + path
-        if self._has_node(p):
-            return p
+        if self.version and not path.startswith(self.version):
+            path1 = self.version + path
+            if self._has_node(path1):
+                return path1
         return path
 
     @lockme

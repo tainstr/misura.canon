@@ -49,11 +49,11 @@ class SharedFile(CoreFile, DataOperator):
     """Configuration dictionary"""
 
     def __init__(self, *a, **k):
-        CoreFile.__init__(self, *a, **k)
         self.conf = False
+        CoreFile.__init__(self, *a, **k)
         self.node_cache = {}
 
-    def open_file(self, path=False, uid='', mode='a', title='', header=True):
+    def open_file(self, path=False, uid='', mode='a', title='', header=True, version=''):
         """opens the hdf file in `path` or `uid`"""
         self.node_cache = {}
         if not path:
@@ -79,11 +79,10 @@ class SharedFile(CoreFile, DataOperator):
             if self.has_node('/conf'):
                 if self.has_node_attr('/conf', 'uid'):
                     self.uid = self.get_node_attr('/conf', 'uid')
-                self.load_conf()
+                self.set_version(version)
             else:
                 self.conf = option.ConfigurationProxy()
-            self.header(refresh=True, version=self.version)
-        print 'done open_file', self.path
+                self.header(refresh=True, version=self.version)
 
         if not self.has_node('/userdata'):
             self.create_group('/', 'userdata')
@@ -129,6 +128,7 @@ class SharedFile(CoreFile, DataOperator):
     def set_version(self, newversion=-1):
         """Set the current version to `newversion`"""
         # Load the last used version
+        
         if newversion < 0:
             self._lock.acquire()
             if '/userdata' in self.test:
@@ -141,6 +141,8 @@ class SharedFile(CoreFile, DataOperator):
         if not isinstance(newversion, basestring):
             newversion = '/ver_{}'.format(newversion)
 
+        print 'AAAAAA set_version', newversion, self.version
+        
         if self.version == newversion and self.conf:
             return True
 
