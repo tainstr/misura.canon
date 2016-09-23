@@ -10,30 +10,39 @@ import Crypto.Hash.SHA as SHA
 import Crypto.Signature.PKCS1_v1_5 as PKCS1_v1_5
 
 
-def list_references(parent, h=False):
+def purge_path(path, result):
+    for cl, refs in result.items():
+        if path in refs:
+            refs.remove(path)
+            result[cl] = refs
+    return result
+
+def list_references(parent, result=False):
     """Recursively search all references available starting from `parent` node, 
-    and append their path to `h`,"""
-    if h is False:
-        h = {}
+    and append their path to `result`,"""
+    if result is False:
+        result = {}
     #print 'Listing references', parent._v_pathname
     for child in parent._f_listNodes():
-        # Do not list versioned paths
-        if child._v_pathname.startswith('/ver_'):
-            continue
+        # Do not list paths from different versions
+        path = child._v_pathname
         # iteratively call itself onto Group nodes
         if child.__class__.__name__ == 'Group':
-            h = list_references(child, h)
+            result = list_references(child, result=result)
             continue
+            
         # if it is of the desired reference class
         rc = getattr(child.attrs, '_reference_class', False)
         if not rc:
-            print 'Skipping missing reference:', child._v_pathname
+            print 'Skipping missing reference:', path
             continue
-        if not h.has_key(rc):
-            h[rc] = []
-        h[rc].append(child._v_pathname)
+        if not result.has_key(rc):
+            result[rc] = []
+            
+        result[rc].append(path)
         continue
-    return h
+
+    return result
 
 
 def get_node_hash(f, path):

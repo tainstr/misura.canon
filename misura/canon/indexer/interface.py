@@ -82,13 +82,12 @@ class SharedFile(CoreFile, DataOperator):
                 self.load_conf()
             else:
                 self.conf = option.ConfigurationProxy()
-            self.header(refresh=True)
+            self.header(refresh=True, version=self.version)
         print 'done open_file', self.path
 
         if not self.has_node('/userdata'):
             self.create_group('/', 'userdata')
             self.set_attributes('/userdata', attrs={'active_version': ''})
-
 
         return self.test, self.path
 
@@ -133,7 +132,8 @@ class SharedFile(CoreFile, DataOperator):
         if newversion < 0:
             self._lock.acquire()
             if '/userdata' in self.test:
-                newversion = self.test.get_node_attr('/userdata', 'active_version')
+                newversion = self.test.get_node_attr(
+                    '/userdata', 'active_version')
             else:
                 newversion = getattr(self.test.root.conf.attrs, 'versions', '')
             self._lock.release()
@@ -146,13 +146,13 @@ class SharedFile(CoreFile, DataOperator):
 
         self._change_version(newversion)
         self.load_conf()
+        self.header(refresh=True)
         return True
 
     def _change_version(self, new_version):
         self.version = str(new_version)
-        self._set_attributes('/userdata', attrs={'active_version': new_version})
-
-
+        self._set_attributes(
+            '/userdata', attrs={'active_version': new_version})
 
     @lockme
     def create_version(self, name=False):
@@ -270,14 +270,16 @@ class SharedFile(CoreFile, DataOperator):
         if self.version != '':
             a = self.get_attributes('/conf')
             self.set_attributes(self.version + '/conf', attrs=a)
+        self.conf = option.ConfigurationProxy(desc=tree)
         return
 
     def save_data(self, path, data, time_data, opt=False):
         version = self.active_version()
         if version is '':
-            raise RuntimeError("Original version is not writable.\nCreate or switch to another version first.")
+            raise RuntimeError(
+                "Original version is not writable.\nCreate or switch to another version first.")
 
-        path = ("/summary/" + path).replace('//','/')
+        path = ("/summary/" + path).replace('//', '/')
         vpath = path.split("/")
         parent = "/".join(vpath[0:-1])
         name = vpath[-1]
@@ -289,19 +291,19 @@ class SharedFile(CoreFile, DataOperator):
             opt = source_path_reference.get_attributes()
             opt['handle'] = name
         self.remove_node(newparent + "/" + name)
-        dest_path_reference = reference.Array(self, newparent, opt=opt, with_summary=False)
+        dest_path_reference = reference.Array(
+            self, newparent, opt=opt, with_summary=False)
         dest_path_reference.append(data_with_time)
         self.flush()
 
     def active_version(self):
         return self.get_node_attr('/userdata', 'active_version')
 
-
-
-
     @lockme
-    def header(self, reference_classes=['Array'], startswith=False, refresh=False):
+    def header(self, reference_classes=['Array'], startswith=False, refresh=False, version=False):
         """Returns all available data references"""
+        if not version:
+            version = self.version
         if refresh or len(self._header) == 0:
             self._header = list_references(self.test.root)
             print self._header
@@ -311,11 +313,16 @@ class SharedFile(CoreFile, DataOperator):
         for k in reference_classes:
             r += self._header.get(k, [])
         if startswith:
-            filtered = []
-            for e in r:
-                if e.startswith(startswith):
-                    filtered.append(e)
-            return filtered
+            ver = version if version else '----'
+            r = filter(lambda el: el.startswith(startswith) or el.startswith(ver), r)
+        if not version:
+            r = filter(lambda el: not el.startswith('/ver_'), r)
+        else:
+            # Exclude element with wrong version
+            wrong = lambda el: el.startswith(version+'/') or not el.startswith('/ver_')
+            # Exclude unversioned elements having a version 
+            unversioned = lambda el: version + el not in r
+            r = filter(lambda el: unversioned(el) or wrong(el), r)
         return r
 
     def xmlrpc_col(self, *a, **k):
@@ -392,7 +399,7 @@ class SharedFile(CoreFile, DataOperator):
         # Associate scripts to their output Meta options
         instr.outFile = self
         instr.distribute_scripts(self)
-        instr.characterization(period = 'all')
+        instr.characterization(period='all')
         return True
 
     def copy(self):
