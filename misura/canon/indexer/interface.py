@@ -272,21 +272,22 @@ class SharedFile(CoreFile, DataOperator):
             self.set_attributes(self.version + '/conf', attrs=a)
         return
 
-    def save_data(self, path, data, time_data):
+    def save_data(self, path, data, time_data, opt=False):
         version = self.active_version()
         if version is '':
             raise RuntimeError("Original version is not writable.\nCreate or switch to another version first.")
 
-        path = "/summary" + path
-        parent = "/".join(path.split("/")[0:-1])
-        name = "/".join(path.split("/")[-1])
+        path = ("/summary/" + path).replace('//','/')
+        vpath = path.split("/")
+        parent = "/".join(vpath[0:-1])
+        name = vpath[-1]
         newparent = version + parent
 
         data_with_time = np.transpose(np.vstack((time_data, data)))
-
-        source_path_reference = reference.Array(self, path)
-        opt = source_path_reference.get_attributes()
-        opt['handle'] = name
+        if not opt:
+            source_path_reference = reference.Array(self, path, opt=opt)
+            opt = source_path_reference.get_attributes()
+            opt['handle'] = name
         self.remove_node(newparent + "/" + name)
         dest_path_reference = reference.Array(self, newparent, opt=opt, with_summary=False)
         dest_path_reference.append(data_with_time)

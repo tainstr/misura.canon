@@ -187,7 +187,6 @@ class CoreFile(object):
 
     @lockme
     def get_attributes(self, where, name=None):
-        print 'getting attributes from', where
         r = {}
         n = self._get_node(where, name)
         a = n.attrs
