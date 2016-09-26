@@ -76,6 +76,9 @@ class SharedFile(CoreFile, DataOperator):
             return False
         self.uid = uid
         if header and mode != 'w':
+            if not self.has_node('/userdata'):
+                self.create_group('/', 'userdata')
+                self.set_attributes('/userdata', attrs={'active_version': ''})
             if self.has_node('/conf'):
                 if self.has_node_attr('/conf', 'uid'):
                     self.uid = self.get_node_attr('/conf', 'uid')
@@ -83,10 +86,6 @@ class SharedFile(CoreFile, DataOperator):
             else:
                 self.conf = option.ConfigurationProxy()
                 self.header(refresh=True, version=self.version)
-
-        if not self.has_node('/userdata'):
-            self.create_group('/', 'userdata')
-            self.set_attributes('/userdata', attrs={'active_version': ''})
 
         return self.test, self.path
 
@@ -140,8 +139,6 @@ class SharedFile(CoreFile, DataOperator):
 
         if not isinstance(newversion, basestring):
             newversion = '/ver_{}'.format(newversion)
-
-        print 'AAAAAA set_version', newversion, self.version
         
         if self.version == newversion and self.conf:
             return True
@@ -292,11 +289,16 @@ class SharedFile(CoreFile, DataOperator):
             source_path_reference = reference.Array(self, path, opt=opt)
             opt = source_path_reference.get_attributes()
             opt['handle'] = name
-        self.remove_node(newparent + "/" + name)
+            
+        path = newparent + "/" + name
+        self.remove_node(path)
+        
         dest_path_reference = reference.Array(
             self, newparent, opt=opt, with_summary=False)
         dest_path_reference.append(data_with_time)
         self.flush()
+        if path not in self._header['Array']:
+            self._header['Array'].append(path)
 
     def active_version(self):
         return self.get_node_attr('/userdata', 'active_version')

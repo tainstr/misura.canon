@@ -315,7 +315,7 @@ class CoreFile(object):
     @lockme
     def remove_node(self, path, recursive=1):
         if not self._has_node(path):
-            return True
+            return False
 
         self.test.removeNode(path, recursive=recursive)
         # Clean the cached header
