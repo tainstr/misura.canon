@@ -79,11 +79,15 @@ class ConfigurationProxy(Scriptable, Conf):
 #               self._Method__name=parent._Method__name+self.separator+name
 #           else:
 #               self._Method__name=name
-        self.get = self.__getitem__
-        self.set = self.__setitem__
         if self.has_key('devpath'):
             self['devpath'] = name
         self.autosort()
+        
+    def get(self, *a, **k):
+        return self.__getitem__(*a, **k)
+    
+    def set(self, *a, **k):
+        return self.__setitem__(*a, **k)
 
     @property
     def root(self):
@@ -200,7 +204,7 @@ class ConfigurationProxy(Scriptable, Conf):
         return r
 
     def __getattr__(self, path):
-        if path in ['__methods__', '__members__', '_Method__name']:
+        if path.startswith('_'):
             return object.__getattribute__(self, path)
         elif path in dir(self):
             return object.__getattribute__(self, path)

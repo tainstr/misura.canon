@@ -10,9 +10,7 @@ class Conf(object):
 
     def __init__(self, desc=False, empty=False):
         self.empty = empty
-        self.__contains__ = self.has_key
         self.log = logger.Log
-
         self.desc = {}
         if desc is not False:
             for k, v in desc.iteritems():
@@ -21,6 +19,9 @@ class Conf(object):
                 if isinstance(v, dict):
                     v = Option(**v)
                 self.desc[k] = v
+                
+    def __contains__(self, *a, **k):
+        return self.has_key(*a, **k)
 
     def iteritems(self):
         return self.desc.iteritems()
