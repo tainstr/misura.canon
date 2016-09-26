@@ -51,6 +51,7 @@ class ConfigurationProxy(Scriptable, Conf):
     separator = '/'
     _readLevel = 5
     _writeLevel = 5
+    _rmodel = False
     
     def print_tree(self):
         print print_tree(self.tree())
