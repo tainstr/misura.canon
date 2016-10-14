@@ -125,6 +125,9 @@ class Converter(object):
         self.log_ref = False
         self.conversion_start_time = time()
         
+    def post_open_file(self, navigator, *a, **k):
+        return False
+        
     def log(self, msg, priority=10):
         # TODO: check zerotime
         logging.info(msg)
@@ -169,10 +172,11 @@ data_importers = set([])
 def search_registry(filename):
     """Find a matching converter for filename"""
     for converter in data_importers:
-        if fnmatch(filename, converter.file_pattern):
-            print 'Found converter', filename, converter.file_pattern
-            return converter
-    print 'No converter found', filename
+        for pattern in converter.file_pattern.split(';'):
+            if fnmatch(filename, pattern):
+                logging.debug('Found converter', filename, converter.file_pattern, pattern)
+                return converter
+    logging.error('No converter found', filename)
     return False
 
 def get_converter(path):
