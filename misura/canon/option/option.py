@@ -316,6 +316,9 @@ class Option(object):
 
     def itervalues(self):
         return self.entry.itervalues()
+    
+    def values(self):
+        return self.entry.values()
 
     def __str__(self):
         """String representation useful for printing purposes"""

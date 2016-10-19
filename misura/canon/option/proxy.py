@@ -142,6 +142,9 @@ class ConfigurationProxy(Scriptable, Conf):
 
     def itervalues(self):
         return self.desc.itervalues()
+    
+    def values(self):
+        return self.desc.values()
 
     def iterkeys(self):
         return self.desc.iterkeys()
@@ -216,7 +219,7 @@ class ConfigurationProxy(Scriptable, Conf):
 
     def sete(self, key, val):
         if not val.has_key('priority') or val['priority']==-1:
-            priorities = [opt.get('priority',0) for opt in self.desc.itervalues()]
+            priorities = [opt.get('priority',0) for opt in self.desc.values()]
             if len(priorities):
                 val['priority'] = max(priorities) + 1
         self.desc[key] = val

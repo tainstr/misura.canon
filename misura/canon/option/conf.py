@@ -31,6 +31,9 @@ class Conf(object):
 
     def itervalues(self):
         return self.desc.itervalues()
+    
+    def values(self):
+        return self.desc.values()
 
     def listPresets(self):
         return []
