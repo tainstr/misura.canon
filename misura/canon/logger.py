@@ -58,22 +58,22 @@ class BaseLogger(object):
         self.log = log
 
     def __call__(self, *msg, **po):
-        self.log(*msg, p=po.get('p', logging.DEBUG))
+        return self.log(*msg, p=po.get('p', logging.DEBUG))
 
     def debug(self, *msg):
-        self.log(*msg, p=logging.DEBUG)
+        return self.log(*msg, p=logging.DEBUG)
 
     def info(self, *msg):
-        self.log(*msg, p=logging.INFO)
+        return self.log(*msg, p=logging.INFO)
 
     def warning(self, *msg):
-        self.log(*msg, p=logging.WARNING)
+        return self.log(*msg, p=logging.WARNING)
 
     def error(self, *msg, **o):
-        self.log(*msg, p=logging.ERROR)
+        return self.log(*msg, p=logging.ERROR)
 
     def critical(self, *msg):
-        self.log(*msg, p=logging.CRITICAL)
+        return self.log(*msg, p=logging.CRITICAL)
 
 
 class SubLogger(BaseLogger):
@@ -94,7 +94,7 @@ class SubLogger(BaseLogger):
         smsg = u' '.join(tuple(msg))
         if self.parent and self.parent.desc:
             self.parent.desc.set_current('log', [p, smsg])
-        return p, smsg
+        return smsg
 
 
 global Log, log
