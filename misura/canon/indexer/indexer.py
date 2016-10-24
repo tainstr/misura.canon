@@ -613,7 +613,6 @@ class Indexer(object):
         for h in incremental_ids_header:
             if h not in test_header:
                 test_header.append(h)
-
         return test_header
 
     @dbcom
@@ -627,8 +626,9 @@ class Indexer(object):
         return r
 
     @dbcom
-    def query(self, conditions={}):
+    def query(self, conditions={}, operator=1):
         # FIXME: inter-thread #412
+        operator = ['OR', 'AND'][operator]
         if len(conditions) == 0:
             self.cur.execute(
                 'SELECT * from test natural join incremental_ids ORDER BY zerotime DESC')
@@ -638,7 +638,7 @@ class Indexer(object):
             for k, v in conditions.iteritems():
                 cnd.append(k + ' like ?')
                 vals.append('%' + v + '%')
-            cnd = ' AND '.join(cnd)
+            cnd = ' {} '.format(operator).join(cnd)
             cmd = 'SELECT * from test natural join incremental_ids WHERE ' + \
                 cnd + 'ORDER BY zerotime DESC'
             self.log.debug('Executing', cmd, vals)
