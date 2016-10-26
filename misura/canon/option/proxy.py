@@ -315,13 +315,18 @@ class ConfigurationProxy(Scriptable, Conf):
                 for t in targets:
                     values[t]+=pack[t]
         result = None
+        error = None
+        #TODO: calc stdev here
         if function_name == 'mean':
-            result = float(np.array(values[targets[0]]).astype(np.float32).mean())
+            v = np.array(values[targets[0]]).astype(np.float32)
+            result = float(v.mean())
+            error = v.std()
         elif function_name == 'sum':
             result = float(np.array(values[targets[0]]).astype(np.float32).sum())
         elif function_name == 'prod':
             result = float(np.array(values[targets[0]]).astype(np.float32).prod())
         elif function_name == 'table':
+            # Should calculate also table header?
             result = [self[handle][0]]
             for i, x in enumerate(values[targets[0]]):
                 row = []
@@ -330,21 +335,26 @@ class ConfigurationProxy(Scriptable, Conf):
                 result.append(row)
         else:
             self.log.error('Aggregate function not found:', function_name, aggregation)
-        return result
+        return result, error
     
-    def update_aggregates(self, recursive=True):
-        """Updates aggregate options"""
+    def update_aggregates(self, recursive=1):
+        """Updates aggregate options. recursive==1, upward; -1, downward"""
         for handle, opt in self.desc.iteritems():
             if not opt.has_key('aggregate'):
                 continue
             aggregation = opt['aggregate']
-            result = self.calc_aggregate(aggregation, handle)
+            result, error = self.calc_aggregate(aggregation, handle)
             if result is not None:
                 self[handle] = result
+                if error is not None and opt.has_key('error'):
+                    self[opt['error']] = error
             else:
                 self.log.error('Aggregation failed for ', handle, aggregation) 
-        if recursive and self.parent():
+        if recursive>0 and self.parent():
             self.parent().update_aggregates(recursive=True)
+        elif recursive<0:
+            for k in self.children.keys():
+                self.child(k).update_aggregates(recursive=-1)
     
     @property
     def devices(self):
