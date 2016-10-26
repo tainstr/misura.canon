@@ -320,7 +320,7 @@ class ConfigurationProxy(Scriptable, Conf):
         if function_name == 'mean':
             v = np.array(values[targets[0]]).astype(np.float32)
             result = float(v.mean())
-            error = v.std()
+            error = float(v.std())
         elif function_name == 'sum':
             result = float(np.array(values[targets[0]]).astype(np.float32).sum())
         elif function_name == 'prod':

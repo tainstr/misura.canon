@@ -412,7 +412,7 @@ class Option(object):
             # traditional key,val was passed
             k, v = arg
         if k in read_only_keys:
-            print 'Read only key!', k
+            print 'Read only key!', k, v, self._entry['handle']
             return
         self._entry[k] = v
     __setitem__ = set
