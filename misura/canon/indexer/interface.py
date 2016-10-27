@@ -68,7 +68,7 @@ class SharedFile(CoreFile, DataOperator):
             raise RuntimeError("File %s not found." % path)
 
         try:
-            print 'opening existing file', path, mode
+            self.log.debug('opening existing file', path, mode)
             self.test = tables.openFile(path, mode=mode)
             self.path = path
         except:
@@ -79,9 +79,12 @@ class SharedFile(CoreFile, DataOperator):
             if not self.has_node('/userdata'):
                 self.create_group('/', 'userdata')
                 self.set_attributes('/userdata', attrs={'active_version': ''})
+            elif not version:
+                version = self.get_node_attr('/userdata', 'active_version')
             if self.has_node('/conf'):
                 if self.has_node_attr('/conf', 'uid'):
                     self.uid = self.get_node_attr('/conf', 'uid')
+                
                 self.set_version(version)
             else:
                 self.conf = option.ConfigurationProxy()
@@ -133,22 +136,26 @@ class SharedFile(CoreFile, DataOperator):
             if '/userdata' in self.test:
                 newversion = self.test.get_node_attr(
                     '/userdata', 'active_version')
+                self.log.debug('Found active version', newversion)
             else:
                 newversion = getattr(self.test.root.conf.attrs, 'versions', '')
+                self.log.debug('Take latest version', newversion)
             self._lock.release()
 
         if not isinstance(newversion, basestring):
             newversion = '/ver_{}'.format(newversion)
         
         if self.version == newversion and self.conf:
+            self.log.debug('Not changing version!', self.version, newversion)
             return True
-
+        
         self._change_version(newversion)
         self.load_conf()
         self.header(refresh=True)
         return True
 
     def _change_version(self, new_version):
+        self.log.debug('Changing version to', new_version)
         self.version = str(new_version)
         self._set_attributes(
             '/userdata', attrs={'active_version': new_version})
