@@ -63,7 +63,7 @@ class SharedFile(CoreFile, DataOperator):
             return False
         if mode == 'w':
             self.log.debug('Creating in write mode', path)
-            tables.openFile(path, mode='w', title=title).close()
+            tables.open_file(path, mode='w', title=title).close()
         if not os.path.exists(path):
             raise RuntimeError("File %s not found." % path)
 
