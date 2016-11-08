@@ -319,6 +319,8 @@ class ConfigurationProxy(Scriptable, Conf):
         #TODO: calc stdev here
         if function_name == 'mean':
             v = np.array(values[targets[0]]).astype(np.float32)
+            #FIXME: hack to filter out zeros
+            v = v[v!=0]
             result = float(v.mean())
             error = float(v.std())
         elif function_name == 'sum':
