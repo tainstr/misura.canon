@@ -69,7 +69,7 @@ class SharedFile(CoreFile, DataOperator):
 
         try:
             self.log.debug('opening existing file', path, mode)
-            self.test = tables.openFile(path, mode=mode)
+            self.test = tables.open_file(path, mode=mode)
             self.path = path
         except:
             self.log.error('Error opening file:', format_exc(), path)

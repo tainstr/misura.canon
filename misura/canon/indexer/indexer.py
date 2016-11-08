@@ -321,7 +321,7 @@ class Indexer(object):
         table = False
         try:
             self.log.debug('Appending',  file_path)
-            table = tables.openFile(file_path, mode='r+')
+            table = tables.open_file(file_path, mode='r+')
             if not getattr(table.root, 'conf', False):
                 self.log.debug('Tree configuration not found', file_path)
                 table.close()

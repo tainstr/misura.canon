@@ -38,7 +38,7 @@ class Reference(unittest.TestCase):
 
 def mkfile():
     path = tempfile.mktemp()
-    f = tables.openFile(path, mode='w')
+    f = tables.open_file(path, mode='w')
     f.close()
     return indexer.SharedFile(path)
 
