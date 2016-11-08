@@ -3,7 +3,7 @@
 from reference import Reference
 from array import Array, Boolean, Rect, Meta,  Point
 from log import Log
-from profile import Profile
+from profile import Profile, CumulativeProfile
 from binary import Binary
 from image import Image, ImageM3, ImageBMP
 from obj import Object

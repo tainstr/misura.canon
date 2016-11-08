@@ -50,9 +50,9 @@ class OutFile(unittest.TestCase):
     refClass = False
     _outfile = False
     keep = False
-    __test__ = False #nosetests will ignore this
-    
-    def rand(self):
+    __test__ = False  # nosetests will ignore this
+
+    def rand(self, *a, **k):
         """Reimplement in specific files to obtain random data"""
         assert False
 
@@ -102,42 +102,34 @@ class OutFile(unittest.TestCase):
         self.assertEqual(opt, ref.get_attributes())
         data = []
         for i in range(1, 10):
-            data.append(self.rand(i))
+            data.append(self.rand(float(i)))
         self.assertTrue(ref.commit(data))
         rdata = ref[:]
-        print repr(rdata)
+        print 'data', flat(data)
+        print 'ref', flat(ref[:])
         self.assertSequenceEqual(flat(data), flat(ref[:]))
         data2 = []
         for i in range(11, 20):
-            data2.append(self.rand(i))
+            data2.append(self.rand(float(i)))
         ref.commit(data2)
         data3 = ref[:]
         # Check that data is not committed more than one time
         self.assertEqual(len(data3), 18)
         self.assertEqual(len(ref), 18)
-
         return
-        # Copy operations
-        ref.copy(self.destpath, 10, 15)
-        # Verify copied data
-        df = indexer.SharedFile(self.destpath)
-        dref = self.refClass(df, ref.path)
-        cp = dref[:]
-        self.assertEqual(len(cp), 5)
-        df.close()
-        print 'copied', cp
 
 
 class Array(OutFile):
     refClass = reference.Array
     __test__ = True
+
     @classmethod
     def rand(cls, t):
         return [t, t * 10]
 
 
 class VariableLength(object):
-    
+
     def test_compress(self):
         data = np.random.random(10, 10)
         dataz = reference.VariableLength.compress(data)
@@ -201,7 +193,7 @@ class Profile(OutFile):
     refClass = reference.Profile
 
     @classmethod
-    def rand(self, t=-1):
+    def rand(cls, t=-1):
         """Produce random profile-like data"""
         if t < 0:
             t = np.random.random() * 1000
@@ -219,6 +211,30 @@ class Profile(OutFile):
         self.assertEqual(h, h1)
         self.assertEqual(list(x.flatten()), list(x1.flatten()))
         self.assertEqual(list(y.flatten()), list(y1.flatten()))
+
+
+class CumulativeProfile(Profile):
+    __test__ = False
+    refClass = reference.CumulativeProfile
+
+    @classmethod
+    def rand(cls, t=-1):
+        if t < 0:
+            t = np.random.random() * 1000
+        w = 640
+        h = 480
+
+        def coord(n):
+            c = np.random.random(n) - 0.5
+            c = np.sign(c) * (np.abs(c) > 0.16)
+            return c
+        x = coord(10)
+        y = coord(10)
+        # If both are 0, increase x
+        x += (x == 0) * (y == 0)
+        x = 300 + np.cumsum(x)
+        y = 300 + np.cumsum(y)
+        return t, ((w, h), x.astype('uint16'), y.astype('uint16'))
 
 #@unittest.skip('')
 
