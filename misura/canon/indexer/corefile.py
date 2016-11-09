@@ -285,25 +285,25 @@ class CoreFile(object):
 
     @lockme
     def create_group(self, *a, **kw):
-        g = self.test.createGroup(*a, **kw)
+        g = self.test.create_group(*a, **kw)
         return True
 
     @lockme
     @addHeader
     def create_vlarray(self, *a, **kw):
-        g = self.test.createVLArray(*a, **kw)
+        g = self.test.create_vlarray(*a, **kw)
         return g
 
     @lockme
     @addHeader
     def create_earray(self, *a, **kw):
-        g = self.test.createEArray(*a, **kw)
+        g = self.test.create_earray(*a, **kw)
         return g
 
     @lockme
     @addHeader
     def create_table(self, *a, **kw):
-        g = self.test.createTable(*a, **kw)
+        g = self.test.create_table(*a, **kw)
         return g
 
     @lockme
