@@ -181,6 +181,8 @@ def search_registry(filename):
 
 def get_converter(path):
     converter_class = search_registry(path)
+    if not converter_class:
+        return False
     return converter_class()
     
 def convert_file(path, *args, **kwargs):
