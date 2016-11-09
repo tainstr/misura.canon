@@ -23,7 +23,7 @@ def list_references(parent, result=False):
     if result is False:
         result = {}
     #print 'Listing references', parent._v_pathname
-    for child in parent._f_listNodes():
+    for child in parent._f_list_nodes():
         # Do not list paths from different versions
         path = child._v_pathname
         # iteratively call itself onto Group nodes

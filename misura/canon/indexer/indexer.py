@@ -347,7 +347,7 @@ class Indexer(object):
                         conf = version_node.conf
 
         # Load configuration
-        node = filenode.openNode(conf, 'r')
+        node = filenode.open_node(conf, 'r')
         node.seek(0)
         tree = node.read()
         node.close()

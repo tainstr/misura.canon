@@ -261,7 +261,7 @@ class CoreFile(object):
             return ''
         node = self._get_node(path)
         print 'open node', path
-        node = filenode.openNode(node, 'r')
+        node = filenode.open_node(node, 'r')
         r = node.read()
 # 		node.close()
         return r
@@ -349,7 +349,7 @@ class CoreFile(object):
         name = os.path.basename(path)
         print 'newNode', path, where, name
         try:
-            node = filenode.newNode(self.test, where=where, name=name)
+            node = filenode.new_node(self.test, where=where, name=name)
         except:
             self._lock.release()
             print_exc()
