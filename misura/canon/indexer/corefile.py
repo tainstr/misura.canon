@@ -317,7 +317,7 @@ class CoreFile(object):
         if not self._has_node(path):
             return False
 
-        self.test.removeNode(path, recursive=recursive)
+        self.test.remove_node(path, recursive=recursive)
         # Clean the cached header
         path += '/'
         for k, v in self._header.iteritems():
