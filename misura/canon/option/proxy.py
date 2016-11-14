@@ -14,7 +14,7 @@ from .option import ao
 
 def dictRecursiveModel(base):
     """BUild a dictionary configuration tree from ConfigurationProxy `base`"""
-    out = {}
+    out = collections.OrderedDict()
     for path, obj in base.iteritems():
         if path == 'self':
             out[path] = obj['name']
@@ -121,6 +121,7 @@ class ConfigurationProxy(Scriptable, Conf):
             obj._update_from_children()
             d.update(obj.children)
             self.children[key] = d
+        self.autosort()
 
     def rmodel(self):
         out = dictRecursiveModel(self.children)
@@ -251,10 +252,9 @@ class ConfigurationProxy(Scriptable, Conf):
     def autosort(self):
         def sorter(item):
             key, val = item
-            m = [int(s) for s in key.split() if s.isdigit()]
-            if not len(m):
-                return key
-            return m[-1]
+            digits = re.sub(r"\D", '', key)
+            key = int(digits) if len(digits) else key
+            return key
         self.children = collections.OrderedDict(sorted(self.children.items(), key=sorter))
             
     def add_child(self, name, desc, overwrite=False):
@@ -328,13 +328,17 @@ class ConfigurationProxy(Scriptable, Conf):
         elif function_name == 'prod':
             result = float(np.array(values[targets[0]]).astype(np.float32).prod())
         elif function_name == 'table':
-            # Should calculate also table header?
-            result = [self[handle][0]]
+            result = []
             for i, x in enumerate(values[targets[0]]):
                 row = []
                 for t in targets:
                     row.append(values[t][i])
                 result.append(row)
+            # Reorder by first column
+            result = sorted(result, key=lambda e: e[0])
+            # Prepend table header
+            # Should calculate also table header?
+            result = [self[handle][0]] + result
         else:
             self.log.error('Aggregate function not found:', function_name, aggregation)
         return result, error

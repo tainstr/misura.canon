@@ -35,6 +35,21 @@ class ConfigurationProxy(unittest.TestCase):
         self.assertEqual(added['name'], 'pippo')
         self.assertEqual(self.shared_file.conf.kiln.new['name'], 'pippo')
         
+    def test_autosort(self):
+        def ac(name):
+            base = dataimport.base_dict()
+            base['name']['current'] = name
+            added = self.shared_file.conf.kiln.add_child(name,base)
+        ac('T10')
+        ac('T100')
+        ac('T30')
+        ac('T20')
+        ac('T1000')
+        ac('T200')
+        self.assertEqual(self.shared_file.conf.kiln.children.keys(), ['sample0',
+                            'T10', 'T20', 'T30', 'T100', 'T200', 'T1000',
+                            'heatload','measure', 'regulator'])
+            
     def test_calc_aggregate(self):
         base = option.ConfigurationProxy({'self':dataimport.base_dict()})
         base.add_option('a','Float',-1,'Aggregate result', aggregate='sum()')
