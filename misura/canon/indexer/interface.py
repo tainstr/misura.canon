@@ -317,7 +317,7 @@ class SharedFile(CoreFile, DataOperator):
             version = self.version
         if refresh or len(self._header) == 0:
             self._header = list_references(self.test.root)
-            print self._header
+            print 'References',len(self._header)
         if reference_classes is False:
             reference_classes = self._header.keys()
         r = []

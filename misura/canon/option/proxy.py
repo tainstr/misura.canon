@@ -321,8 +321,9 @@ class ConfigurationProxy(Scriptable, Conf):
             v = np.array(values[targets[0]]).astype(np.float32)
             #FIXME: hack to filter out zeros
             v = v[v!=0]
-            result = float(v.mean())
-            error = float(v.std())
+            if len(v):
+                result = float(v.mean())
+                error = float(v.std())
         elif function_name == 'sum':
             result = float(np.array(values[targets[0]]).astype(np.float32).sum())
         elif function_name == 'prod':
