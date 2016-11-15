@@ -48,7 +48,7 @@ class ConfigurationProxy(unittest.TestCase):
         ac('T200')
         self.assertEqual(self.shared_file.conf.kiln.children.keys(), ['sample0',
                             'T10', 'T20', 'T30', 'T100', 'T200', 'T1000',
-                            'heatload','measure', 'regulator'])
+                            'heatload','measure', 'new','regulator'])
             
     def test_calc_aggregate(self):
         base = option.ConfigurationProxy({'self':dataimport.base_dict()})
