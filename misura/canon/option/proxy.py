@@ -436,7 +436,7 @@ class ConfigurationProxy(Scriptable, Conf):
             print 'no samples defined!'
             return []
         out = []
-        for i in range(n):
+        for i in range(n+1):
             # Search direct child (instrument)
             child = self.child('sample{}'.format(i))
             if child:
