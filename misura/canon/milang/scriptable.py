@@ -60,8 +60,8 @@ class Scriptable(object):
         # characterization time (about every 30s)
         if exe.period == None:
             self.scripts.append(exe.handle)
-        # If an >=0 period is defined, the script is always executed (during
-        # pre_summary)
+        # If an >=0 period is defined, the script is always executed
+        #TODO: implement custom execution freq based on this number
         elif exe.period >= 0:
             self.always_scripts.append(exe.handle)
         # If period <0, the script will be executed only at the end of the test
