@@ -9,7 +9,6 @@ from conf import Conf
 import cPickle as pickle
 from ..milang import Scriptable
 import common_proxy
-from .option import ao
 
 
 def dictRecursiveModel(base):
@@ -224,30 +223,6 @@ class ConfigurationProxy(Scriptable, Conf):
             if len(priorities):
                 val['priority'] = max(priorities) + 1
         self.desc[key] = val
-        
-    def add_option(self, *args, **kwargs):
-        """Creates a new option using the ao() utility function. 
-        Migrate old one if existing."""
-        out = {}
-        overwrite = True
-        if kwargs.has_key('overwrite'):
-            overwrite = kwargs.pop('overwrite')
-        ao(out, *args, **kwargs)
-        out = out.values()[0]
-        key = out['handle']
-        if out['priority'] == 0:
-            out['priority'] = -1
-        # If option was already defined, update old one with new values
-        if self.has_key(key):
-            # Do not do anything if not overwriting
-            if not overwrite:
-                return out
-            origin = self.gete(key).entry
-            origin.update(out)
-            out = origin
-        
-        self.sete(out['handle'], out)
-        return out
         
     def autosort(self):
         def sorter(item):

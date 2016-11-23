@@ -3,7 +3,7 @@
 from .. import logger
 from option import Option, read_only_keys
 from store import Store
-
+from option import ao
 
 class Conf(object):
     kid_base = ''
@@ -125,6 +125,30 @@ class Conf(object):
             opt.set_base_kid(self.kid_base)
         self.desc[name] = opt
         return True
+    
+    def add_option(self, *args, **kwargs):
+        """Creates a new option using the ao() utility function. 
+        Migrate old one if existing."""
+        out = {}
+        overwrite = True
+        if kwargs.has_key('overwrite'):
+            overwrite = kwargs.pop('overwrite')
+        ao(out, *args, **kwargs)
+        out = out.values()[0]
+        key = out['handle']
+        if out['priority'] == 0:
+            out['priority'] = -1
+        # If option was already defined, update old one with new values
+        if self.has_key(key):
+            # Do not do anything if not overwriting
+            if not overwrite:
+                return out
+            origin = self.gete(key).entry
+            origin.update(out)
+            out = origin
+        
+        self.sete(out['handle'], out)
+        return out
 
     def getattr(self, handle, attr):
         """Returns the attribute `attr` of an option `name`"""
