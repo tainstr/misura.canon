@@ -1,6 +1,8 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 import os, sys
+import numpy as np
+
 def determine_path(root=__file__):
     """Borrowed from wxglade.py"""
     try:
@@ -61,3 +63,54 @@ class DummyInstrument(dict):
 
     def stop_acquisition(self):
         self.running = False
+        
+class FakeStorageFile(object):
+
+    """Faking an hdf file"""
+    r = range(100)
+    r += range(100, 0, -1)
+    nrows = len(r)
+    r = np.array(r) * 1.
+    t = np.arange(nrows) * 15.
+    T = r * 10
+
+    h = np.concatenate((np.linspace(90, 95, 50),
+                        np.linspace(95, 6, 150)))
+    cohe = np.concatenate((np.linspace(70, 98, 100),
+                           np.linspace(97, 31, 100)))
+
+    w = np.concatenate((np.linspace(60, 50, 120),
+                        np.linspace(50, 180, 80)))
+    Left_pos = np.linspace(0, 5, 200)
+    Right_pos = Left_pos
+    dil = Left_pos + Right_pos
+
+    def __init__(self):
+        self.nodes = {'/hsm/sample0/h': self.t_arr(self.h),
+                      '/hsm/sample0/cohe': self.t_arr(self.cohe),
+                      '/hsm/sample0/w': self.t_arr(self.w),
+                      '/hsm/sample0/dil': self.t_arr(self.dil),
+                      '/kiln/T': self.t_arr(self.T)}
+
+    def t_arr(self, arr):
+        return np.array([self.t, arr]).transpose()
+
+    def get_node(self, path):
+        return self.nodes[path]
+
+    def close(self):
+        return True
+
+    def set_time_limit(self, *a, **k):
+        return True
+
+    def set_limit(self, *a, **k):
+        return True
+
+    def min(self, curve):
+        c = self.get_node(curve)[:, 1]
+        return 0, 0, min(c)
+
+    def max(self, curve):
+        c = self.get_node(curve)[:, 1]
+        return 0, 0, max(c)

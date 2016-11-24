@@ -7,7 +7,6 @@ import numpy
 from misura.canon import milang, indexer
 
 from misura.canon.tests import testdir, DummyInstrument, verify_point
-
 np = numpy
 
 
@@ -48,7 +47,6 @@ path = testdir + 'storage/hsm_test.h5'
 
 class DataEnvironment(unittest.TestCase):
     env = milang.DataEnvironment()
-# 	tab=ut.FakeStorageFile()
     tab = indexer.SharedFile(path)
     env.hdf = tab
     env.prefix = '/hsm/sample0/'
