@@ -114,3 +114,27 @@ class FakeStorageFile(object):
     def max(self, curve):
         c = self.get_node(curve)[:, 1]
         return 0, 0, max(c)
+    
+
+def checkCompile(test, si, out):
+    """Check if Script is compiled correctly"""
+    for k, opt in si.describe().iteritems():
+        if opt['type'] != 'Script':
+            continue
+        test.assertTrue(si.all_scripts.has_key(k), 'Missing Script ' + k)
+        si.all_scripts[k].eval(out, si)
+        outopt = False
+        # Find output option (child)
+        for handle, desc in out.describe().iteritems():
+            if desc['parent'] == k:
+                outopt = handle
+                break
+        if not outopt:
+            return
+        o = out[outopt]
+        print 'checkCompile', k, repr(o)
+        t = None if o['time'] == 'None' else o['time']
+        T = None if o['temp'] == 'None' else o['temp']
+        v = None if o['value'] == 'None' else o['value']
+
+        verify_point(test, si.env, o['time'], o['temp'], o['value'])

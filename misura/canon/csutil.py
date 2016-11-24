@@ -23,7 +23,7 @@ profiling = True
 ###
 import time as standardTime
 time_scaled = multiprocessing.Value('i')
-time_scaled.value = False
+time_scaled.value = 0
 time_factor = multiprocessing.Value('d')
 time_factor.value = 1.0
 
