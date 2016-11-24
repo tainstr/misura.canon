@@ -33,7 +33,7 @@ def time():
     if time_scaled.value == 1:
         return time_step() * time_factor.value * 1.
     return float(standardTime.time())
-
+utime = time
 
 def sleep(t):
     return standardTime.sleep(t)
