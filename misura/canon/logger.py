@@ -5,7 +5,7 @@ import logging
 from datetime import datetime
 import csutil
 
-
+logging.getLogger().setLevel(-1)
 def concatenate_message_objects(*msg):
     # Ensure all message tokens are actually strings
     # (avoid "None" objects pollute the buffer!)
