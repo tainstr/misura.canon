@@ -333,10 +333,12 @@ class ConfigurationProxy(Scriptable, Conf):
             else:
                 self.log.error('Aggregation failed for ', handle, aggregation) 
         if recursive>0 and self.parent():
-            self.parent().update_aggregates(recursive=True)
+            self.parent().update_aggregates(recursive=1)
         elif recursive<0:
             for k in self.children.keys():
                 self.child(k).update_aggregates(recursive=-1)
+            # Then run backwards as aggregates only propagates bottom-up
+            self.parent().update_aggregates(recursive=1)
     
     @property
     def devices(self):
