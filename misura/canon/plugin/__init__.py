@@ -11,6 +11,7 @@ clientconf_update_functions = []
 # Mapping of instrument:DefaultPlotPlugin names
 default_plot_plugins = {} 
 
+# Mapping of instrument: plotting rule generating function
 default_plot_rules = {}
 
 load_rules = []
