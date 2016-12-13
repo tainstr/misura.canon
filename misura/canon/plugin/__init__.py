@@ -13,5 +13,3 @@ default_plot_plugins = {}
 
 # Mapping of instrument: plotting rule generating function
 default_plot_rules = {}
-
-load_rules = []
