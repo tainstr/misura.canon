@@ -270,6 +270,7 @@ class ConfigurationProxy(Scriptable, Conf):
         return self.children_obj[name]
     
     def calc_aggregate(self, aggregation, handle=False):
+        #TODO: move to Scriptable class! (or a new one)
         function_name = re.search("(.+?)\(", aggregation).group(1)
         targets = re.search("\((.+?)\)", aggregation)
         if targets is None:
@@ -321,6 +322,7 @@ class ConfigurationProxy(Scriptable, Conf):
     
     def update_aggregates(self, recursive=1):
         """Updates aggregate options. recursive==1, upward; -1, downward"""
+        #TODO: move to Scriptable class! (or a new one)
         for handle, opt in self.desc.iteritems():
             if not opt.has_key('aggregate'):
                 continue
@@ -338,7 +340,8 @@ class ConfigurationProxy(Scriptable, Conf):
             for k in self.children.keys():
                 self.child(k).update_aggregates(recursive=-1)
             # Then run backwards as aggregates only propagates bottom-up
-            self.parent().update_aggregates(recursive=1)
+            if self.parent():
+                self.parent().update_aggregates(recursive=1)
     
     @property
     def devices(self):
