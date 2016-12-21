@@ -94,12 +94,14 @@ class Scriptable(object):
         if not en:
             print 'Disabled script, skipping:', handle
             return True
-        # DEBUG
         if ins:
             exe.set_env_outFile(ins.outFile)
-        print 'INTERPRETING', handle, exe, exe.env._hdf, exe.obj_env._hdf,  exe.ins_env._hdf, exe.kiln_env._hdf, exe.script_env._hdf, exe.measure_env._hdf
+        self.log.debug('execute_script:', handle, exe, exe.env._hdf, 
+                       exe.obj_env._hdf,  exe.ins_env._hdf, exe.kiln_env._hdf, 
+                       exe.script_env._hdf, exe.measure_env._hdf)
         u = exe.eval(self, ins=ins)
-        print 'DONE', handle, u, exe.env.time, exe.env.temp, exe.env.value
+        self.log.debug('execute_script done:', handle, u, 
+                       exe.env.time, exe.env.temp, exe.env.value)
         return u
 
     def validate_script(self, handle):
