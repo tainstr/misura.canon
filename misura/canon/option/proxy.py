@@ -111,11 +111,14 @@ class ConfigurationProxy(Scriptable, Conf):
                 break
         # Revert to get the top-down path
         path.reverse()
-        return '/' + '/'.join(path) + '/'
+        r= '/' + '/'.join(path) + '/'
+        self['fullpath'] = r
+        return r
 
     def _update_from_children(self):
         """ Retrieve current configuration from instantiated child objects"""
         for key, obj in self.children_obj.iteritems():
+            obj.get_fullpath()
             d = {'self': obj.desc}
             obj._update_from_children()
             d.update(obj.children)
@@ -245,7 +248,9 @@ class ConfigurationProxy(Scriptable, Conf):
             for key, val in desc['self'].iteritems():
                 self.children[name]['self'][key] = val
         self.autosort()
-        return self.child(name)
+        r = self.child(name)
+        r.get_fullpath()
+        return r
 
     def getFlags(self, opt):
         if not self.desc[opt].has_key('flags'):

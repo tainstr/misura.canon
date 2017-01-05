@@ -84,7 +84,7 @@ class SharedFile(CoreFile, DataOperator):
             if self.has_node('/conf'):
                 if self.has_node_attr('/conf', 'uid'):
                     self.uid = self.get_node_attr('/conf', 'uid')
-                
+
                 self.set_version(version)
             else:
                 self.conf = option.ConfigurationProxy()
@@ -124,13 +124,26 @@ class SharedFile(CoreFile, DataOperator):
         print 'returning versions', v
         return v
 
+    def get_version_by_name(self, name):
+        for path, data in self.get_versions().iteritems():
+            if data[0] != name:
+                continue
+            return path
+        return False
+    
+    def get_versions_by_date(self):
+        v = self.get_versions()
+        v = [[key] + list(val) for key,val in v.iteritems()]
+        v.sort(key=lambda e: datetime.strptime(e[2]))
+        
+
     def get_version(self):
         return self.version
 
     def set_version(self, newversion=-1):
         """Set the current version to `newversion`"""
         # Load the last used version
-        
+
         if newversion < 0:
             self._lock.acquire()
             if '/userdata' in self.test:
@@ -144,11 +157,11 @@ class SharedFile(CoreFile, DataOperator):
 
         if not isinstance(newversion, basestring):
             newversion = '/ver_{}'.format(newversion)
-        
+
         if self.version == newversion and self.conf:
             self.log.debug('Not changing version!', self.version, newversion)
             return True
-        
+
         self._change_version(newversion)
         self.load_conf()
         self.header(refresh=True)
@@ -178,6 +191,18 @@ class SharedFile(CoreFile, DataOperator):
         self._change_version(newversion)
         self.test.flush()
         return newversion
+    
+    def remove_version(self, version_path):
+        self.remove_node(version_path, recursive=True)
+        self.log.info('Removed version', version_path)
+        plots = self.get_plots()
+        for plot_id, info in plots.iteritems():
+            if info[4]==version_path:
+                p = '/plot/{}'.format(plot_id)
+                self.remove_node(p, recursive=True)
+                self.log.info('Remove version plot', p)
+        return True
+                
 
     @lockme
     def get_plots(self, render=False):
@@ -198,15 +223,23 @@ class SharedFile(CoreFile, DataOperator):
                     image = self._file_node(path + 'render')
                 else:
                     image = False
-            r[node._v_name] = (
-                script.attrs.title, script.attrs.date, image, image_format)
+            r[node._v_name] = (script.attrs.title, script.attrs.date, 
+                               image, image_format, 
+                               getattr(script.attrs,'version',''))
         return r
 
     def get_plot(self, plot_id):
         """Returns the text of a plot"""
-        return self.file_node('/plot/{}/script'.format(plot_id))
+        n = '/plot/{}/script'.format(plot_id)
+        text = self.file_node(n)
+        attrs = self.get_attributes(n)
+        return text, attrs
 
-    def save_plot(self, text, plot_id=False, title=False, date=False, render=False, render_format=False):
+    def save_plot(self, text, plot_id=False,
+                  title=False,
+                  date=False,
+                  render=False,
+                  render_format=False):
         """Save the text of a plot to plot_id, optionally adding a title, date and rendered output"""
         if not self.has_node('/plot'):
             self.create_group('/', 'plot')
@@ -217,9 +250,8 @@ class SharedFile(CoreFile, DataOperator):
             plot_id = self.get_unique_name('/plot')
         if not title:
             title = plot_id
-        current_date = datetime.now().strftime("%H:%M:%S, %d/%m/%Y")
         if not date:
-            date = current_date
+            date = datetime.now().strftime("%H:%M:%S, %d/%m/%Y")
 
         base_group = '/plot/' + plot_id
         if not self.has_node(base_group):
@@ -227,7 +259,9 @@ class SharedFile(CoreFile, DataOperator):
 
         text_path = base_group + '/script'
         self.filenode_write(text_path, data=text)
-        self.set_attributes(text_path, attrs={'title': title, 'date': date})
+        self.set_attributes(text_path, attrs={'title': title,
+                                              'date': date,
+                                              'version': self.version})
 
         if render and render_format:
             render_path = base_group + '/render'
@@ -284,7 +318,7 @@ class SharedFile(CoreFile, DataOperator):
         if version is '':
             raise RuntimeError(
                 "Original version is not writable.\nCreate or switch to another version first.")
-
+        path = path.split(':')[-1]
         path = ("/summary/" + path).replace('//', '/')
         vpath = path.split("/")
         parent = "/".join(vpath[0:-1])
@@ -296,10 +330,10 @@ class SharedFile(CoreFile, DataOperator):
             source_path_reference = reference.Array(self, path, opt=opt)
             opt = source_path_reference.get_attributes()
             opt['handle'] = name
-            
+
         path = newparent + "/" + name
         self.remove_node(path)
-        
+
         dest_path_reference = reference.Array(
             self, newparent, opt=opt, with_summary=False)
         dest_path_reference.append(data_with_time)
@@ -317,7 +351,7 @@ class SharedFile(CoreFile, DataOperator):
             version = self.version
         if refresh or len(self._header) == 0:
             self._header = list_references(self.test.root)
-            print 'References',len(self._header)
+            print 'References', len(self._header)
         if reference_classes is False:
             reference_classes = self._header.keys()
         r = []
@@ -325,13 +359,15 @@ class SharedFile(CoreFile, DataOperator):
             r += self._header.get(k, [])
         if startswith:
             ver = version if version else '----'
-            r = filter(lambda el: el.startswith(startswith) or el.startswith(ver), r)
+            r = filter(
+                lambda el: el.startswith(startswith) or el.startswith(ver), r)
         if not version:
             r = filter(lambda el: not el.startswith('/ver_'), r)
         else:
             # Exclude element with wrong version
-            wrong = lambda el: el.startswith(version+'/') or not el.startswith('/ver_')
-            # Exclude unversioned elements having a version 
+            wrong = lambda el: el.startswith(
+                version + '/') or not el.startswith('/ver_')
+            # Exclude unversioned elements having a version
             unversioned = lambda el: version + el not in r
             r = filter(lambda el: unversioned(el) or wrong(el), r)
         return r
