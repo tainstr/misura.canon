@@ -201,6 +201,7 @@ class SharedFile(CoreFile, DataOperator):
                 p = '/plot/{}'.format(plot_id)
                 self.remove_node(p, recursive=True)
                 self.log.info('Remove version plot', p)
+        self.flush()
         return True
                 
 
@@ -324,16 +325,13 @@ class SharedFile(CoreFile, DataOperator):
         parent = "/".join(vpath[0:-1])
         name = vpath[-1]
         newparent = version + parent
-
-        data_with_time = np.transpose(np.vstack((time_data, data)))
-        if not opt:
-            source_path_reference = reference.Array(self, path, opt=opt)
-            opt = source_path_reference.get_attributes()
-            opt['handle'] = name
-
         path = newparent + "/" + name
+        if not opt:
+            opt = self.get_attributes(parent+'/'+name)
+            opt['handle'] = name
+        
         self.remove_node(path)
-
+        data_with_time = np.transpose(np.vstack((time_data, data)))
         dest_path_reference = reference.Array(
             self, newparent, opt=opt, with_summary=False)
         dest_path_reference.append(data_with_time)
