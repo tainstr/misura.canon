@@ -29,11 +29,11 @@ def measure_dict():
     """Returns a dictionary containing typical options for a generic Measure object"""
     out = base_dict()
     out['name']['current'] = 'Measure'
-    ao(out, 'nSamples', 'Integer', 1, attr=['Hidden'])
-    ao(out, 'id', 'String', 'Conversion source ID')
-    ao(out, 'uid', 'String', 'Unique ID')
+    ao(out, 'nSamples', 'Integer', 1, readLevel=3)
+    ao(out, 'id', 'String', 'Conversion source ID', readLevel=3)
+    ao(out, 'uid', 'String', 'Unique ID', readLevel=5)
     ao(out, 'date', 'Date', '00:00:00 01/01/2000', name='Test date')
-    ao(out, 'zerotime', 'Float', name='Acquisition starting time', attr = ['Hidden'])
+    ao(out, 'zerotime', 'Float', name='Acquisition starting time', readLevel=4)
     ao(out, 'elapsed', 'Float', name='Test duration', unit='second')
     ao(out, 'operator', 'String', 'Operator')
     return out
@@ -51,23 +51,23 @@ def kiln_dict():
     """Returns a dictionary containing typical options for Kiln object"""
     out = base_dict()
     out['name']['current'] = 'Kiln'
-    ao(out, 'serial', 'String')
+    ao(out, 'serial', 'String', readLevel=4)
     ao(out, 'curve', 'Hidden', [[0, 0]], 'Heating curve')
     ao(out, 'thermalCycle', 'ThermalCycle', 'default')
     ao(out, 'T', 'Float', 0, 'Temperature', unit='celsius')
     ao(out, 'P', 'Float', 0, 'Power', unit='percent')
     ao(out, 'S', 'Float', 0, 'Setpoint', unit='celsius')
-    ao(out, 'maxHeatingRate', 'Float', 0, 'Max Heating Rate')
-    ao(out, 'maxControlTemp', 'Float', 0, 'Max Control Temp')
-    ao(out, 'minControlTemp', 'Float', 0, 'Min Control Temp')
-    ao(out, 'maxElementTemp', 'Float', 0, 'Max Element Temp')
-    ao(out, 'minElementTemp', 'Float', 0, 'Min Element Temp')
+    ao(out, 'maxHeatingRate', 'Float', 0, 'Max Heating Rate', readLevel=3)
+    ao(out, 'maxControlTemp', 'Float', 0, 'Max Control Temp', readLevel=3)
+    ao(out, 'minControlTemp', 'Float', 0, 'Min Control Temp', readLevel=3)
+    ao(out, 'maxElementTemp', 'Float', 0, 'Max Element Temp', readLevel=3)
+    ao(out, 'minElementTemp', 'Float', 0, 'Min Element Temp', readLevel=3)
     return out
 
 def instr_dict():
     """Returns a dictionary containing typical options for generic instrument object"""
     out = base_dict()
-    ao(out, 'nSamples', 'Integer', 1, attr=['Hidden'])
+    ao(out, 'nSamples', 'Integer', 1, 'Number of samples', readLevel=3)
     ao(out, 'devices', 'List', attr=['Hidden'])
     ao(out, 'initTest', 'Progress', attr=['Hidden'])
     ao(out, 'closingTest', 'Progress', attr=['Hidden'])
@@ -77,7 +77,7 @@ def server_dict():
     out = base_dict()
     out['name']['current'] = 'server'
     ao(out, 'name', 'String', 'server')
-    ao(out, 'isRunning', 'Boolean', False)
+    ao(out, 'isRunning', 'Boolean', False, readLevel=4)
     ao(out, 'runningInstrument', 'String')
     ao(out, 'lastInstrument', 'String')
     ao(out, 'log', 'Log')
