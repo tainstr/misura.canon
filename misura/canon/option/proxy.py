@@ -56,13 +56,15 @@ class ConfigurationProxy(Scriptable, Conf):
         print print_tree(self.tree())
 
     def __init__(self, desc=collections.OrderedDict({'self': {}}), 
-                 name='MAINSERVER', parent=False, readLevel=2, writeLevel=5, kid_base='/'):
+                 name='MAINSERVER', parent=False, readLevel=-1, writeLevel=-1, kid_base='/'):
         Scriptable.__init__(self)
         self.log = logger.BaseLogger()
         self.kid_base = kid_base
         Conf.__init__(self, desc['self'])
-        self._readLevel = readLevel
-        self._writeLevel = writeLevel      
+        if readLevel>0:
+            self._readLevel = readLevel
+        if writeLevel>0:
+            self._writeLevel = writeLevel      
         self.children = desc.copy()
         """Child configuration dictionaries"""
         self.children_obj = {}
@@ -196,7 +198,10 @@ class ConfigurationProxy(Scriptable, Conf):
 
     def __setitem__(self, key, val):
         if not self.desc.has_key(key):
-            print 'Impossible to set key', key, val
+            self.log.error('Impossible to set non-existing option', key, val)
+            return False
+        if self.desc[key].get('writeLevel', 0) > self._writeLevel:
+            self.log.error('No authorization to edit the option', key, self._writeLevel)
             return False
         self.desc[key]['current'] = val
         return True
@@ -225,7 +230,11 @@ class ConfigurationProxy(Scriptable, Conf):
             priorities = [opt.get('priority',0) for opt in self.desc.values()]
             if len(priorities):
                 val['priority'] = max(priorities) + 1
+        if self.desc[key].get('writeLevel', 0) > self._writeLevel:
+            self.log.error('No authorization to edit the option', key, self._writeLevel)
+            return False
         self.desc[key] = val
+        return True
         
     def autosort(self):
         def sorter(item):
