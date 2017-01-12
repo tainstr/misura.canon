@@ -2,6 +2,7 @@
 """Generalized logging utilities"""
 import os
 import logging
+import functools
 from datetime import datetime
 import csutil
 
@@ -21,13 +22,16 @@ def formatMsg(*msg, **po):
     # Owner e priority
     o = po.get('o')
     p = po.get('p')
+    pid =po.get('pid', os.getpid())
     if p == None:
         p = logging.NOTSET
     if o == None or o == '':
         own = ' '
         o = ''
+    elif pid:
+        own = ' (%s%i): ' % (o, pid)
     else:
-        own = ' (%s%i): ' % (o, os.getpid())
+        own = ' (%s): ' % (o)
     msg = concatenate_message_objects(*msg)
     smsg = ' '.join(tuple(msg))
     smsg = smsg.splitlines()
@@ -96,7 +100,12 @@ class SubLogger(BaseLogger):
             self.parent.desc.set_current('log', [p, smsg])
         return smsg
 
+def get_module_logging(owner):
+    logfunc = functools.partial(toLogging, o=owner, pid=False)
+    r = BaseLogger(log=logfunc)
+    return r
 
 global Log, log
 Log = BaseLogger(log=toLogging)
 log = Log.log
+
