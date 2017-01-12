@@ -230,7 +230,7 @@ class ConfigurationProxy(Scriptable, Conf):
             priorities = [opt.get('priority',0) for opt in self.desc.values()]
             if len(priorities):
                 val['priority'] = max(priorities) + 1
-        if self.desc[key].get('writeLevel', 0) > self._writeLevel:
+        if self.desc.get(key, {'writeLevel':-1}).get('writeLevel', 0) > self._writeLevel:
             self.log.error('No authorization to edit the option', key, self._writeLevel)
             return False
         self.desc[key] = val

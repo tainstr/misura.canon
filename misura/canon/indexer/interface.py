@@ -15,6 +15,7 @@ import numpy as np
 from ..csutil import lockme
 from .. import reference
 
+
 from corefile import CoreFile
 from dataops import DataOperator
 import digisign
@@ -87,6 +88,7 @@ class SharedFile(CoreFile, DataOperator):
 
                 self.set_version(version)
             else:
+                self.log.info('No configuration object was found', path)
                 self.conf = option.ConfigurationProxy()
                 self.header(refresh=True, version=self.version)
 
@@ -95,7 +97,7 @@ class SharedFile(CoreFile, DataOperator):
     def load_conf(self):
         d = self.conf_tree()
         self.conf = option.ConfigurationProxy(desc=d)
-        print 'load conf', self.conf, len(d)
+        self.log.debug('load conf', self.conf, len(d))
         return True
 
     def verify(self):

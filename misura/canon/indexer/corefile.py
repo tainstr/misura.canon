@@ -14,6 +14,7 @@ from traceback import print_exc
 from time import time
 from multiprocessing import Lock
 from ..csutil import lockme,  unlockme
+from ..logger import get_module_logging
 
 
 def addHeader(func):
@@ -38,7 +39,9 @@ class CoreFile(object):
 
     """Low-level HDF access functions"""
 
-    def __init__(self, path=False, uid='', mode='a', title='', log=csutil.fakelogger, header=True, version= ''):
+    def __init__(self, path=False, uid='', mode='a', title='', 
+                 log=get_module_logging(__name__), 
+                 header=True, version= ''):
         self._header = {}  # static header listing
         self.node_cache = {}
         self.path = False

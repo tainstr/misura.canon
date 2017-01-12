@@ -6,7 +6,11 @@ import functools
 from datetime import datetime
 import csutil
 
-logging.getLogger().setLevel(-1)
+root_log = logging.getLogger()
+root_log.setLevel(-1)
+formatter = logging.Formatter("%(levelname)s: %(asctime)s %(message)s")
+for h in root_log.handlers:
+    h.setFormatter(formatter)
 def concatenate_message_objects(*msg):
     # Ensure all message tokens are actually strings
     # (avoid "None" objects pollute the buffer!)
@@ -44,7 +48,7 @@ def formatMsg(*msg, **po):
 
 def justPrint(*msg, **po):
     t, st, p, o, msg, pmsg = formatMsg(*msg, **po)
-    print pmsg
+    print st+' '+pmsg
 
 
 def toLogging(*msg, **po):
