@@ -54,7 +54,7 @@ class SharedFile(CoreFile, DataOperator):
         CoreFile.__init__(self, *a, **k)
         self.node_cache = {}
 
-    def open_file(self, path=False, uid='', mode='a', title='', header=True, version=''):
+    def open_file(self, path=False, uid='', mode='a', title='', header=True, version='', conf=False):
         """opens the hdf file in `path` or `uid`"""
         self.node_cache = {}
         if not path:
@@ -85,13 +85,14 @@ class SharedFile(CoreFile, DataOperator):
             if self.has_node('/conf'):
                 if self.has_node_attr('/conf', 'uid'):
                     self.uid = self.get_node_attr('/conf', 'uid')
-
-                self.set_version(version)
+                if version != None:
+                    self.set_version(version)
             else:
-                self.log.info('No configuration object was found', path)
-                self.conf = option.ConfigurationProxy()
+                self.log.info(
+                    'No configuration object was found', path, version)
                 self.header(refresh=True, version=self.version)
-
+        if self.conf is False:
+            self.conf = option.ConfigurationProxy()
         return self.test, self.path
 
     def load_conf(self):
@@ -132,12 +133,11 @@ class SharedFile(CoreFile, DataOperator):
                 continue
             return path
         return False
-    
+
     def get_versions_by_date(self):
         v = self.get_versions()
-        v = [[key] + list(val) for key,val in v.iteritems()]
+        v = [[key] + list(val) for key, val in v.iteritems()]
         v.sort(key=lambda e: datetime.strptime(e[2]))
-        
 
     def get_version(self):
         return self.version
@@ -193,19 +193,18 @@ class SharedFile(CoreFile, DataOperator):
         self._change_version(newversion)
         self.test.flush()
         return newversion
-    
+
     def remove_version(self, version_path):
         self.remove_node(version_path, recursive=True)
         self.log.info('Removed version', version_path)
         plots = self.get_plots()
         for plot_id, info in plots.iteritems():
-            if info[4]==version_path:
+            if info[4] == version_path:
                 p = '/plot/{}'.format(plot_id)
                 self.remove_node(p, recursive=True)
                 self.log.info('Remove version plot', p)
         self.flush()
         return True
-                
 
     @lockme
     def get_plots(self, render=False):
@@ -226,9 +225,9 @@ class SharedFile(CoreFile, DataOperator):
                     image = self._file_node(path + 'render')
                 else:
                     image = False
-            r[node._v_name] = (script.attrs.title, script.attrs.date, 
-                               image, image_format, 
-                               getattr(script.attrs,'version',''))
+            r[node._v_name] = (script.attrs.title, script.attrs.date,
+                               image, image_format,
+                               getattr(script.attrs, 'version', ''))
         return r
 
     def get_plot(self, plot_id):
@@ -329,9 +328,9 @@ class SharedFile(CoreFile, DataOperator):
         newparent = version + parent
         path = newparent + "/" + name
         if not opt:
-            opt = self.get_attributes(parent+'/'+name)
+            opt = self.get_attributes(parent + '/' + name)
             opt['handle'] = name
-        
+
         self.remove_node(path)
         data_with_time = np.transpose(np.vstack((time_data, data)))
         dest_path_reference = reference.Array(

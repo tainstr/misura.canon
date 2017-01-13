@@ -8,7 +8,8 @@ from collections import OrderedDict
 import numpy as np
 
 from ..option import ao
-from ..logger import Log as logging
+from misura.canon.logger import get_module_logging
+logging = get_module_logging(__name__)
 from .. import reference
 
 def base_dict():

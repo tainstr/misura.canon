@@ -3,8 +3,8 @@
 import functools
 import re
 
-from ..logger import Log as logging
-
+from ..logger import get_module_logging
+logging = get_module_logging(__name__)
 navigator_domains = []
 
 #FIXME: hacks!
