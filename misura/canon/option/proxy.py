@@ -10,6 +10,8 @@ import cPickle as pickle
 from ..milang import Scriptable
 import common_proxy
 
+logging = logger.get_module_logging(__name__)
+
 
 def dictRecursiveModel(base):
     """BUild a dictionary configuration tree from ConfigurationProxy `base`"""
@@ -41,6 +43,7 @@ def print_tree(tree, level=0):
         msg += '{}|: {} = {}\n'.format(pre, k, v)
     return msg
 
+
 # TODO: parametrize in user conf
 # 0=always visible; 1=user ; 2=expert ; 3=advanced ; 4=technician ;
 # 5=developer; 6=never visible
@@ -51,20 +54,22 @@ class ConfigurationProxy(Scriptable, Conf):
     _readLevel = 5
     _writeLevel = 5
     _rmodel = False
-    
+    callbacks_get = {}
+    callbacks_set = {}
+
     def print_tree(self):
         print print_tree(self.tree())
 
-    def __init__(self, desc=collections.OrderedDict({'self': {}}), 
+    def __init__(self, desc=collections.OrderedDict({'self': {}}),
                  name='MAINSERVER', parent=False, readLevel=-1, writeLevel=-1, kid_base='/'):
         Scriptable.__init__(self)
         self.log = logger.BaseLogger()
         self.kid_base = kid_base
         Conf.__init__(self, desc['self'])
-        if readLevel>0:
+        if readLevel > 0:
             self._readLevel = readLevel
-        if writeLevel>0:
-            self._writeLevel = writeLevel      
+        if writeLevel > 0:
+            self._writeLevel = writeLevel
         self.children = desc.copy()
         """Child configuration dictionaries"""
         self.children_obj = {}
@@ -84,12 +89,6 @@ class ConfigurationProxy(Scriptable, Conf):
         if self.has_key('devpath'):
             self['devpath'] = name
         self.autosort()
-        
-    def get(self, *a, **k):
-        return self.__getitem__(*a, **k)
-    
-    def set(self, *a, **k):
-        return self.__setitem__(*a, **k)
 
     @property
     def root(self):
@@ -113,7 +112,7 @@ class ConfigurationProxy(Scriptable, Conf):
                 break
         # Revert to get the top-down path
         path.reverse()
-        r= '/' + '/'.join(path) + '/'
+        r = '/' + '/'.join(path) + '/'
         self['fullpath'] = r
         return r
 
@@ -147,7 +146,7 @@ class ConfigurationProxy(Scriptable, Conf):
 
     def itervalues(self):
         return self.desc.itervalues()
-    
+
     def values(self):
         return self.desc.values()
 
@@ -189,21 +188,38 @@ class ConfigurationProxy(Scriptable, Conf):
     def __nonzero__(self):
         return 1
 
+    def get(self, *a, **k):
+        return self.__getitem__(*a, **k)
+
+    def set(self, *a, **k):
+        return self.__setitem__(*a, **k)
+
     def __getitem__(self, key, *a):
         if key == 'fullpath':
             return self.get_fullpath()
-        if len(a)==1 and not self.desc.has_key(key):
+        if len(a) == 1 and not self.desc.has_key(key):
             return a[0]
         return self.desc[key]['current']
+
+    def callback(self, key, val, callback_name='set'):
+        callback_group = getattr(self, 'callbacks_' + callback_name)
+        cb = callback_group.get(
+            self.desc[key].get('callback_' + callback_name, False), False)
+        if cb:
+            old = self.desc[key]['current']
+            val = cb(self, key, old, val)
+            self.log.debug('Callback:', key, old, val)
+        return val
 
     def __setitem__(self, key, val):
         if not self.desc.has_key(key):
             self.log.error('Impossible to set non-existing option', key, val)
             return False
         if self.desc[key].get('writeLevel', 0) > self._writeLevel:
-            self.log.error('No authorization to edit the option', key, self._writeLevel)
+            self.log.error(
+                'No authorization to edit the option', key, self._writeLevel)
             return False
-        self.desc[key]['current'] = val
+        self.desc[key]['current'] = self.callback(key, val)
         return True
 
     def gettype(self, key):
@@ -226,24 +242,27 @@ class ConfigurationProxy(Scriptable, Conf):
         return self.desc[key]
 
     def sete(self, key, val):
-        if not val.has_key('priority') or val['priority']==-1:
-            priorities = [opt.get('priority',0) for opt in self.desc.values()]
+        if not val.has_key('priority') or val['priority'] == -1:
+            priorities = [opt.get('priority', 0) for opt in self.desc.values()]
             if len(priorities):
                 val['priority'] = max(priorities) + 1
-        if self.desc.get(key, {'writeLevel':-1}).get('writeLevel', 0) > self._writeLevel:
-            self.log.error('No authorization to edit the option', key, self._writeLevel)
+        old = self.desc.get(key, val)
+        if old.get('writeLevel', 0) > self._writeLevel:
+            self.log.error(
+                'No authorization to edit the option', key, self._writeLevel)
             return False
         self.desc[key] = val
         return True
-        
+
     def autosort(self):
         def sorter(item):
             key, val = item
             digits = re.sub(r"\D", '', key)
             key = int(digits) if len(digits) else key
             return key
-        self.children = collections.OrderedDict(sorted(self.children.items(), key=sorter))
-            
+        self.children = collections.OrderedDict(
+            sorted(self.children.items(), key=sorter))
+
     def add_child(self, name, desc, overwrite=False):
         """Inserts a sub-object `name` with object tree dictionary `desc`.
         Returns a ConfigurationProxy to the new child."""
@@ -279,18 +298,19 @@ class ConfigurationProxy(Scriptable, Conf):
             return None
         if not self.children_obj.has_key(name):
             kb = self.kid_base + name + self.separator
-            self.children_obj[name] = ConfigurationProxy(
-                self.children[name], name=name, parent=self, kid_base=kb)
+            self.children_obj[name] = ConfigurationProxy(self.children[name],
+                                                         name=name, parent=self, kid_base=kb,
+                                                         readLevel=self._readLevel, writeLevel=self._writeLevel)
         return self.children_obj[name]
-    
+
     def calc_aggregate(self, aggregation, handle=False):
-        #TODO: move to Scriptable class! (or a new one)
+        # TODO: move to Scriptable class! (or a new one)
         function_name = re.search("(.+?)\(", aggregation).group(1)
         targets = re.search("\((.+?)\)", aggregation)
         if targets is None:
             targets = [handle]
         else:
-            targets = targets.group(1).replace(' ','').split(',')
+            targets = targets.group(1).replace(' ', '').split(',')
         values = collections.defaultdict(list)
         for child_name in self.children.iterkeys():
             child = self.child(child_name)
@@ -303,21 +323,23 @@ class ConfigurationProxy(Scriptable, Conf):
                 pack[target].append(child[target])
             if pack:
                 for t in targets:
-                    values[t]+=pack[t]
+                    values[t] += pack[t]
         result = None
         error = None
-        #TODO: calc stdev here
+        # TODO: calc stdev here
         if function_name == 'mean':
             v = np.array(values[targets[0]]).astype(np.float32)
-            #FIXME: hack to filter out zeros
-            v = v[v!=0]
+            # FIXME: hack to filter out zeros
+            v = v[v != 0]
             if len(v):
                 result = float(v.mean())
                 error = float(v.std())
         elif function_name == 'sum':
-            result = float(np.array(values[targets[0]]).astype(np.float32).sum())
+            result = float(
+                np.array(values[targets[0]]).astype(np.float32).sum())
         elif function_name == 'prod':
-            result = float(np.array(values[targets[0]]).astype(np.float32).prod())
+            result = float(
+                np.array(values[targets[0]]).astype(np.float32).prod())
         elif function_name == 'table':
             result = []
             for i, x in enumerate(values[targets[0]]):
@@ -331,12 +353,13 @@ class ConfigurationProxy(Scriptable, Conf):
             # Should calculate also table header?
             result = [self[handle][0]] + result
         else:
-            self.log.error('Aggregate function not found:', function_name, aggregation)
+            self.log.error(
+                'Aggregate function not found:', function_name, aggregation)
         return result, error
-    
+
     def update_aggregates(self, recursive=1):
         """Updates aggregate options. recursive==1, upward; -1, downward"""
-        #TODO: move to Scriptable class! (or a new one)
+        # TODO: move to Scriptable class! (or a new one)
         for handle, opt in self.desc.iteritems():
             if not opt.has_key('aggregate'):
                 continue
@@ -347,16 +370,16 @@ class ConfigurationProxy(Scriptable, Conf):
                 if error is not None and opt.has_key('error'):
                     self[opt['error']] = error
             else:
-                self.log.error('Aggregation failed for ', handle, aggregation) 
-        if recursive>0 and self.parent():
+                self.log.error('Aggregation failed for ', handle, aggregation)
+        if recursive > 0 and self.parent():
             self.parent().update_aggregates(recursive=1)
-        elif recursive<0:
+        elif recursive < 0:
             for k in self.children.keys():
                 self.child(k).update_aggregates(recursive=-1)
             # Then run backwards as aggregates only propagates bottom-up
             if self.parent():
                 self.parent().update_aggregates(recursive=1)
-    
+
     @property
     def devices(self):
         return [self.child(name) for name in self.children.keys()]
@@ -381,7 +404,6 @@ class ConfigurationProxy(Scriptable, Conf):
 
     def from_column(self, col0):
         return common_proxy.from_column(col0, self.root)
-
 
     def toMethodName(self, name):
         if name == 'MAINSERVER':
@@ -423,14 +445,14 @@ class ConfigurationProxy(Scriptable, Conf):
     @property
     def samples(self):
         if not self.measure.has_key('nSamples'):
-            print 'no nSample option!'
+            self.log.debug('no nSample option!')
             return []
         n = self.measure['nSamples']
         if n == 0:
-            print 'no samples defined!'
+            self.log.debug('no samples defined!')
             return []
         out = []
-        for i in range(n+1):
+        for i in range(n + 2):
             # Search direct child (instrument)
             child = self.child('sample{}'.format(i))
             if child:
@@ -439,17 +461,17 @@ class ConfigurationProxy(Scriptable, Conf):
             # Search referred sample (from device)
             s = 'smp{}'.format(i)
             if not self.has_key(s):
-                print 'sample not found', s
-                break
+                self.log.debug('sample not found', s)
+                continue
             # Get fullpath of the referred sample object
             s = self[s][0]
             # Get the actual object
             obj = self.root.toPath(s)
             if obj is None:
-                print 'sample object not found', s
+                self.log.debug('sample object not found', s)
                 continue
             out.append(obj)
-        print 'returning samples', out
+        self.log.debug('returning samples', out, n)
         return out
 
     def role2dev(self, opt):
