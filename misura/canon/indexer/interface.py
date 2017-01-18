@@ -98,6 +98,7 @@ class SharedFile(CoreFile, DataOperator):
     def load_conf(self):
         d = self.conf_tree()
         self.conf = option.ConfigurationProxy(desc=d)
+        self.conf.filename = self.path
         self.log.debug('load conf', self.conf, len(d))
         return True
 

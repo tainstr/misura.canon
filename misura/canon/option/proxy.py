@@ -56,6 +56,8 @@ class ConfigurationProxy(Scriptable, Conf):
     _rmodel = False
     callbacks_get = {}
     callbacks_set = {}
+    doc = False # Document where this configuration is contained
+    filename = False # Filename from which this configuration was red
 
     def print_tree(self):
         print print_tree(self.tree())
@@ -179,6 +181,8 @@ class ConfigurationProxy(Scriptable, Conf):
         self._Method__name = obj._Method__name
         self._readLevel = obj._readLevel
         self._writeLevel = obj._writeLevel
+        self.doc = obj.doc 
+        self.filename = obj.filename
 
     def copy(self):
         p = ConfigurationProxy()
@@ -298,9 +302,12 @@ class ConfigurationProxy(Scriptable, Conf):
             return None
         if not self.children_obj.has_key(name):
             kb = self.kid_base + name + self.separator
-            self.children_obj[name] = ConfigurationProxy(self.children[name],
+            obj = ConfigurationProxy(self.children[name],
                                                          name=name, parent=self, kid_base=kb,
                                                          readLevel=self._readLevel, writeLevel=self._writeLevel)
+            obj.doc = self.doc
+            obj.filename = self.filename
+            self.children_obj[name] = obj
         return self.children_obj[name]
 
     def calc_aggregate(self, aggregation, handle=False):
