@@ -319,6 +319,9 @@ class Option(object):
     
     def values(self):
         return self.entry.values()
+    
+    def __len__(self):
+        return len(self.entry)
 
     def __str__(self):
         """String representation useful for printing purposes"""

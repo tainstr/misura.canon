@@ -62,6 +62,7 @@ class ConfigurationProxy(Scriptable, Conf):
 
     def print_tree(self):
         print print_tree(self.tree())
+        
 
     def __init__(self, desc=collections.OrderedDict({'self': {}}),
                  name='MAINSERVER', parent=False, readLevel=-1, writeLevel=-1, kid_base='/'):
@@ -92,6 +93,21 @@ class ConfigurationProxy(Scriptable, Conf):
         if self.has_key('devpath'):
             self['devpath'] = name
         self.autosort()
+        
+    def __getstate__(self):
+        result = self.__dict__.copy()
+        result.pop('children_obj')
+        # These might contain unpickable references
+        result.pop('doc', 0)
+        result.pop('callbacks_get', 0)
+        result.pop('callbacks_set', 0)
+        return result
+    
+    def __setstate__(self, state):
+        self.__dict__ = state
+        self.children_obj = {}
+        self.callbacks_set = self.__class__.callbacks_set
+        self.callbacks_get = self.__class__.callbacks_get
 
     @property
     def root(self):
