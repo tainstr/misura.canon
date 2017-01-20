@@ -221,7 +221,6 @@ class Conf(object):
             # io can point only towards History or RoleIO types
             if 'History' in opt['attr'] or opt['type'] == 'RoleIO':
                 r.append(opt['handle'])
-        print 'iolist', r
         return r
 
 

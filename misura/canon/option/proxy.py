@@ -9,6 +9,7 @@ from conf import Conf
 import cPickle as pickle
 from ..milang import Scriptable
 import common_proxy
+from traceback import format_exc
 
 logging = logger.get_module_logging(__name__)
 
@@ -371,7 +372,11 @@ class ConfigurationProxy(Scriptable, Conf):
             if not opt.has_key('aggregate'):
                 continue
             aggregation = opt['aggregate']
-            result, error = self.calc_aggregate(aggregation, handle)
+            try:
+                result, error = self.calc_aggregate(aggregation, handle)
+            except:
+                logging.error('Failed aggregation', aggregation, handle, format_exc())
+                continue
             if result is not None:
                 self[handle] = result
                 if error is not None and opt.has_key('error'):
