@@ -106,7 +106,7 @@ def create_tree(outFile, tree, path='/'):
         if outFile.has_node(path, key):
             logging.debug('Path already found:', path, key)
             continue
-        logging.debug('%s %s %s', 'Creating group:', path, key)
+        logging.debug('Creating group:', path, key)
         outFile.create_group(path, key, key)
         dest = path + key + '/'
         if outFile.has_node(dest):

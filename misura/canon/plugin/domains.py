@@ -41,7 +41,7 @@ def node(func):
         # If node was expressed as/converted to string, get its corresponding
         # tree entry
         if isinstance(n, str) or isinstance(n, unicode):
-            logging.debug('%s %s', 'traversing node', n)
+            logging.debug('traversing node', n)
             n = str(n)
             n = self.model().tree.traverse(n)
 
@@ -51,8 +51,7 @@ def node(func):
             a = list(a)
             a[0] = n
             a = tuple(a)
-        logging.debug(
-            '%s %s %s %s', '@node with', n, type(n), isinstance(n, unicode))
+        logging.debug('@node with', n, type(n), isinstance(n, unicode))
         return func(self, *a, **k)
     return node_wrapper
 
@@ -82,8 +81,7 @@ def nodes(func):
             a = list(a)
             a[0] = n
             a = tuple(a)
-        logging.debug(
-            '%s %s %s %s %s', '@nodes with', n, type(n), isinstance(n, unicode))
+        logging.debug('@nodes with', n, type(n), isinstance(n, unicode))
         return func(self, *a, **k)
     return node_wrapper
 
