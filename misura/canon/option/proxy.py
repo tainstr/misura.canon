@@ -220,7 +220,9 @@ class ConfigurationProxy(Scriptable, Conf):
             return self.get_fullpath()
         if len(a) == 1 and not self.desc.has_key(key):
             return a[0]
-        return self.desc[key]['current']
+        old = self.desc[key]['current']
+        new = self.callback(key, old, callback_name='get')
+        return new
 
     def callback(self, key, val, callback_name='set'):
         callback_group = getattr(self, 'callbacks_' + callback_name)
@@ -229,7 +231,7 @@ class ConfigurationProxy(Scriptable, Conf):
         if cb:
             old = self.desc[key]['current']
             val = cb(self, key, old, val)
-            self.log.debug('Callback:', key, old, val)
+            self.log.debug('Callback:', callback_name, key, old, val)
         return val
 
     def __setitem__(self, key, val):

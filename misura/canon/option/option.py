@@ -372,8 +372,8 @@ class Option(object):
             del self._entry[k]
         return True
 
-    def pop(self, k):
-        return self._entry.pop(k)
+    def pop(self, *a):
+        return self._entry.pop(*a)
 
     @property
     def entry(self):
