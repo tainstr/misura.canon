@@ -2,16 +2,16 @@
 # -*- coding: utf-8 -*-
 """Misura shared utilities"""
 # Sub modules
-from . import csutil
-from . import bitmap
-from . import circle
+import csutil
+import bitmap
+import circle
 
 # Sub packages
-from . import indexer
-from . import milang
-from . import option
-from . import reference
-from . import plugin
+import indexer
+import milang
+import option
+import reference
+import plugin
 
 
 import os, sys
