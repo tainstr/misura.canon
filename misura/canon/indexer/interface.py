@@ -111,21 +111,22 @@ class SharedFile(CoreFile, DataOperator):
         """List available versions. Returns a dictionary {path: (name,date)}"""
         if not self.test:
             return {}
-        if not self.has_node('/conf'):
+        if not self._has_node('/conf'):
             return {}
-        m = getattr(self.test.root.conf.attrs, 'versions', 10)
         v = {'': ('Original', self.test.root.conf.attrs.date)}
         # skip 0 and seek a little farer
         latest = 0
-        for i in range(1, m + 5):
-            n = '/ver_{}'.format(i)
-            if n in self.test:
-                name = self.get_node_attr(n, 'name')
-                date = self.get_node_attr(n, 'date')
-                v[n] = (name, date)
-                latest = i
+        for node in self.test.list_nodes('/'):
+            name = node._v_name
+            if not name.startswith('ver_'):
+                continue
+            ver = int(name.split('_')[-1])
+            if ver>latest:
+                latest=ver
+            v[node._v_pathname] = (node._f_getattr('name'), 
+                                   node._f_getattr('date'))
         self.test.root.conf.attrs.versions = latest
-        print 'returning versions', v
+        self.log.debug('returning versions', v)
         return v
 
     def get_version_by_name(self, name):
@@ -134,6 +135,13 @@ class SharedFile(CoreFile, DataOperator):
                 continue
             return path
         return False
+    
+    def get_latest_version_number(self):
+        v = []
+        for k in self.get_versions().iterkeys():
+            v.append(0 if k=='' else int(k.split('_')[-1]))
+        m = max(v)
+        return m
 
     def get_versions_by_date(self):
         v = self.get_versions()
@@ -175,19 +183,26 @@ class SharedFile(CoreFile, DataOperator):
         self.version = str(new_version)
         self._set_attributes(
             '/userdata', attrs={'active_version': new_version})
-
-    @lockme
-    def create_version(self, name=False):
-        """Create a new version with `name`"""
-        latest = getattr(self.test.root.conf.attrs, 'versions', 0)
-        newversion = '/ver_{}'.format(latest + 1)
-        print 'creating new version', newversion, name
+    
+    def create_version(self, name=False, overwrite=True):
+        """Create a new version with `name`. `overwrite` a previous version with same name."""
+        newversion= False
+        if name and overwrite:
+            newversion = self.get_version_by_name(name)
+        if newversion:
+            self.log.debug('Found version {} saved as {}. Overwriting.'.format(name, newversion))
+            latest = int(newversion.split('_')[-1])
+            self.remove_version(newversion)
+        else:
+            latest = self.get_latest_version_number()+1
+            newversion = '/ver_{}'.format(latest)
+        self.log.debug('creating new version', newversion, name)
         if not name:
             name = newversion
         self.test.create_group('/', newversion[1:])
         d = datetime.now().strftime("%H:%M:%S, %d/%m/%Y")
         self._set_attributes(newversion, attrs={'name': name, 'date': d})
-        self.test.root.conf.attrs.versions = latest + 1
+        self.test.root.conf.attrs.versions = latest
         # Set current version (will be empty until some transparent writing
         # occurs)
         self.version = newversion
