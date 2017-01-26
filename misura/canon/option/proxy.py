@@ -44,6 +44,51 @@ def print_tree(tree, level=0):
         msg += '{}|: {} = {}\n'.format(pre, k, v)
     return msg
 
+def aggregate_table(targets, values, current):
+    """Calculate the table() aggregate"""
+    result = []
+    for i, x in enumerate(values[targets[0]]):
+        row = []
+        for t in targets:
+            row.append(values[t][i])
+        result.append(row)
+    # Reorder by first column
+    result = sorted(result, key=lambda e: e[0])
+    # Prepend table header
+    # Should calculate also table header?
+    result = [current[0]] + result
+    return result
+
+def aggregate_merge_tables(targets, values, current):
+    """Calculate the merge_tables() aggregate"""
+    all_y = []
+    # Discover all possible y values
+    xlen = 1
+    for t in targets:
+        tab = values[t]
+        xlen += len(tab[0])-1
+        all_y += [row[0] for row in tab[1:]]
+    all_y = list(set(all_y))
+    all_y.sort()
+    # Table template
+    result = []
+    for y in all_y:
+        result.append([0]*xlen)
+        result[-1][0] = y
+    # X cursor
+    xpos = 1
+    # Fill the table template
+    for t in targets:
+        tab = values[t]
+        for row in tab[1:]:
+            iy = all_y.index(row[0])
+            # Assign values starting from the second column
+            for ix, val in enumerate(row[1:]):
+                result[iy][xpos+ix] = val
+        # Move the X cursor
+        xpos += len(row)-1
+    result = [current[0]] + result
+    return result        
 
 # TODO: parametrize in user conf
 # 0=always visible; 1=user ; 2=expert ; 3=advanced ; 4=technician ;
@@ -293,11 +338,12 @@ class ConfigurationProxy(Scriptable, Conf):
         # encapsulate it in a 'self' dict
         if not 'self' in desc:
             desc = {'self': desc}
-        if overwrite or name not in self.children:
+        if overwrite or (name not in self.children):
             self.children[name] = desc
         else:
             for key, val in desc['self'].iteritems():
                 self.children[name]['self'][key] = val
+        self.children_obj.pop(name, False)
         self.autosort()
         r = self.child(name)
         r.get_fullpath()
@@ -330,7 +376,7 @@ class ConfigurationProxy(Scriptable, Conf):
         return self.children_obj[name]
 
     def calc_aggregate(self, aggregation, handle=False):
-        # TODO: move to Scriptable class! (or a new one)
+        # TODO: move to Scriptable class! (or a abstract new one)
         function_name = re.search("(.+?)\(", aggregation).group(1)
         targets = re.search("\((.+?)\)", aggregation)
         if targets is None:
@@ -344,6 +390,7 @@ class ConfigurationProxy(Scriptable, Conf):
             for target in targets:
                 # Ensure all targets exist
                 if not child.has_key(target):
+                    self.log.error('calc_aggregate: missing target in child object', child_name, target)
                     pack = False
                     break
                 pack[target].append(child[target])
@@ -356,10 +403,12 @@ class ConfigurationProxy(Scriptable, Conf):
         if function_name == 'mean':
             v = np.array(values[targets[0]]).astype(np.float32)
             # FIXME: hack to filter out zeros
-            v = v[v != 0]
-            if len(v):
-                result = float(v.mean())
-                error = float(v.std())
+            v1 = v[v != 0]
+            if len(v1):
+                result = float(v1.mean())
+                error = float(v1.std())
+            else:
+                self.log.debug('calc_aggregate: Zero-length', aggregation, v)
         elif function_name == 'sum':
             result = float(
                 np.array(values[targets[0]]).astype(np.float32).sum())
@@ -367,24 +416,16 @@ class ConfigurationProxy(Scriptable, Conf):
             result = float(
                 np.array(values[targets[0]]).astype(np.float32).prod())
         elif function_name == 'table':
-            result = []
-            for i, x in enumerate(values[targets[0]]):
-                row = []
-                for t in targets:
-                    row.append(values[t][i])
-                result.append(row)
-            # Reorder by first column
-            result = sorted(result, key=lambda e: e[0])
-            # Prepend table header
-            # Should calculate also table header?
-            result = [self[handle][0]] + result
+            result = aggregate_table(targets, values, self[handle])
+        elif function_name == 'merge_tables':
+            result = aggregate_merge_tables(targets, values, self[handle])
         else:
             self.log.error(
                 'Aggregate function not found:', function_name, aggregation)
         return result, error
 
     def update_aggregates(self, recursive=1):
-        """Updates aggregate options. recursive==1, upward; -1, downward"""
+        """Updates aggregate options. recursive==1, upward; -1, downward; 0, no"""
         # TODO: move to Scriptable class! (or a new one)
         for handle, opt in self.desc.iteritems():
             if not opt.has_key('aggregate'):
@@ -393,14 +434,16 @@ class ConfigurationProxy(Scriptable, Conf):
             try:
                 result, error = self.calc_aggregate(aggregation, handle)
             except:
-                logging.error('Failed aggregation', aggregation, handle, format_exc())
+                logging.error('Error during aggregation', self.get_fullpath(), 
+                              aggregation, handle, format_exc())
                 continue
             if result is not None:
                 self[handle] = result
                 if error is not None and opt.has_key('error'):
                     self[opt['error']] = error
             else:
-                self.log.error('Aggregation failed for ', handle, aggregation)
+                self.log.error('Aggregation failed for ', self.get_fullpath(), 
+                               handle, aggregation)
         if recursive > 0 and self.parent():
             self.parent().update_aggregates(recursive=1)
         elif recursive < 0:

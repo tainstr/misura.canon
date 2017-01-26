@@ -100,7 +100,7 @@ class ConfigurationProxy(unittest.TestCase):
         self.assertEqual(aval, aval2)
         aval, error = base.calc_aggregate('makegold(a)')
         self.assertEqual(aval, None)
-
+        
         base.update_aggregates()
         self.assertEqual(base['a'], 9)
         self.assertEqual(base['sum'], 9)
@@ -109,6 +109,18 @@ class ConfigurationProxy(unittest.TestCase):
         self.assertEqual(base['prod'], 12)
         self.assertEqual(base['table'], [
                          [('Col A', 'Float'), ('Col B', 'Float')], [1, 2], [2, 4], [6, 12]])
+        
+    def test_aggregate_merge_tables(self):
+        targets = ['a', 'b', 'c']
+        h = ['col1', 'col2']
+        current = [h]
+        values = {'a':[h, [1, 10], [2, 20], [3, 30], [4, 40], [5, 50]],
+                  'b':[h, [1, 0.1], [2, 0.2], [3, 0.3], [4, 0.4], [5, 0.5]],
+                  'c':[h, [1, 100], [2, 200], [3, 300], [4, 400], [5, 500]],}
+        result = option.proxy.aggregate_merge_tables(targets, values, current)
+        self.assertEqual(result[0], current[0])
+        self.assertEqual(len(result[1]), 4)
+        self.assertEqual(result[5], [5, 50, 0.5, 500])
 
     def test_callback(self):
         base = option.ConfigurationProxy({'self': dataimport.base_dict()})
