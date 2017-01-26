@@ -44,6 +44,7 @@ def print_tree(tree, level=0):
         msg += '{}|: {} = {}\n'.format(pre, k, v)
     return msg
 
+
 def aggregate_table(targets, values, current):
     """Calculate the table() aggregate"""
     result = []
@@ -59,40 +60,50 @@ def aggregate_table(targets, values, current):
     result = [current[0]] + result
     return result
 
+
 def aggregate_merge_tables(targets, values, current):
     """Calculate the merge_tables() aggregate"""
     all_y = []
     # Discover all possible y values
+    key_col = 0
     xlen = 1
     for t in targets:
-        tab = values[t]
-        xlen += len(tab[0])-1
-        all_y += [row[0] for row in tab[1:]]
+        for tab in values[t]:
+            if len(tab) == 0:
+                logging.debug('Zero-length table in merge_tables', t, tab)
+                continue
+            xlen += len(tab[0]) - 1 - key_col
+            all_y += [row[key_col] for row in tab[1:]]
     all_y = list(set(all_y))
     all_y.sort()
     # Table template
     result = []
     for y in all_y:
-        result.append([0]*xlen)
+        result.append([0] * xlen)
         result[-1][0] = y
     # X cursor
     xpos = 1
     # Fill the table template
     for t in targets:
-        tab = values[t]
-        for row in tab[1:]:
-            iy = all_y.index(row[0])
-            # Assign values starting from the second column
-            for ix, val in enumerate(row[1:]):
-                result[iy][xpos+ix] = val
-        # Move the X cursor
-        xpos += len(row)-1
+        for tab in values[t]:
+            if len(tab) == 0:
+                continue
+            row = []
+            for row in tab[1:]:
+                iy = all_y.index(row[key_col])
+                # Assign values starting from the second column
+                for ix, val in enumerate(row[key_col + 1:]):
+                    result[iy][xpos + ix] = val
+            # Move the X cursor
+            xpos += len(row) - 1 - key_col
     result = [current[0]] + result
-    return result        
+    return result
 
 # TODO: parametrize in user conf
 # 0=always visible; 1=user ; 2=expert ; 3=advanced ; 4=technician ;
 # 5=developer; 6=never visible
+
+
 class ConfigurationProxy(Scriptable, Conf):
 
     """A configuration object behaving like a live server"""
@@ -102,12 +113,11 @@ class ConfigurationProxy(Scriptable, Conf):
     _rmodel = False
     callbacks_get = {}
     callbacks_set = {}
-    doc = False # Document where this configuration is contained
-    filename = False # Filename from which this configuration was red
+    doc = False  # Document where this configuration is contained
+    filename = False  # Filename from which this configuration was red
 
     def print_tree(self):
         print print_tree(self.tree())
-        
 
     def __init__(self, desc=collections.OrderedDict({'self': {}}),
                  name='MAINSERVER', parent=False, readLevel=-1, writeLevel=-1, kid_base='/'):
@@ -138,7 +148,7 @@ class ConfigurationProxy(Scriptable, Conf):
         if self.has_key('devpath'):
             self['devpath'] = name
         self.autosort()
-        
+
     def __getstate__(self):
         result = self.__dict__.copy()
         result.pop('children_obj')
@@ -147,7 +157,7 @@ class ConfigurationProxy(Scriptable, Conf):
         result.pop('callbacks_get', 0)
         result.pop('callbacks_set', 0)
         return result
-    
+
     def __setstate__(self, state):
         self.__dict__ = state
         self.children_obj = {}
@@ -243,7 +253,7 @@ class ConfigurationProxy(Scriptable, Conf):
         self._Method__name = obj._Method__name
         self._readLevel = obj._readLevel
         self._writeLevel = obj._writeLevel
-        self.doc = obj.doc 
+        self.doc = obj.doc
         self.filename = obj.filename
 
     def copy(self):
@@ -368,8 +378,8 @@ class ConfigurationProxy(Scriptable, Conf):
         if not self.children_obj.has_key(name):
             kb = self.kid_base + name + self.separator
             obj = ConfigurationProxy(self.children[name],
-                                                         name=name, parent=self, kid_base=kb,
-                                                         readLevel=self._readLevel, writeLevel=self._writeLevel)
+                                     name=name, parent=self, kid_base=kb,
+                                     readLevel=self._readLevel, writeLevel=self._writeLevel)
             obj.doc = self.doc
             obj.filename = self.filename
             self.children_obj[name] = obj
@@ -390,13 +400,16 @@ class ConfigurationProxy(Scriptable, Conf):
             for target in targets:
                 # Ensure all targets exist
                 if not child.has_key(target):
-                    self.log.error('calc_aggregate: missing target in child object', child_name, target)
+                    self.log.error(
+                        'calc_aggregate: missing target in child object', child_name, target)
                     pack = False
                     break
                 pack[target].append(child[target])
             if pack:
                 for t in targets:
                     values[t] += pack[t]
+            else:
+                self.log.error('calc_aggregate: no values packed for', child_name, target)
         result = None
         error = None
         # TODO: calc stdev here
@@ -434,7 +447,7 @@ class ConfigurationProxy(Scriptable, Conf):
             try:
                 result, error = self.calc_aggregate(aggregation, handle)
             except:
-                logging.error('Error during aggregation', self.get_fullpath(), 
+                logging.error('Error during aggregation', self.get_fullpath(),
                               aggregation, handle, format_exc())
                 continue
             if result is not None:
@@ -442,7 +455,7 @@ class ConfigurationProxy(Scriptable, Conf):
                 if error is not None and opt.has_key('error'):
                     self[opt['error']] = error
             else:
-                self.log.error('Aggregation failed for ', self.get_fullpath(), 
+                self.log.error('Aggregation failed for ', self.get_fullpath(),
                                handle, aggregation)
         if recursive > 0 and self.parent():
             self.parent().update_aggregates(recursive=1)

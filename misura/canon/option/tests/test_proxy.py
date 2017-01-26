@@ -114,9 +114,9 @@ class ConfigurationProxy(unittest.TestCase):
         targets = ['a', 'b', 'c']
         h = ['col1', 'col2']
         current = [h]
-        values = {'a':[h, [1, 10], [2, 20], [3, 30], [4, 40], [5, 50]],
-                  'b':[h, [1, 0.1], [2, 0.2], [3, 0.3], [4, 0.4], [5, 0.5]],
-                  'c':[h, [1, 100], [2, 200], [3, 300], [4, 400], [5, 500]],}
+        values = {'a':[[h, [1, 10], [2, 20], [3, 30], [4, 40], [5, 50]]],
+                  'b':[[h, [1, 0.1], [2, 0.2], [3, 0.3], [4, 0.4], [5, 0.5]]],
+                  'c':[[h, [1, 100], [2, 200], [3, 300], [4, 400], [5, 500]]],}
         result = option.proxy.aggregate_merge_tables(targets, values, current)
         self.assertEqual(result[0], current[0])
         self.assertEqual(len(result[1]), 4)
