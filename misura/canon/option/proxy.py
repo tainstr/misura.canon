@@ -8,6 +8,7 @@ from .. import logger
 from conf import Conf
 import cPickle as pickle
 from ..milang import Scriptable
+from aggregative import Aggregative
 import common_proxy
 from traceback import format_exc
 
@@ -45,66 +46,13 @@ def print_tree(tree, level=0):
     return msg
 
 
-def aggregate_table(targets, values, current):
-    """Calculate the table() aggregate"""
-    result = []
-    for i, x in enumerate(values[targets[0]]):
-        row = []
-        for t in targets:
-            row.append(values[t][i])
-        result.append(row)
-    # Reorder by first column
-    result = sorted(result, key=lambda e: e[0])
-    # Prepend table header
-    # Should calculate also table header?
-    result = [current[0]] + result
-    return result
-
-
-def aggregate_merge_tables(targets, values, current):
-    """Calculate the merge_tables() aggregate"""
-    all_y = []
-    # Discover all possible y values
-    key_col = 0
-    xlen = 1
-    for t in targets:
-        for tab in values[t]:
-            if len(tab) == 0:
-                logging.debug('Zero-length table in merge_tables', t, tab)
-                continue
-            xlen += len(tab[0]) - 1 - key_col
-            all_y += [row[key_col] for row in tab[1:]]
-    all_y = list(set(all_y))
-    all_y.sort()
-    # Table template
-    result = []
-    for y in all_y:
-        result.append([0] * xlen)
-        result[-1][0] = y
-    # X cursor
-    xpos = 1
-    # Fill the table template
-    for t in targets:
-        for tab in values[t]:
-            if len(tab) == 0:
-                continue
-            row = []
-            for row in tab[1:]:
-                iy = all_y.index(row[key_col])
-                # Assign values starting from the second column
-                for ix, val in enumerate(row[key_col + 1:]):
-                    result[iy][xpos + ix] = val
-            # Move the X cursor
-            xpos += len(row) - 1 - key_col
-    result = [current[0]] + result
-    return result
 
 # TODO: parametrize in user conf
 # 0=always visible; 1=user ; 2=expert ; 3=advanced ; 4=technician ;
 # 5=developer; 6=never visible
 
 
-class ConfigurationProxy(Scriptable, Conf):
+class ConfigurationProxy(Aggregative, Scriptable, Conf):
 
     """A configuration object behaving like a live server"""
     separator = '/'
@@ -384,87 +332,7 @@ class ConfigurationProxy(Scriptable, Conf):
             obj.filename = self.filename
             self.children_obj[name] = obj
         return self.children_obj[name]
-
-    def calc_aggregate(self, aggregation, handle=False):
-        # TODO: move to Scriptable class! (or a abstract new one)
-        function_name = re.search("(.+?)\(", aggregation).group(1)
-        targets = re.search("\((.+?)\)", aggregation)
-        if targets is None:
-            targets = [handle]
-        else:
-            targets = targets.group(1).replace(' ', '').split(',')
-        values = collections.defaultdict(list)
-        for child_name in self.children.iterkeys():
-            child = self.child(child_name)
-            pack = collections.defaultdict(list)
-            for target in targets:
-                # Ensure all targets exist
-                if not child.has_key(target):
-                    self.log.error(
-                        'calc_aggregate: missing target in child object', child_name, target)
-                    pack = False
-                    break
-                pack[target].append(child[target])
-            if pack:
-                for t in targets:
-                    values[t] += pack[t]
-            else:
-                self.log.error('calc_aggregate: no values packed for', child_name, target)
-        result = None
-        error = None
-        # TODO: calc stdev here
-        if function_name == 'mean':
-            v = np.array(values[targets[0]]).astype(np.float32)
-            # FIXME: hack to filter out zeros
-            v1 = v[v != 0]
-            if len(v1):
-                result = float(v1.mean())
-                error = float(v1.std())
-            else:
-                self.log.debug('calc_aggregate: Zero-length', aggregation, v)
-        elif function_name == 'sum':
-            result = float(
-                np.array(values[targets[0]]).astype(np.float32).sum())
-        elif function_name == 'prod':
-            result = float(
-                np.array(values[targets[0]]).astype(np.float32).prod())
-        elif function_name == 'table':
-            result = aggregate_table(targets, values, self[handle])
-        elif function_name == 'merge_tables':
-            result = aggregate_merge_tables(targets, values, self[handle])
-        else:
-            self.log.error(
-                'Aggregate function not found:', function_name, aggregation)
-        return result, error
-
-    def update_aggregates(self, recursive=1):
-        """Updates aggregate options. recursive==1, upward; -1, downward; 0, no"""
-        # TODO: move to Scriptable class! (or a new one)
-        for handle, opt in self.desc.iteritems():
-            if not opt.has_key('aggregate'):
-                continue
-            aggregation = opt['aggregate']
-            try:
-                result, error = self.calc_aggregate(aggregation, handle)
-            except:
-                logging.error('Error during aggregation', self.get_fullpath(),
-                              aggregation, handle, format_exc())
-                continue
-            if result is not None:
-                self[handle] = result
-                if error is not None and opt.has_key('error'):
-                    self[opt['error']] = error
-            else:
-                self.log.error('Aggregation failed for ', self.get_fullpath(),
-                               handle, aggregation)
-        if recursive > 0 and self.parent():
-            self.parent().update_aggregates(recursive=1)
-        elif recursive < 0:
-            for k in self.children.keys():
-                self.child(k).update_aggregates(recursive=-1)
-            # Then run backwards as aggregates only propagates bottom-up
-            if self.parent():
-                self.parent().update_aggregates(recursive=1)
+    
 
     @property
     def devices(self):

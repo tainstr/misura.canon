@@ -5,6 +5,8 @@ from option import Option, read_only_keys
 from store import Store
 from option import ao
 
+logging = logger.get_module_logging(__name__)
+
 class Conf(object):
     kid_base = ''
 
@@ -222,5 +224,4 @@ class Conf(object):
             if 'History' in opt['attr'] or opt['type'] == 'RoleIO':
                 r.append(opt['handle'])
         return r
-
-
+    

@@ -10,7 +10,7 @@ from milang import MiLang
 
 class Scriptable(object):
 
-    """A configuration object which can contain and execute Script-type options"""
+    """A configuration object fragment which can contain and execute Script-type options"""
 
     def __init__(self):
         self.scripts = []
