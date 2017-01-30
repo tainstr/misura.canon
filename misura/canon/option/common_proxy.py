@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+from misura.canon.logger import get_module_logging
+logging = get_module_logging(__name__)
 import re
 
 def from_column(column, proxy=False):
@@ -15,3 +17,27 @@ def from_column(column, proxy=False):
     name = branches.pop(-1)
     obj = proxy.toPath(branches)
     return obj, name
+
+
+class CommonProxy(object):
+    separator = '/'
+    _parent = False
+    _readLevel = 5
+    _writeLevel = 5
+    _rmodel = False
+    """Cached remote recursive model dictionary"""
+    _navigator = None
+    """Navigator instance for configuration-plot interactions"""
+    
+    @property
+    def instrument(self):
+        root = self.root 
+        ins = root['runningInstrument']
+        ins = getattr(root, ins, False)
+        return ins
+    
+    @property
+    def navigator(self):
+        return self.root._navigator
+    
+    

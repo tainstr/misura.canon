@@ -46,18 +46,8 @@ def print_tree(tree, level=0):
     return msg
 
 
-
-# TODO: parametrize in user conf
-# 0=always visible; 1=user ; 2=expert ; 3=advanced ; 4=technician ;
-# 5=developer; 6=never visible
-
-
-class ConfigurationProxy(Aggregative, Scriptable, Conf):
-
+class ConfigurationProxy(common_proxy.CommonProxy, Aggregative, Scriptable, Conf):
     """A configuration object behaving like a live server"""
-    separator = '/'
-    _readLevel = 5
-    _writeLevel = 5
     _rmodel = False
     callbacks_get = {}
     callbacks_set = {}
@@ -96,6 +86,7 @@ class ConfigurationProxy(Aggregative, Scriptable, Conf):
         if self.has_key('devpath'):
             self['devpath'] = name
         self.autosort()
+        
 
     def __getstate__(self):
         result = self.__dict__.copy()
@@ -117,10 +108,6 @@ class ConfigurationProxy(Aggregative, Scriptable, Conf):
         if not self._parent:
             return self
         return self._parent.root
-
-    @property
-    def naturalName(self):
-        return self.name
 
     def get_fullpath(self):
         po = self

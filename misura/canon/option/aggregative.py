@@ -4,6 +4,9 @@ import collections
 from traceback import format_exc
 import re
 
+from misura.canon.logger import get_module_logging
+logging = get_module_logging(__name__)
+
 import numpy as np
 
 def aggregate_table(targets, values, current):
