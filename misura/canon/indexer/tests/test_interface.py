@@ -8,8 +8,6 @@ import tempfile
 from misura.canon import indexer
 from misura.canon.tests import testdir
 
-
-
 print 'Importing', __name__
 
 paths = [testdir + 'storage']
@@ -18,7 +16,7 @@ dbPath = testdir + 'storage/db'
 
 class SharedFile(unittest.TestCase):
     path = testdir + 'storage/hsm_test.h5' 
-
+    
     def setUp(self):
         self.test_file = tempfile.mktemp('.h5')
         shutil.copy(self.path, self.test_file)
@@ -98,7 +96,38 @@ class SharedFile(unittest.TestCase):
 
         self.shared_file.set_version(2)
         self.assertEqual(self.shared_file.get_version(), '/ver_2')
-
+        
+    def test_plots(self):
+        # Original version should have no plot functionality
+        self.assertEqual(self.shared_file.get_plots(), {})
+        self.assertFalse(self.shared_file.save_plot('fake plot text'))
+        
+        self.shared_file.create_version('plot0')
+        self.assertEqual(self.shared_file.get_version(), '/ver_1')
+        
+        self.assertEqual((None, None), self.shared_file.get_plot('none'))
+        format = 'jpg'
+        render = 'fake jpg data'
+        pid, title, date = self.shared_file.save_plot('fake plot text', title='A Fake Plot', 
+                                                      render=render, render_format=format)
+        self.assertEqual(pid, '0')
+        self.assertEqual(title, 'A Fake Plot')
+        text, attrs = self.shared_file.get_plot('0')
+        self.assertEqual(text, 'fake plot text') 
+        self.assertEqual(attrs['format'], 'jpg')
+        self.assertEqual(attrs['title'], title)
+        self.assertEqual(attrs['date'], date)
+        
+        plots = self.shared_file.get_plots(render=True)
+        self.assertIn('0', plots)
+        title1, date1, render1, format1 = plots['0']
+        self.assertEqual(title1, title)
+        self.assertEqual(date1, date)
+        self.assertEqual(render1, 'fake jpg data')
+        self.assertEqual(format1, format)
+        
+        
+        
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

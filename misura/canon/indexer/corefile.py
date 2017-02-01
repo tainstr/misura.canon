@@ -408,15 +408,18 @@ class CoreFile(object):
         print self.test
         return msg
 
-    def _versioned(self, path):
+    def _versioned(self, path, version=False):
         """Translate standard orig path into configured version path.
         Eg: /conf to /ver_1/conf"""
-        if self.version and not path.startswith(self.version):
-            path1 = self.version + path
+        if version is False:
+            version = self.version
+        if version and not path.startswith(version):
+            path1 = version + path
             if self._has_node(path1):
                 return path1
+        print 'CCCCCCCCC', version, path
         return path
 
     @lockme
-    def versioned(self, path):
-        return self._versioned(path)
+    def versioned(self, path, version=False):
+        return self._versioned(path, version=version)
