@@ -204,6 +204,24 @@ class Conf(object):
         e['attr'] = attrlist
         self.sete(name, e)
         return True
+    
+    def add_attr(self, opt, attr_name):
+        """Add `attr_name` to the attr list of keywords, if missing"""
+        e = self.gete(opt)
+        if attr_name in e['attr']:
+            return False
+        e['attr'].append(attr_name)
+        self.sete(opt, e)
+        return True
+    
+    def del_attr(self, opt, attr_name):
+        """Remove `attr_name` from the attr list of keyword, if found"""
+        e = self.gete(opt)
+        if attr_name not in e['attr']:
+            return False
+        e['attr'].remove(attr_name)
+        self.sete(opt, e)
+        return True    
 
     def validate(self):
         """Verify current configuration and updates KID"""

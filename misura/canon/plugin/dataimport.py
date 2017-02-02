@@ -36,7 +36,7 @@ def measure_dict():
     ao(out, 'date', 'Date', '00:00:00 01/01/2000', name='Test date')
     ao(out, 'zerotime', 'Float', name='Acquisition starting time', readLevel=4)
     ao(out, 'elapsed', 'Float', name='Test duration', unit='second')
-    ao(out, 'operator', 'String', 'Operator')
+    ao(out, 'operator', 'String', name='Operator')
     return out
 
 def smp_dict():

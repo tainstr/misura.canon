@@ -63,16 +63,27 @@ def aggregate_merge_tables(targets, values, current):
     result = [current[0]] + result
     return result
 
+def decode_aggregation(aggregation):
+    function_name = re.search("(.+?)\(", aggregation).group(1)
+    targets = re.search("\((.+?)\)", aggregation)
+    if targets is None:
+        targets = []
+    else:
+        targets = targets.group(1).replace(' ', '').split(',')
+    return function_name, targets
+
+def encode_aggregation(function_name, targets=[]):
+    if not targets:
+        return function_name+'()'
+    return function_name+'('+','.join(targets)+')'
+
 class Aggregative(object):
     """A configuration object fragment proving aggregate capability"""
     
     def collect_aggregate(self, aggregation, handle=False):
-        function_name = re.search("(.+?)\(", aggregation).group(1)
-        targets = re.search("\((.+?)\)", aggregation)
-        if targets is None:
-            targets = [handle]
-        else:
-            targets = targets.group(1).replace(' ', '').split(',')
+        function_name, targets = decode_aggregation(aggregation)
+        if not targets:
+            targets = [handle]        
         values = collections.defaultdict(list)
         devices = collections.defaultdict(list)
         for child in self.devices:
@@ -158,5 +169,24 @@ class Aggregative(object):
             # Then run backwards as aggregates only propagates bottom-up
             if self.parent():
                 self.parent().update_aggregates(recursive=1)
-
+                
+    def add_aggregation_target(self, opt, target):
+        old = self.getattr(opt, 'aggregate')
+        function_name, targets = decode_aggregation(old)
+        if target in targets:
+            return False
+        targets.append(target)
+        new = encode_aggregation(function_name, targets)
+        self.setattr(opt, 'aggregate', new)
+        return True
+        
+    def remove_aggregation_target(self, opt, target):
+        old = self.getattr(opt, 'aggregate')
+        function_name, targets = decode_aggregation(old)
+        if target not in targets:
+            return False
+        targets.remove(target)
+        new = encode_aggregation(function_name, targets)
+        self.setattr(opt, 'aggregate', new)
+        return True
 
