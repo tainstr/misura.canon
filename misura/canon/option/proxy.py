@@ -51,7 +51,6 @@ class ConfigurationProxy(common_proxy.CommonProxy, Aggregative, Scriptable, Conf
     _rmodel = False
     callbacks_get = {}
     callbacks_set = {}
-    doc = False  # Document where this configuration is contained
     filename = False  # Filename from which this configuration was red
 
     def print_tree(self):
@@ -92,9 +91,9 @@ class ConfigurationProxy(common_proxy.CommonProxy, Aggregative, Scriptable, Conf
         result = self.__dict__.copy()
         result.pop('children_obj')
         # These might contain unpickable references
-        result.pop('doc', 0)
         result.pop('callbacks_get', 0)
         result.pop('callbacks_set', 0)
+        result.pop('_navigator', 0)
         return result
 
     def __setstate__(self, state):
@@ -102,6 +101,7 @@ class ConfigurationProxy(common_proxy.CommonProxy, Aggregative, Scriptable, Conf
         self.children_obj = {}
         self.callbacks_set = self.__class__.callbacks_set
         self.callbacks_get = self.__class__.callbacks_get
+        self._navigator = None
 
     @property
     def root(self):
@@ -188,7 +188,8 @@ class ConfigurationProxy(common_proxy.CommonProxy, Aggregative, Scriptable, Conf
         self._Method__name = obj._Method__name
         self._readLevel = obj._readLevel
         self._writeLevel = obj._writeLevel
-        self.doc = obj.doc
+        self._navigator = obj._navigator
+        self._doc = obj._doc
         self.filename = obj.filename
 
     def copy(self):
@@ -315,7 +316,6 @@ class ConfigurationProxy(common_proxy.CommonProxy, Aggregative, Scriptable, Conf
             obj = ConfigurationProxy(self.children[name],
                                      name=name, parent=self, kid_base=kb,
                                      readLevel=self._readLevel, writeLevel=self._writeLevel)
-            obj.doc = self.doc
             obj.filename = self.filename
             self.children_obj[name] = obj
         return self.children_obj[name]
