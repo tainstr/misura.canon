@@ -209,18 +209,22 @@ class Conf(object):
         """Add `attr_name` to the attr list of keywords, if missing"""
         e = self.gete(opt)
         if attr_name in e['attr']:
+            self.log.debug('Cannot add found attribute', opt, attr_name)
             return False
         e['attr'].append(attr_name)
         self.sete(opt, e)
+        self.log.debug('Added attribute', opt, attr_name)
         return True
     
     def del_attr(self, opt, attr_name):
         """Remove `attr_name` from the attr list of keyword, if found"""
         e = self.gete(opt)
         if attr_name not in e['attr']:
+            self.log.debug('Cannot delete missing attribute', opt, attr_name)
             return False
         e['attr'].remove(attr_name)
         self.sete(opt, e)
+        self.log.debug('Deleted attribute', opt, attr_name)
         return True    
 
     def validate(self):

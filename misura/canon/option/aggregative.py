@@ -174,19 +174,23 @@ class Aggregative(object):
         old = self.getattr(opt, 'aggregate')
         function_name, targets = decode_aggregation(old)
         if target in targets:
+            self.log.debug('Aggregation target already found:', opt, target, old)
             return False
         targets.append(target)
         new = encode_aggregation(function_name, targets)
         self.setattr(opt, 'aggregate', new)
+        self.log.debug('Added aggregation target:', opt, target, new)
         return True
         
     def remove_aggregation_target(self, opt, target):
         old = self.getattr(opt, 'aggregate')
         function_name, targets = decode_aggregation(old)
         if target not in targets:
+            self.log.debug('Aggregation target already missing:', opt, target, old)
             return False
         targets.remove(target)
         new = encode_aggregation(function_name, targets)
         self.setattr(opt, 'aggregate', new)
+        self.log.debug('Removed aggregation target:', opt, target, new)
         return True
 

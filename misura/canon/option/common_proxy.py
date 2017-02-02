@@ -28,6 +28,7 @@ class CommonProxy(object):
     """Cached remote recursive model dictionary"""
     _navigator = None
     """Navigator instance for configuration-plot interactions"""
+    _doc = None
     
     @property
     def instrument(self):
@@ -39,5 +40,17 @@ class CommonProxy(object):
     @property
     def navigator(self):
         return self.root._navigator
+    
+    @navigator.setter
+    def navigator(self, nav):
+        self.root._navigator = nav
+    
+    @property
+    def doc(self):
+        return self.root._doc 
+    
+    @doc.setter
+    def doc(self, doc):
+        self.root._doc = doc
     
     
