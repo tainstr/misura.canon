@@ -274,7 +274,7 @@ def validate(entry):
     return entry
 
 
-read_only_keys = ['handle', 'type', 'unit']
+read_only_keys = ['handle', 'type']
 
 
 def namingConvention(path, splt='/'):

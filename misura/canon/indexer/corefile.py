@@ -417,7 +417,6 @@ class CoreFile(object):
             path1 = version + path
             if self._has_node(path1):
                 return path1
-        print 'CCCCCCCCC', version, path
         return path
 
     @lockme

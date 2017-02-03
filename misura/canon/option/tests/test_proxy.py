@@ -72,14 +72,14 @@ class ConfigurationProxy(unittest.TestCase):
         base.add_option(
             'prod', 'Float', -1, 'Aggregate result', aggregate='prod(a)')
         base.add_option('table', 'Table',
-                        [[('Col A', 'Float'), ('Col B', 'Float')],
+                        [[('Bla Bla', 'Float'), ('Bla Bla Bla', 'Float')],
                          [7, 8]], 'Aggregate result',
                         aggregate='table(a,b)')
 
         def add_target(name, val):
             child = option.ConfigurationProxy({'self': dataimport.base_dict()})
-            child.add_option('a', 'Float', val, 'Aggregate target')
-            child.add_option('b', 'Float', val * 2, 'Aggregate target col')
+            child.add_option('a', 'Float', val, 'Col A')
+            child.add_option('b', 'Float', val * 2, 'Col B')
             base.add_child(name, child.describe())
         add_target('ch1', 1)
         add_target('ch2', 2)

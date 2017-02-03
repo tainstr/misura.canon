@@ -12,6 +12,7 @@ class Conf(object):
 
     def __init__(self, desc=False, empty=False):
         self.empty = empty
+        #FIXME: replace with logging
         self.log = logger.Log
         self.desc = {}
         if desc is not False:

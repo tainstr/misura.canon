@@ -94,6 +94,7 @@ class ConfigurationProxy(common_proxy.CommonProxy, Aggregative, Scriptable, Conf
         result.pop('callbacks_get', 0)
         result.pop('callbacks_set', 0)
         result.pop('_navigator', 0)
+        result.pop('_doc', 0)
         return result
 
     def __setstate__(self, state):
@@ -102,6 +103,7 @@ class ConfigurationProxy(common_proxy.CommonProxy, Aggregative, Scriptable, Conf
         self.callbacks_set = self.__class__.callbacks_set
         self.callbacks_get = self.__class__.callbacks_get
         self._navigator = None
+        self._doc = None
 
     @property
     def root(self):

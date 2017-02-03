@@ -9,7 +9,7 @@ logging = get_module_logging(__name__)
 
 import numpy as np
 
-def aggregate_table(targets, values, current):
+def aggregate_table(targets, values, devices, precision=[], visible=[]):
     """Calculate the table() aggregate"""
     result = []
     for i, x in enumerate(values[targets[0]]):
@@ -19,10 +19,26 @@ def aggregate_table(targets, values, current):
         result.append(row)
     # Reorder by first column
     result = sorted(result, key=lambda e: e[0])
-    # Prepend table header
-    # Should calculate also table header?
-    result = [current[0]] + result
-    return result
+    # Calculate table properties
+    header = []
+    units = []
+    N = len(precision)
+    for i, t in enumerate(targets):
+        # Take the first device
+        d = devices[t]
+        if not len(d):
+            logging.error('No device found for target', t)
+            return None, None, None, None
+        d = d[0]
+        opt = d.gete(t)
+        header.append((opt['name'], opt['type']))
+        units.append(opt.get('unit', False))
+        if i>=N:
+            visible.append(not opt.get('parent', False))
+            if opt['type'] in ['Float', 'Integer', 'Number']:
+                precision.append(opt.get('precision', 2))
+    result = [header] + result
+    return result, units, precision, visible
 
 
 def aggregate_merge_tables(targets, values, current):
@@ -82,18 +98,22 @@ class Aggregative(object):
     
     def collect_aggregate(self, aggregation, handle=False):
         function_name, targets = decode_aggregation(aggregation)
-        if not targets:
+        if not len(targets) and handle:
             targets = [handle]        
         values = collections.defaultdict(list)
         devices = collections.defaultdict(list)
+        fullpaths = collections.defaultdict(list)
         for child in self.devices:
+            target = None
             pack = collections.defaultdict(list)
             devpack = collections.defaultdict(list)
+            pathpack = collections.defaultdict(list)
             for target in targets:
                 # Ensure all targets exist
+                
                 if not child.has_key(target):
                     self.log.error(
-                        'calc_aggregate: missing target in child object', child['devpath'], target)
+                        'calc_aggregate: missing target in child object', handle, aggregation, child['devpath'], target, targets)
                     pack = False
                     break
                 elif child.getattr(target, 'type') == 'RoleIO':
@@ -102,18 +122,20 @@ class Aggregative(object):
                     pack = False
                     break                   
                 pack[target].append(child[target])
-                devpack[target].append(child['fullpath'])
+                devpack[target].append(child)
+                pathpack[target].append(child['fullpath'])
             if pack:
                 for t in targets:
                     values[t] += pack[t]
+                    fullpaths[t] += pathpack[t]
                     devices[t] += devpack[t]
             else:
                 self.log.error('calc_aggregate: no values packed for', child['devpath'], target)
 
-        return function_name, targets, values, devices
+        return function_name, targets, values, fullpaths, devices
     
     def calc_aggregate(self, aggregation, handle=False):
-        function_name, targets, values, devices = self.collect_aggregate(aggregation, handle=handle)
+        function_name, targets, values, fullpaths, devices = self.collect_aggregate(aggregation, handle=handle)
         result = None
         error = None       
         # TODO: calc stdev here
@@ -133,7 +155,19 @@ class Aggregative(object):
             result = float(
                 np.array(values[targets[0]]).astype(np.float32).prod())
         elif function_name == 'table':
-            result = aggregate_table(targets, values, self[handle])
+            opt = False
+            visible = []
+            precision = []
+            if handle:
+                opt = self.gete(handle)
+                visible = opt['visible']
+                precision =  opt['precision']
+            result, units, precision, visible = aggregate_table(targets, values, devices, precision, visible)
+            if opt and result:
+                opt['unit'] = units
+                opt['visible'] = visible
+                opt['precision'] = precision
+                self.sete(handle, opt)
         elif function_name == 'merge_tables':
             result = aggregate_merge_tables(targets, values, self[handle])
         else:
