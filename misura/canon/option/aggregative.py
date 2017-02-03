@@ -31,9 +31,14 @@ def aggregate_table(targets, values, devices, precision=[], visible=[]):
             return None, None, None, None
         d = d[0]
         opt = d.gete(t)
-        header.append((opt['name'], opt['type']))
+        h = opt.get('column', opt['name'])
+        header.append((h, opt['type']))
         units.append(opt.get('unit', False))
         if i>=N:
+            # Hide if has a parent
+            v = not opt.get('parent', False)
+            # Hide also if the 'error' is found (should use is_error_col...)
+            v *= 'error' not in h.lower()
             visible.append(not opt.get('parent', False))
             if opt['type'] in ['Float', 'Integer', 'Number']:
                 precision.append(opt.get('precision', 2))
@@ -162,8 +167,8 @@ class Aggregative(object):
             precision = []
             if handle:
                 opt = self.gete(handle)
-                visible = opt['visible']
-                precision =  opt['precision']
+                visible = opt.get('visible', visible)
+                precision =  opt.get('precision', precision)
             result, units, precision, visible = aggregate_table(targets, values, devices, precision, visible)
             if opt and result:
                 opt['unit'] = units
