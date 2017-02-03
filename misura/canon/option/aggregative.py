@@ -110,18 +110,20 @@ class Aggregative(object):
             pathpack = collections.defaultdict(list)
             for target in targets:
                 # Ensure all targets exist
-                
                 if not child.has_key(target):
-                    self.log.error(
-                        'calc_aggregate: missing target in child object', handle, aggregation, child['devpath'], target, targets)
-                    pack = False
-                    break
+                    self.log.error('calc_aggregate: missing target in child object', 
+                                   handle, aggregation, child['devpath'], target, targets)
+                    # This cell will remain empty
+                    pack[target].append(None)
+                # Skip this device entirely
                 elif child.getattr(target, 'type') == 'RoleIO':
-                    self.log.error(
-                        'calc_aggregate: child object exposes a RoleIO for target', child['devpath'], target)
+                    self.log.error('calc_aggregate: child object exposes a RoleIO for target', 
+                                   child['devpath'], target)
                     pack = False
-                    break                   
-                pack[target].append(child[target])
+                    break 
+                else:
+                    #Target is fine                  
+                    pack[target].append(child[target])
                 devpack[target].append(child)
                 pathpack[target].append(child['fullpath'])
             if pack:
