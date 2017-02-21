@@ -24,7 +24,6 @@ def dictRecursiveModel(base):
         if path == 'self':
             out[path] = obj['name']
             continue
-        print 'recursiveModel', path, obj.keys()
         out[path] = dictRecursiveModel(obj)
     return out
 
