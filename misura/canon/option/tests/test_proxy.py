@@ -44,6 +44,11 @@ class ConfigurationProxy(unittest.TestCase):
         added = self.shared_file.conf.kiln.add_child('new', base)
         self.assertEqual(added['name'], 'pippo')
         self.assertEqual(self.shared_file.conf.kiln.new['name'], 'pippo')
+        t = self.shared_file.conf.tree()
+        self.assertIn('new', t['kiln'])
+        self.assertEqual(t['kiln']['new']['self']['name']['current'], 'pippo')
+        rm = self.shared_file.conf.rmodel()
+        self.assertIn('new', rm['kiln'])
 
     def test_autosort(self):
         def ac(name):

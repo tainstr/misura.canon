@@ -4,24 +4,27 @@ import re
 import collections
 import numpy as np
 
+from ..csutil import lockme
+from threading import Lock
 from .. import logger
 from conf import Conf
 import cPickle as pickle
 from ..milang import Scriptable
 from aggregative import Aggregative
 import common_proxy
-from traceback import format_exc
+
 
 logging = logger.get_module_logging(__name__)
 
 
 def dictRecursiveModel(base):
-    """BUild a dictionary configuration tree from ConfigurationProxy `base`"""
+    """Build a dictionary configuration tree from ConfigurationProxy `base`"""
     out = collections.OrderedDict()
     for path, obj in base.iteritems():
         if path == 'self':
             out[path] = obj['name']
             continue
+        print 'recursiveModel', path, obj.keys()
         out[path] = dictRecursiveModel(obj)
     return out
 
@@ -48,7 +51,6 @@ def print_tree(tree, level=0):
 
 class ConfigurationProxy(common_proxy.CommonProxy, Aggregative, Scriptable, Conf):
     """A configuration object behaving like a live server"""
-    _rmodel = False
     callbacks_get = {}
     callbacks_set = {}
     filename = False  # Filename from which this configuration was red
@@ -56,8 +58,10 @@ class ConfigurationProxy(common_proxy.CommonProxy, Aggregative, Scriptable, Conf
     def print_tree(self):
         print print_tree(self.tree())
 
-    def __init__(self, desc=collections.OrderedDict({'self': {}}),
-                 name='MAINSERVER', parent=False, readLevel=-1, writeLevel=-1, kid_base='/'):
+    def __init__(self, desc=False, name='MAINSERVER', parent=False, readLevel=-1, writeLevel=-1, kid_base='/'):
+        self._lock = Lock()
+        if not desc:
+            desc = collections.OrderedDict({'self': {}})
         Scriptable.__init__(self)
         self.log = logger.BaseLogger()
         self.kid_base = kid_base
@@ -66,7 +70,7 @@ class ConfigurationProxy(common_proxy.CommonProxy, Aggregative, Scriptable, Conf
             self._readLevel = readLevel
         if writeLevel > 0:
             self._writeLevel = writeLevel
-        self.children = desc.copy()
+        self.children = desc #.copy()
         """Child configuration dictionaries"""
         self.children_obj = {}
         """Instantiated children configuration proxies"""
@@ -95,6 +99,7 @@ class ConfigurationProxy(common_proxy.CommonProxy, Aggregative, Scriptable, Conf
         result.pop('callbacks_set', 0)
         result.pop('_navigator', 0)
         result.pop('_doc', 0)
+        result.pop('_lock',0)
         return result
 
     def __setstate__(self, state):
@@ -104,6 +109,7 @@ class ConfigurationProxy(common_proxy.CommonProxy, Aggregative, Scriptable, Conf
         self.callbacks_get = self.__class__.callbacks_get
         self._navigator = None
         self._doc = None
+        self._lock = Lock()
 
     @property
     def root(self):
@@ -184,8 +190,8 @@ class ConfigurationProxy(common_proxy.CommonProxy, Aggregative, Scriptable, Conf
 
     def paste(self, obj):
         self.desc = obj.desc.copy()
-        self.children = obj.children.copy()
-        self.children_obj = obj.children_obj
+        self.children = obj.children #.copy()
+        self.children_obj = obj.children_obj #.copy()
         self._parent = obj._parent
         self._Method__name = obj._Method__name
         self._readLevel = obj._readLevel
@@ -278,7 +284,9 @@ class ConfigurationProxy(common_proxy.CommonProxy, Aggregative, Scriptable, Conf
             return key
         self.children = collections.OrderedDict(
             sorted(self.children.items(), key=sorter))
-
+        self.dump_model()
+    
+    @lockme
     def add_child(self, name, desc, overwrite=False):
         """Inserts a sub-object `name` with object tree dictionary `desc`.
         Returns a ConfigurationProxy to the new child."""
@@ -291,9 +299,14 @@ class ConfigurationProxy(common_proxy.CommonProxy, Aggregative, Scriptable, Conf
         else:
             for key, val in desc['self'].iteritems():
                 self.children[name]['self'][key] = val
+        # Remove stale instantiated CP child
         self.children_obj.pop(name, False)
         self.autosort()
+        # Notify tree about the new object
+        self.root._update_from_children()
+        # Recreate child CP instance
         r = self.child(name)
+        # Autocalc path
         r.get_fullpath()
         return r
 

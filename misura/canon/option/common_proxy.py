@@ -26,12 +26,20 @@ class CommonProxy(object):
     _writeLevel = 5
     _rmodel = False
     """Cached remote recursive model dictionary"""
+    _recursiveModel = False
+    """Cached Item model for tree representation"""
     _navigator = None
     """Navigator instance for configuration-plot interactions"""
     _doc = None
     
+    def dump_model(self):
+        self._rmodel = False
+        self._recursiveModel = False
+        self.root._rmodel = False
+        self.root._recursiveModel = False
+    
     @property
-    def instrument(self):
+    def instrument_obj(self):
         root = self.root 
         ins = root['runningInstrument']
         ins = getattr(root, ins, False)
