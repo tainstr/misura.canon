@@ -34,7 +34,7 @@ def list_references(parent, result=False):
         # if it is of the desired reference class
         rc = getattr(child.attrs, '_reference_class', False)
         if not rc:
-            print 'Skipping missing reference:', path
+            #print 'Skipping missing reference:', path
             continue
         if not result.has_key(rc):
             result[rc] = []

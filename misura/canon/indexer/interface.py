@@ -300,15 +300,15 @@ class SharedFile(CoreFile, DataOperator):
     def conf_tree(self):
         tree = self.file_node(self.versioned('/conf'))
         if tree in [False, None]:
-            print 'Configuration node file not found!'
+            self.log.warning('Configuration node file not found!')
             return '{}'
         # test
-        print 'loading ', len(tree)
+        self.log.debug('loading ', len(tree))
         d = loads(tree)
         if not isinstance(d, dict):
-            print 'Wrong Conf Tree!'
+            self.log.debug('Wrong Conf Tree!')
             return False
-        print 'Conf tree length:', len(tree)
+        self.log.debug('Conf tree length:', len(tree))
         return d
 
     def xmlrpc_conf_tree(self):
@@ -365,7 +365,7 @@ class SharedFile(CoreFile, DataOperator):
             version = self.version
         if refresh or len(self._header) == 0:
             self._header = list_references(self.test.root)
-            print 'References', len(self._header)
+            self.log.debug('References', len(self._header))
         if reference_classes is False:
             reference_classes = self._header.keys()
         r = []
@@ -418,7 +418,7 @@ class SharedFile(CoreFile, DataOperator):
             return []
         si = csutil.find_nearest_val(t, startTime)
         ei = csutil.find_nearest_val(t, endTime)
-        print startTime, si, endTime, ei
+        self.log.debug(startTime, si, endTime, ei)
         arr = n[si:ei]
 #		n.close()
         if step is None:
@@ -427,7 +427,7 @@ class SharedFile(CoreFile, DataOperator):
         st = t[si]
         et = t[ei]
         ts = np.arange(st, et, step)
-        print 'tseq', st, et, step, ts
+        self.log.debug('tseq', st, et, step, ts)
         if interp:
             r = self.interpolated_col(
                 arr=arr, startIdx=0, endIdx=-1, time_sequence=ts)
@@ -453,7 +453,7 @@ class SharedFile(CoreFile, DataOperator):
         if instr is None:
             instr = getattr(self.conf, self.instrument_name(), None)
         if instr is None:
-            print 'Impossible to run scripts: conf is not available.'
+            self.log.debug('Impossible to run scripts: conf is not available.')
             return False
         if self.conf.kiln is not None:
             instr.kiln = self.conf.kiln

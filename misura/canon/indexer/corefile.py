@@ -90,7 +90,7 @@ class CoreFile(object):
         n = self.node_cache.get(path, False)
         if n is not False:
             if not n._v_isopen:
-                print 'Found closed node. Reopening:', path, n._v_isopen
+                self.log.debug('Found closed node. Reopening:', path, n._v_isopen)
                 n = False
         if n is False:
             n = self.test.get_node(path)
@@ -104,7 +104,7 @@ class CoreFile(object):
     def __len__(self, path):
         t = self.test
         if t is False:
-            print 'Asking length without file'
+            self.log.warning('Asking length without file')
             return 0
         n = self._get_node(path)
         r = len(n)
@@ -121,16 +121,13 @@ class CoreFile(object):
 
     @lockme
     def close(self):
-        print 'CoreFile.close', self.path, type(self.test)
+        self.log.debug('CoreFile.close', self.path, type(self.test))
         self.node_cache = {}
         try:
             if self.test is not False:
-                # 				print 'closing',self.path
                 self.test.close()
             return True
         except:
-            # 			if tables.file._open_files.has_key(self.path):
-            # 				del tables.file._open_files[self.path]
             self.log.debug("Reopening:", format_exc())
             return False
 
@@ -142,12 +139,12 @@ class CoreFile(object):
         return True
 
     def reopen(self):
-        print 'Reopening', self.path
+        self.log.debug('Reopening', self.path)
         if self.test:
             try:
                 self.test.close()
             except:
-                print 'While reopening', self.path
+                self.log.debug('While reopening', self.path)
                 print_exc()
         self.open_file(self.path)
         return True
@@ -170,7 +167,7 @@ class CoreFile(object):
     @lockme
     def has_node_attr(self, path, attr):
         if not path.startswith('/'):
-            print 'has_node_path, wrong path', path, attr
+            self.log.debug('has_node_path, wrong path', path, attr)
             path = '/' + path
         n = self._get_node(path)
         r = hasattr(n.attrs, attr)
@@ -201,7 +198,7 @@ class CoreFile(object):
         """Non-locking call to set_node_attr on `where` with a dict of `attrs`.
         Optionally accepts leaf `name`."""
         for k, v in attrs.iteritems():
-            print 'setting node attr', where, name, k, v
+            self.log.debug('setting node attr', where, name, k, v)
             self.test.set_node_attr(where, k, v, name=name)
 
     @lockme
@@ -211,18 +208,15 @@ class CoreFile(object):
 
     @lockme
     def len(self, where):
-        # 		print 'len',where
         n = self._get_node(where)
-# 		print 'asking length',where,n,n.nrows
         r = int(n.nrows)
-#		n.close()
         return r
 
     @lockme
     def append_to_node(self, where, data):
         """Append data to node located in `where`"""
         if self.test is False:
-            print 'Append error: Node not found', where
+            self.log.warning('Append error: Node not found', where)
             return False
         r = False
         try:
@@ -230,7 +224,7 @@ class CoreFile(object):
             r = n.append(data)
 #			n.close()
         except:
-            print 'Exception appending to', where, type(data), data, repr(data)
+            self.log.error('Exception appending to', where, type(data), data, repr(data))
             print_exc()
         return r
 
@@ -260,10 +254,10 @@ class CoreFile(object):
     def _file_node(self, path):
         """Unlocked version of file_node"""
         if self.test is False:
-            print 'CoreFile.file_node: no test', self.path
+            self.log.warning('CoreFile.file_node: no test', self.path)
             return ''
         node = self._get_node(path)
-        print 'open node', path
+        self.log.debug('open file node', path)
         node = filenode.open_node(node, 'r')
         r = node.read()
 # 		node.close()
@@ -339,34 +333,34 @@ class CoreFile(object):
             return False
         n = False
         attrs = {}
-        print 'SharedFile.filenode_write', path
+        self.log.debug('CoreFile.filenode_write', path)
         if self.has_node(path) and mode == 'w':
-            print 'removing old node', path
+            self.log.debug('removing old node', path)
             t0 = time()
             attrs = self.get_attributes(path)
-            print 'saved attributes', attrs
+            self.log.debug('saved attributes', attrs)
             self.remove_node(path)
-        print 'filenode_write lock'
+        self.log.debug('filenode_write lock')
         self._lock.acquire()
         where = os.path.dirname(path)
         name = os.path.basename(path)
-        print 'newNode', path, where, name
+        self.log.debug('newNode', path, where, name)
         try:
             node = filenode.new_node(self.test, where=where, name=name)
         except:
             self._lock.release()
             print_exc()
             return False
-        print 'newNode done', where, name
+        self.log.debug('newNode done', where, name)
         if obj:
             t0 = time()
             data = dumps(obj)
             t1 = time()
-            print 'dumping', t1 - t0
+            self.log.debug('dumping', t1 - t0)
             node.write(data)
             t2 = time()
-            print 'writing', t2 - t1
-            print 'total', t2 - t0
+            self.log.debug('writing', t2 - t1)
+            self.log.debug('total', t2 - t0)
         else:
             node.write(data)
 #		node.close()
@@ -374,10 +368,10 @@ class CoreFile(object):
         self.test.flush()
         self._lock.release()
         if len(attrs) > 0:
-            print 'restoring attrs', attrs
+            self.log.debug('restoring attrs', attrs)
             self.set_attributes(path, attrs=attrs)
 
-        print 'DONE SharedFile.filenode_write', path
+        self.log.debug('DONE CoreFile.filenode_write', path)
         return len(data)
 
 
@@ -385,14 +379,14 @@ class CoreFile(object):
     def link(self, link_path, referred_path):
         """Create a new link from link_path to existing object referred_path"""
         if not self.has_node(referred_path):
-            print 'Impossible to create link:', link_path, referred_path
+            self.log.debug('Impossible to create link:', link_path, referred_path)
             return False
         v = link_path.split('/')
         name = v.pop(-1)
         where = '/'.join(v)
         if not len(where):
             where = '/'
-        print 'Creating link', link_path, referred_path, where, name
+        self.log.debug('Creating link', link_path, referred_path, where, name)
         g = self.create_hard_link(
             where, name, referred_path, createparents=True)
         if g:
@@ -404,8 +398,8 @@ class CoreFile(object):
                repr(self),
                repr(self.test)]
         msg = '\n'.join(msg)
-        print msg
-        print self.test
+        self.log.debug(msg)
+        self.log.debug(self.test)
         return msg
 
     def _versioned(self, path, version=False):

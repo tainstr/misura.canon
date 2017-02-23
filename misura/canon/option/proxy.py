@@ -28,7 +28,7 @@ def dictRecursiveModel(base):
     return out
 
 
-def print_tree(tree, level=0):
+def print_tree(tree, level=0, current=False):
     """Pretty-print a dictionary configuration `tree`"""
     pre = '   ' * level
     msg = ''
@@ -40,6 +40,8 @@ def print_tree(tree, level=0):
         if isinstance(v, dict) and 'self' in v:
             msg += pre + '|++> ' + k + '\n'
             msg += print_tree(v, level + 1)
+            continue
+        if not current:
             continue
         v = repr(v['current'])
         if len(v) > 50:
@@ -54,8 +56,8 @@ class ConfigurationProxy(common_proxy.CommonProxy, Aggregative, Scriptable, Conf
     callbacks_set = {}
     filename = False  # Filename from which this configuration was red
 
-    def print_tree(self):
-        print print_tree(self.tree())
+    def print_tree(self, *a, **k):
+        print print_tree(self.tree(), *a, **k)
 
     def __init__(self, desc=False, name='MAINSERVER', parent=False, readLevel=-1, writeLevel=-1, kid_base='/'):
         self._lock = Lock()
