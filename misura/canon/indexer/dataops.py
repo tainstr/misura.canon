@@ -24,15 +24,14 @@ No data will be evaluate if older than zerotime."""
         if self.test is False:
             return 0
         if self._zerotime < 0:
-            print 'ask zerotime'
+            self.log.debug('ask zerotime')
             if not self.has_node('/conf'):
-                print 'NO CONF NODE'
+                self.log.warning('NO CONF NODE')
                 return 0
             self._zerotime = self.get_node_attr('/conf', 'zerotime')
         return self._zerotime
 
     def get_zerotime(self):
-        print 'get_zerotime'
         return self.zerotime
 
     def _xy(self, path=False, arr=False):
@@ -48,7 +47,7 @@ No data will be evaluate if older than zerotime."""
             x = arr[:, 0]
             y = arr[:, 1]
         if len(arr) == 0:
-            print 'Empty dataset', path
+            self.log.info('Empty dataset', path)
             return False, False
         if x is False:
             return False, False
@@ -65,7 +64,7 @@ No data will be evaluate if older than zerotime."""
             try:
                 n = n[:].view(np.float64).reshape(n.shape + (-1,))
             except:
-                print 'SHAPE', path, n.shape
+                self.log.debug('SHAPE', path, n.shape)
                 raise
             
         if idx_or_slice is not None:
@@ -96,7 +95,7 @@ No data will be evaluate if older than zerotime."""
             break
         return g
 
-    def find_nearest_cond(self, tab, s, f=2., start_time=0, end_time=np.inf):
+    def find_nearest_cond(self, tab, path, s, f=2., start_time=0, end_time=np.inf):
         """Search for the nearest value to `s` in table `tab`,
         by iteratively reducing the tolerance by a factor of `f`."""
         start_index = self._get_time(path, start_time)
@@ -139,7 +138,7 @@ No data will be evaluate if older than zerotime."""
     @lockme
     def search(self, path, op, cond='x==y', pos=-1, start_time=0, end_time=-1):
         """Search dataset path with operator `op` for condition `cond`"""
-        print 'searching in ', path, cond
+        self.log.debug('searching in ', path, cond)
         tab = self._get_node(path)
         x, y = tab.cols.t, tab.cols.v
         y, m = op(y)
@@ -166,8 +165,11 @@ No data will be evaluate if older than zerotime."""
                 return False
             cond = 'y<m'
         elif cond == 'x~y':
-            last = self.find_nearest_cond(
-                tab, m, limit=slice(start_index, end_index))
+            #FIXME: inefficient, restore find_nearest_cond!
+            d = abs(y[:]-m)
+            last = np.where(d==min(d))[0][0]
+            #last = self.find_nearest_cond(
+            #    tab, path, m, start_time=start_time, end_time=end_time)
             if last is None:
                 return False
         else:
@@ -188,7 +190,7 @@ No data will be evaluate if older than zerotime."""
                 break
 
             if last is None or len(last) == 0:
-                print 'DataOps.search FAILED', path, cond, start_index, end_index, m, len(y), last0, last
+                self.log.debug('DataOps.search FAILED', path, cond, start_index, end_index, m, len(y), last0, last)
                 return False
             last = last[0]
 
@@ -219,14 +221,14 @@ No data will be evaluate if older than zerotime."""
     def drops(self, path, val, start_time=0):
         cond = 'x<y'
         op = lambda y: (y, val)
-        print 'drops', path, val
+        self.log.debug('drops', path, val)
         return self.search(path, op, cond, pos=0, start_time=start_time)
 
     def rises(self, path, val, start_time=0):
         #		cond=lambda a,b: a>b
         cond = 'x>y'
         op = lambda y: (y, val)
-        print 'rises', path, val
+        self.log.debug('rises', path, val)
         return self.search(path, op, cond, pos=0, start_time=start_time)
 
     def _get_time(self, path, t, get=False, seed=None):
@@ -258,9 +260,9 @@ No data will be evaluate if older than zerotime."""
         x, y = self._xy(path, arr)
         if x is False:
             return False
-        print 'building spline', path
+        self.log.debug('building spline', path)
         f = UnivariateSpline(x, y, k=k)
-        print 'interp'
+        self.log.debug('interp')
         r = f(time_sequence)
         return r
 
@@ -274,9 +276,8 @@ No data will be evaluate if older than zerotime."""
             startIdx = self._get_time(path, time_sequence[0] - 1)
             endIdx = self._get_time(path, time_sequence[-1] + 1, seed=startIdx)
         s = slice(startIdx, endIdx)
-        print 'Interpolating ', path, s
+        self.log.debug('Interpolating ', path, s)
         f = interp1d(x[s], y[s], kind=kind, bounds_error=False, fill_value=0)
-        print 'interp'
+        self.log.debug('interp')
         r = f(time_sequence)
-# 		print 'interpolate',x,time_sequence,r
         return r
