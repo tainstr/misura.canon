@@ -290,7 +290,6 @@ class Indexer(object):
 
         return 'Done. Found %i tests.' % len(tests_filenames)
 
-
     @dbcom
     def recalculate_incremental_ids(self):
         self.cur.execute("select uid from test order by zerotime")
@@ -378,7 +377,7 @@ class Indexer(object):
         zerotime = test['zerotime']
         test['serial'] = conf.attrs.serial
         uid = getattr(conf.attrs, 'uid', False)
-        if not uid or len(uid)<2:
+        if not uid or len(uid) < 2:
             self.log.debug('UID attribute not found')
             sname = tree[instrument]['measure']['id']
             test['uid'] = hashlib.md5(
@@ -395,7 +394,6 @@ class Indexer(object):
         print 'File verify:', ok
         v.append(ok)
         return v, tree, instrument, test
-
 
     def save_modify_date(self, file_name):
         full_test_file_name = self.convert_to_full_path(file_name)
@@ -417,7 +415,8 @@ class Indexer(object):
     @dbcom
     def _appendFile(self, table, file_path, add_uid_to_incremental_ids_table):
         """Inserts a new file in the database"""
-        v, tree, instrument, test = self.get_test_data(table, file_path, add_uid_to_incremental_ids_table)
+        v, tree, instrument, test = self.get_test_data(
+            table, file_path, add_uid_to_incremental_ids_table)
 
         cur = self.cur
         cmd = '?,' * len(v)
@@ -451,7 +450,6 @@ class Indexer(object):
 
         modify_date = os.path.getmtime(self.convert_to_full_path(file_path))
 
-
         self.save_modify_date(test['file'])
 
         # ##
@@ -463,7 +461,6 @@ class Indexer(object):
         s.write_tree(tree, preset=test['uid'])
         self.conn.commit()
 
-
         return True
 
     def add_incremental_id(self, cursor, uid):
@@ -473,7 +470,6 @@ class Indexer(object):
         except sqlite3.IntegrityError:
             self.log.debug(
                 'uid ' + uid + ' already exists in incremental_ids table: no big deal')
-
 
     def change_column(self,
                       column_name,
@@ -488,7 +484,8 @@ class Indexer(object):
             hdf_file.create_version()
 
         instrument_name = hdf_file.test.root.conf.attrs.instrument
-        getattr(hdf_file.conf, instrument_name).measure[column_name] = new_value
+        getattr(hdf_file.conf, instrument_name).measure[
+            column_name] = new_value
 
         hdf_file.save_conf()
         hdf_file.close()
@@ -539,7 +536,8 @@ class Indexer(object):
         modified_dates_on_db = self.get_modify_dates()
 
         modified_dates_on_db = map(
-            lambda db_entry: (db_entry[0], self.convert_to_full_path(db_entry[1]), db_entry[1]),
+            lambda db_entry: (
+                db_entry[0], self.convert_to_full_path(db_entry[1]), db_entry[1]),
             modified_dates_on_db
         )
 
@@ -548,7 +546,8 @@ class Indexer(object):
             old_modified_dates[f] = int(os.path.getmtime(f))
 
         for modify_date_on_db, full_test_file_name, relative_test_file_name in modified_dates_on_db:
-            old_modified_date = old_modified_dates.get(full_test_file_name, False)
+            old_modified_date = old_modified_dates.get(
+                full_test_file_name, False)
             if old_modified_date and old_modified_date != modify_date_on_db:
                 self.clear_file_path(relative_test_file_name)
 
@@ -559,11 +558,11 @@ class Indexer(object):
                 self.clear_file_path(relative_file_path)
 
     def add_new_files(self, all_files, database):
-        file_names_in_database = map(lambda data: self.convert_to_full_path(data[0]), database)
+        file_names_in_database = map(
+            lambda data: self.convert_to_full_path(data[0]), database)
         for f in all_files:
             if f not in file_names_in_database:
                 self.appendFile(f)
-
 
     def remove_uid(self, uid):
         fn = self.searchUID(uid)
@@ -626,12 +625,21 @@ class Indexer(object):
         return r
 
     @dbcom
-    def query(self, conditions={}, operator=1):
+    def query(self, conditions={}, operator=1, orderby='zerotime', order='DESC', limit=1000, offset=0):
         # FIXME: inter-thread #412
         operator = ['OR', 'AND'][operator]
+        order = order.upper()
+        assert order in ('DESC', 'ASC')
+        assert orderby in testColumnDefault
+        limit = int(limit)
+        assert limit>0
+        offset = int(offset)
+        assert offset>=0
+        ordering = " ORDER BY `{}` {} LIMIT {} OFFSET {}".format(orderby, 
+                                                        order, limit, offset)
         if len(conditions) == 0:
             self.cur.execute(
-                'SELECT * from test natural join incremental_ids ORDER BY zerotime DESC')
+                'SELECT * from test natural join incremental_ids ' + ordering)
         else:
             cnd = []
             vals = []
@@ -640,7 +648,7 @@ class Indexer(object):
                 vals.append('%' + v + '%')
             cnd = ' {} '.format(operator).join(cnd)
             cmd = 'SELECT * from test natural join incremental_ids WHERE ' + \
-                cnd + 'ORDER BY zerotime DESC'
+                cnd + ordering
             self.log.debug('Executing', cmd, vals)
             self.cur.execute(cmd, vals)
         r = self.cur.fetchall()
