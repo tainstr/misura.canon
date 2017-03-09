@@ -53,7 +53,7 @@ No data will be evaluate if older than zerotime."""
             return False, False
         return x, y
 
-    @lockme
+    @lockme()
     def col(self, path, idx_or_slice=None, raw=False):
         """Reads an array in the requested slice. If an integer index is specified, reads just one point."""
         path = self._versioned(path)
@@ -81,7 +81,7 @@ No data will be evaluate if older than zerotime."""
             n = n[:].view(np.float64).reshape(n.shape + (-1,))
         return n
 
-    @lockme
+    @lockme()
     def col_at(self, *a, **k):
         """Retrive single index `idx` from node `path`, locked"""
         return self._col_at(*a, **k)
@@ -135,7 +135,7 @@ No data will be evaluate if older than zerotime."""
             if ur + lr < 0.0000000001:
                 return None
 
-    @lockme
+    @lockme()
     def search(self, path, op, cond='x==y', pos=-1, start_time=0, end_time=-1):
         """Search dataset path with operator `op` for condition `cond`"""
         self.log.debug('searching in ', path, cond)
@@ -242,19 +242,19 @@ No data will be evaluate if older than zerotime."""
 
         return idx
 
-    @lockme
+    @lockme()
     def get_time(self, *a, **k):
         return self._get_time(*a, **k)
 
-    @lockme
+    @lockme()
     def get_time_profile(self, path, t):
         return self._get_time(path, t, get=reference.Profile.unbound['decode_time'])
 
-    @lockme
+    @lockme()
     def get_time_image(self, path, t):
         return self._get_time(path, t, get=reference.Image.unbound['decode_time'])
 
-    @lockme
+    @lockme()
     def spline_col(self, path=False, startIdx=0, endIdx=-1, time_sequence=[0], arr=False, k=3):
         """Returns a 1D interpolated version of the array, as per """
         x, y = self._xy(path, arr)
@@ -266,7 +266,7 @@ No data will be evaluate if older than zerotime."""
         r = f(time_sequence)
         return r
 
-    @lockme
+    @lockme()
     def interpolated_col(self, path=False, startIdx=0, endIdx=None, time_sequence=[0], arr=False, kind='cubic'):
         x, y = self._xy(path, arr)
         if x is False:

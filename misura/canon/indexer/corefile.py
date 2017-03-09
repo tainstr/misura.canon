@@ -100,7 +100,7 @@ class CoreFile(object):
                 self.node_cache[path] = n
         return n
 
-    @lockme
+    @lockme()
     def __len__(self, path):
         t = self.test
         if t is False:
@@ -119,7 +119,7 @@ class CoreFile(object):
     def __nonzero__(self):
         return self.test is not False
 
-    @lockme
+    @lockme()
     def close(self):
         self.log.debug('CoreFile.close', self.path, type(self.test))
         self.node_cache = {}
@@ -131,7 +131,7 @@ class CoreFile(object):
             self.log.debug("Reopening:", format_exc())
             return False
 
-    @lockme
+    @lockme()
     def remove(self):
         """Delete the file from the filesystem"""
         self.close()
@@ -159,12 +159,12 @@ class CoreFile(object):
 
         return where in self.test
 
-    @lockme
+    @lockme()
     def has_node(self, where, name=False):
         return self._has_node(where, name)
 
 
-    @lockme
+    @lockme()
     def has_node_attr(self, path, attr):
         if not path.startswith('/'):
             self.log.debug('has_node_path, wrong path', path, attr)
@@ -174,17 +174,17 @@ class CoreFile(object):
 #		n.close()
         return r
 
-    @lockme
+    @lockme()
     def get_node_attr(self, *a, **kw):
         """Return the attribute named `attrname` of node `where`"""
         r = self.test.get_node_attr(*a, **kw)
         return csutil.xmlrpcSanitize(r)
 
-    @lockme
+    @lockme()
     def set_node_attr(self, *a, **kw):
         return self.test.set_node_attr(*a, **kw)
 
-    @lockme
+    @lockme()
     def get_attributes(self, where, name=None):
         r = {}
         n = self._get_node(where, name)
@@ -201,18 +201,18 @@ class CoreFile(object):
             self.log.debug('setting node attr', where, name, k, v)
             self.test.set_node_attr(where, k, v, name=name)
 
-    @lockme
+    @lockme()
     def set_attributes(self, *a, **kw):
         """Locking call to _set_attributes"""
         return self._set_attributes(*a, **kw)
 
-    @lockme
+    @lockme()
     def len(self, where):
         n = self._get_node(where)
         r = int(n.nrows)
         return r
 
-    @lockme
+    @lockme()
     def append_to_node(self, where, data):
         """Append data to node located in `where`"""
         if self.test is False:
@@ -228,14 +228,14 @@ class CoreFile(object):
             print_exc()
         return r
 
-    @lockme
+    @lockme()
     def list_nodes(self, *a, **k):
         """Return a list of node names"""
         lst = self.test.list_nodes(*a, **k)
         r = [n._v_name for n in lst]
         return r
 
-    @lockme
+    @lockme()
     def group_len(self, path, classname=''):
         """Returns length of objects contained in group path"""
         return len(self.test.list_nodes(path, classname=classname))
@@ -263,7 +263,7 @@ class CoreFile(object):
 # 		node.close()
         return r
 
-    @lockme
+    @lockme()
     def file_node(self, path):
         """Returns content of filenode in path"""
         return self._file_node(path)
@@ -271,7 +271,7 @@ class CoreFile(object):
     def xmlrpc_file_node(self, path):
         return csutil.binfunc(self.file_node(path))
 
-    @lockme
+    @lockme()
     def flush(self):
         if not self.test:
             return False
@@ -280,36 +280,36 @@ class CoreFile(object):
     ######################
     # Creation
 
-    @lockme
+    @lockme()
     def create_group(self, *a, **kw):
         g = self.test.create_group(*a, **kw)
         return True
 
-    @lockme
+    @lockme()
     @addHeader
     def create_vlarray(self, *a, **kw):
         g = self.test.create_vlarray(*a, **kw)
         return g
 
-    @lockme
+    @lockme()
     @addHeader
     def create_earray(self, *a, **kw):
         g = self.test.create_earray(*a, **kw)
         return g
 
-    @lockme
+    @lockme()
     @addHeader
     def create_table(self, *a, **kw):
         g = self.test.create_table(*a, **kw)
         return g
 
-    @lockme
+    @lockme()
     @addHeader
     def create_hard_link(self, *a, **k):
         g = self.test.create_hard_link(*a, **k)
         return g
 
-    @lockme
+    @lockme()
     def remove_node(self, path, recursive=1):
         if not self._has_node(path):
             return False
@@ -413,6 +413,6 @@ class CoreFile(object):
                 return path1
         return path
 
-    @lockme
+    @lockme()
     def versioned(self, path, version=False):
         return self._versioned(path, version=version)

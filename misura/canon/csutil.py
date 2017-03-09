@@ -383,56 +383,68 @@ def next_point(crv, row, delta=1, events=False):
 
     return row, ent
 
-def initializeme(func):
+class initializeme(object):
     """Decorator to protect a function call behind an initializing flag"""
-    @functools.wraps(func)
-    def initializeme_wrapper(self, *args, **kwargs):
-        if self['initializing']:
-            self.log.error('Already initializing: cannot exec', func)
-            raise BaseException('Already initializing: cannot execute')
-        try:
-            self['initializing'] = True
-            r = func(self, *args, **kwargs)
-            self['initializing'] = False
-            return r
-        except KeyboardInterrupt:
-            raise KeyboardInterrupt()
-        except:
-            self.log.error('initializing_flag: exc calling', func, args, kwargs, format_exc())
-            raise
-        finally:
-            self['initializing'] = False
-        return False
-    return initializeme_wrapper
+    def __init__(self, repeatable=False):
+        """`repeatable`=False will not allow the decorated function to be called if the object is 
+        already initializing."""
+        self.repeatable = repeatable
+    
+    def __call__(self, func):
+        repeatable = self.repeatable
+        @functools.wraps(func)
+        def initializeme_wrapper(self, *args, **kwargs):
+            if self['initializing'] and not repeatable:
+                self.log.error('Already initializing: cannot exec', func)
+                raise BaseException('Already initializing: cannot execute')
+            try:
+                self['initializing'] = True
+                r = func(self, *args, **kwargs)
+                self['initializing'] = False
+                return r
+            except KeyboardInterrupt:
+                raise KeyboardInterrupt()
+            except:
+                self.log.error('initializing_flag: exc calling', func, args, kwargs, format_exc())
+                raise
+            finally:
+                self['initializing'] = False
+            return False
+        return initializeme_wrapper
 
-def lockme(func):
+class lockme(object):
     """Decorator to lock/unlock method execution.
     The class having its method decorated must expose
     a _lock object compatible with threading.Lock."""
-    @functools.wraps(func)
-    def lockme_wrapper(self, *args, **kwargs):
-        if self._lock is False:
-            return func(self, *args, **kwargs)
-        if isinstance(self._lock, multiprocessing.synchronize.Lock):
-            r = self._lock.acquire(timeout=5)
-            if not r:
-                raise BaseException("Failed to acquire lock")
-        else:
-            # Threading locks does not support timeout (py2)
-            self._lock.acquire()
-        try:
-            return func(self, *args, **kwargs)
-        except KeyboardInterrupt:
-            raise KeyboardInterrupt()
-        except:
-            print 'lockme: exc calling', func, args, kwargs
-            print_exc()
-        finally:
+    def __init__(self, timeout=5):
+        self.timeout=timeout
+        
+    def __call__(self, func):
+        timeout = self.timeout
+        @functools.wraps(func)
+        def lockme_wrapper(self, *args, **kwargs):
+            if self._lock is False:
+                return func(self, *args, **kwargs)
+            if isinstance(self._lock, multiprocessing.synchronize.Lock):
+                r = self._lock.acquire(timeout=timeout)
+                if not r:
+                    raise BaseException("Failed to acquire lock")
+            else:
+                # Threading locks does not support timeout (py2)
+                self._lock.acquire()
             try:
-                self._lock.release()
+                return func(self, *args, **kwargs)
+            except KeyboardInterrupt:
+                raise KeyboardInterrupt()
             except:
-                pass
-    return lockme_wrapper
+                print 'lockme: exc calling', func, args, kwargs
+                print_exc()
+            finally:
+                try:
+                    self._lock.release()
+                except:
+                    pass
+        return lockme_wrapper
 
 def unlockme(func):
     """Decorator to finally unlock after method execution.

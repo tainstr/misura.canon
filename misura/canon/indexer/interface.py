@@ -216,7 +216,7 @@ class SharedFile(CoreFile, DataOperator):
         self.flush()
         return True
 
-    @lockme
+    @lockme()
     def get_plots(self, render=False, version=False):
         """List available plots in `version` (current if False). 
         Returns a dictionary {path: (name,date,render,render_format)}"""
@@ -358,7 +358,7 @@ class SharedFile(CoreFile, DataOperator):
     def active_version(self):
         return self.get_node_attr('/userdata', 'active_version')
 
-    @lockme
+    @lockme()
     def header(self, reference_classes=['Array'], startswith=False, refresh=False, version=False):
         """Returns all available data references"""
         if not version:
@@ -394,7 +394,7 @@ class SharedFile(CoreFile, DataOperator):
         r = self.col_at(*a, **k)
         return csutil.binfunc(dumps(r))
 
-    @lockme
+    @lockme()
     def get_decoded(self, path, idx, get):
         """Get the `path` node index `idx` using the getter function `get`"""
         n = self._get_node(path)
@@ -402,7 +402,7 @@ class SharedFile(CoreFile, DataOperator):
 #		n.close()
         return r
 
-    @lockme
+    @lockme()
     def query_time(self, path, startTime=-1,  endTime=-1, step=None, interp=False):
         """Reads an array in the requested time range"""
         n = self._get_node(path)

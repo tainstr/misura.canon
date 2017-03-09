@@ -287,7 +287,7 @@ class ConfigurationProxy(common_proxy.CommonProxy, Aggregative, Scriptable, Conf
             sorted(self.children.items(), key=sorter))
         self.dump_model()
     
-    @lockme
+    @lockme()
     def add_child(self, name, desc, overwrite=False):
         """Inserts a sub-object `name` with object tree dictionary `desc`.
         Returns a ConfigurationProxy to the new child."""
