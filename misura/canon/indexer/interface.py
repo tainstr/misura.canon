@@ -121,9 +121,9 @@ class SharedFile(CoreFile, DataOperator):
             if not name.startswith('ver_'):
                 continue
             ver = int(name.split('_')[-1])
-            if ver>latest:
-                latest=ver
-            v[node._v_pathname] = (node._f_getattr('name'), 
+            if ver > latest:
+                latest = ver
+            v[node._v_pathname] = (node._f_getattr('name'),
                                    node._f_getattr('date'))
         self.test.root.conf.attrs.versions = latest
         self.log.debug('returning versions', v)
@@ -135,11 +135,11 @@ class SharedFile(CoreFile, DataOperator):
                 continue
             return path
         return False
-    
+
     def get_latest_version_number(self):
         v = []
         for k in self.get_versions().iterkeys():
-            v.append(0 if k=='' else int(k.split('_')[-1]))
+            v.append(0 if k == '' else int(k.split('_')[-1]))
         m = max(v)
         return m
 
@@ -183,23 +183,28 @@ class SharedFile(CoreFile, DataOperator):
         self.version = str(new_version)
         self._set_attributes(
             '/userdata', attrs={'active_version': new_version})
-    
+
     def create_version(self, name=False, overwrite=True):
         """Create a new version with `name`. `overwrite` a previous version with same name."""
-        newversion= False
-        if name and overwrite:
+        newversion = False
+        if name:
             newversion = self.get_version_by_name(name)
-        if newversion:
-            self.log.debug('Found version {} saved as {}. Overwriting.'.format(name, newversion))
+        if newversion and overwrite:
+            self.log.debug(
+                'Found version {} saved as {}. Overwriting.'.format(name, newversion))
             latest = int(newversion.split('_')[-1])
-            self.remove_version(newversion)
+            #self.remove_version(newversion, remove_plots=False)
         else:
-            latest = self.get_latest_version_number()+1
+            latest = self.get_latest_version_number() + 1
             newversion = '/ver_{}'.format(latest)
-        self.log.debug('creating new version', newversion, name)
+        
         if not name:
             name = newversion
-        self.test.create_group('/', newversion[1:])
+        if not self.has_node('/', newversion[1:]):
+            self.log.debug('creating new version', newversion, name)
+            self.test.create_group('/', newversion[1:])
+        else:
+            self.log.debug('using existing version', newversion, name)
         d = datetime.now().strftime("%H:%M:%S, %d/%m/%Y")
         self._set_attributes(newversion, attrs={'name': name, 'date': d})
         self.test.root.conf.attrs.versions = latest
@@ -210,10 +215,16 @@ class SharedFile(CoreFile, DataOperator):
         self.test.flush()
         return newversion
 
-    def remove_version(self, version_path):
-        self.remove_node(version_path, recursive=True)
-        self.log.info('Removed version', version_path)
-        self.flush()
+    def remove_version(self, version_path, remove_plots=True):
+        if remove_plots:
+            self.remove_node(version_path, recursive=True)
+            self.log.info('Removed version', version_path)
+            self.flush()
+            return True
+        for node in self.list_nodes():
+            if node == 'plots':
+                continue
+            self.remove_node(version_path + '/' + node)
         return True
 
     @lockme()
@@ -243,7 +254,7 @@ class SharedFile(CoreFile, DataOperator):
 
     def get_plot(self, plot_id):
         """Returns the text of a plot"""
-        n = self.versioned('/plot')+'/{}/script'.format(plot_id)
+        n = self.versioned('/plot') + '/{}/script'.format(plot_id)
         text = self.file_node(n)
         attrs = self.get_attributes(n)
         return text, attrs
@@ -255,9 +266,10 @@ class SharedFile(CoreFile, DataOperator):
                   render_format=False):
         """Save the text of a plot to plot_id, optionally adding a title, date and rendered output"""
         if not self.version:
-            self.log.error('Cannot save plots for original version. Please make a new version first.')
+            self.log.error(
+                'Cannot save plots for original version. Please make a new version first.')
             return False
-        plots_path = self.version+'/plot'
+        plots_path = self.version + '/plot'
         if not self.has_node(plots_path):
             self.create_group(self.versioned('/'), 'plot')
             if not plot_id:
@@ -270,7 +282,7 @@ class SharedFile(CoreFile, DataOperator):
         if not date:
             date = datetime.now().strftime("%H:%M:%S, %d/%m/%Y")
 
-        base_group = plots_path+'/' + plot_id
+        base_group = plots_path + '/' + plot_id
         if not self.has_node(base_group):
             self.create_group(plots_path, plot_id)
 

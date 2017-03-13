@@ -195,7 +195,6 @@ class ListStore(Store):
                 if not self.desc.has_key(k):
                     print 'Missing update key', entry
                     continue
-                print 'Default modified to', k, entry[k]
                 self.desc[k]['current'] = entry[k]
                 continue
             # Else, add the option
