@@ -310,6 +310,7 @@ class SharedFile(CoreFile, DataOperator):
         return txt
 
     def conf_tree(self):
+        self.log.debug('Loading conf', self.versioned('/conf'))
         tree = self.file_node(self.versioned('/conf'))
         if tree in [False, None]:
             self.log.warning('Configuration node file not found!')
@@ -384,18 +385,18 @@ class SharedFile(CoreFile, DataOperator):
         for k in reference_classes:
             r += self._header.get(k, [])
         if startswith:
-            ver = version if version else '----'
+            swv = version + startswith
             r = filter(
-                lambda el: el.startswith(startswith) or el.startswith(ver), r)
+                lambda el: el.startswith(startswith) or el.startswith(swv), r)
         if not version:
             r = filter(lambda el: not el.startswith('/ver_'), r)
         else:
             # Exclude element with wrong version
-            wrong = lambda el: el.startswith(
+            good = lambda el: el.startswith(
                 version + '/') or not el.startswith('/ver_')
-            # Exclude unversioned elements having a version
-            unversioned = lambda el: version + el not in r
-            r = filter(lambda el: unversioned(el) or wrong(el), r)
+            r = filter(good, r)
+            # Exclude unversioned elements having a version 
+            r = filter(lambda el: version + el not in r, r)
         return r
 
     def xmlrpc_col(self, *a, **k):
