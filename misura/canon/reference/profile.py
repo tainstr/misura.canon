@@ -8,14 +8,14 @@ from reference import Reference
 from variable import VariableLength, binary_cast
 
 
-def decode_time(node, index):
+def decode_time_uint16(node, index):
     t = binary_cast(node[index][:4, 0], 'HHHH', 'd')[0]
     return t
 
 
 class Profile(VariableLength):
     unbound = VariableLength.unbound.copy()
-    unbound['decode_time'] = decode_time
+    unbound['decode_time'] = decode_time_uint16
     atom = tables.UInt16Atom(shape=(2,))
 
     def create(self):
@@ -65,31 +65,43 @@ class Profile(VariableLength):
 
 def accumulate_coords(x,y):
     """Convert absolute coords x, y into cumulative coords relative to the starting values of x,y.
-    2 5 8
-    1 x 7
-    0 3 6"""
-    d = np.diff(x)*3 + np.diff(y) +4
+    2  5  8
+    1 (4) 7
+    0  3  6
+    4 never exists (means identity)"""
+    d = (np.diff(x)+1)*3 + (np.diff(y)+1)
     return d.astype('uint8')
 
 def decumulate_coords(x0, y0, v):
     """Convert cumulative coords v into absolute coords x,y"""
-    v-=4
+    # 4-translation and conversion to SIGNED int
+    v=v.astype('int8')-4
     """
-    -2  1 4
-    -3  x 3
-    -4 -1 2"""
+    Results in:
+    -2  1   4
+    -3  (0) 3
+    -4  -1  2"""
     a = np.abs(v)
     # Convert to single coordinate +1,0,-1 movements
-    x = (a!=1)*np.sign(v)
+    # Any abs>1 contains an x movement equal to the sign of the 4-trans
+    # Any abs<=0 contains a 0 x movement
+    x = (a>1)*np.sign(v)
+    # Any abs==3 contains no y movement
+    # Otherwise, y movement is equal to the sign(v), unless a==2, 
+    # in which case it's the opposite: (1-2*(a==2))
     y = (a!=3)*np.sign(v)*(1-2*(a==2))
     # Convert to cumulative values
     x = np.concatenate(([x0], x0+np.cumsum(x)))
     y = np.concatenate(([y0], y0+np.cumsum(y)))
     return x.astype('uint16'), y.astype('uint16')
     
-    
+def decode_time_uint8(node, index):
+    t = binary_cast(node[index][:8], '<8B', 'd')[0]
+    return t   
 
 class CumulativeProfile(Profile):
+    unbound = Profile.unbound.copy()
+    unbound['decode_time'] = decode_time_uint8
     atom = tables.UInt8Atom() 
     
     @classmethod
@@ -100,7 +112,7 @@ class CumulativeProfile(Profile):
         if len(prf[0]) != 2:
             return None
         (w, h), x, y = prf
-        # Cast double time,  16-bits integer dimensions and starting coords into 16 8-bits integers
+        # Cast double time,  16-bits integer dimensions and starting coords into 16 8-bits unsigned integers
         coords = np.array(binary_cast([t, w, h, x[0], y[0]], 'dHHHH', '<16B'))
         cumul = accumulate_coords(x,y)
         out = np.concatenate((coords, cumul))

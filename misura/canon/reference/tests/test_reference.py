@@ -10,7 +10,7 @@ import numpy as np
 from misura.canon import indexer
 from misura.canon.csutil import flatten as flat
 from misura.canon import reference
-#@unittest.skip('')
+
 
 
 class ReferenceFunctions(unittest.TestCase):
@@ -23,6 +23,25 @@ class ReferenceFunctions(unittest.TestCase):
         self.assertEqual(len(b), 8)
         f1 = reference.binary_cast(b, 'bbbbbbbb', 'd')[0]
         self.assertEqual(f, f1)
+        
+    def test_accumulate_coords(self):
+        x = [1,2,3,4,5]
+        y = [10,9,8,9,10]
+        acc = reference.accumulate_coords(x, y)
+        self.assertEqual(list(acc), [6,6,8,8])
+    
+    def test_decumulate_coords(self):
+        x,y = reference.decumulate_coords(1, 10, np.array([6,6,8,8]))
+        self.assertEqual(list(x), [1,2,3,4,5])
+        self.assertEqual(list(y), [10,9,8,9,10])
+        
+    def test_accumulate_decumulate_coords(self):
+        x = [301, 302, 302, 302, 303, 302, 303, 303, 302, 303]
+        y = [299, 298, 297, 298, 298, 297, 296, 297, 296, 296]
+        acc = reference.accumulate_coords(x, y)
+        x1, y1 = reference.decumulate_coords(x[0], y[0], acc)
+        self.assertEqual(list(x1), x)
+        self.assertEqual(list(y1), y)
 
 #@unittest.skip('')
 
@@ -105,6 +124,8 @@ class OutFile(unittest.TestCase):
             data.append(self.rand(float(i)))
         self.assertTrue(ref.commit(data))
         rdata = ref[:]
+        print data[0]
+        print ref[0]
         print 'data', flat(data)
         print 'ref', flat(ref[:])
         self.assertSequenceEqual(flat(data), flat(ref[:]))

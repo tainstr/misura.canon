@@ -94,11 +94,11 @@ nowrite = set(['Binary', 'Runtime'])  # attributes which should not be saved
 def tosave(entry):
     """Determine if this option should be saved or not"""
     if len(nowrite.intersection(set([entry['type']]))) > 0:
-        print 'nowrite entry by type', entry
+        print('nowrite entry by type', entry)
         return False
     if entry.has_key('attr'):
         if len(nowrite.intersection(set(entry['attr']))) > 0:
-            print 'nowrite entry by attr', entry
+            print('nowrite entry by attr', entry)
             return False
     return True
 
@@ -190,7 +190,7 @@ def validate(entry):
     """Verify coherence of option `entry`"""
     key = entry.get('handle', False)
     if not key:
-        print 'No handle for', entry, ': skipping!'
+        print('No handle for', entry, ': skipping!')
         return False
     # Type guessing
     etype = entry.get('type', False)
@@ -208,7 +208,7 @@ def validate(entry):
             if set(cur.keys()) == set('temp', 'time', 'value'):
                 etype = 'Meta'
         else:
-            print 'No type for', entry, ': skipping!'
+            print('No type for', entry, ': skipping!')
             return False
         entry['type'] = etype
     # redundancy integration
@@ -366,7 +366,7 @@ class Option(object):
 
     def __delitem__(self, k):
         if k not in self._keys:
-            print 'Requested key does not exist'
+            print('Requested key does not exist')
             return False
         if self._entry.has_key(k):
             del self._entry[k]
@@ -415,7 +415,7 @@ class Option(object):
             # traditional key,val was passed
             k, v = arg
         if k in read_only_keys:
-            print 'Read only key!', k, v, self._entry['handle']
+            print('Read only key!', k, v, self._entry['handle'])
             return
         self._entry[k] = v
     __setitem__ = set
@@ -471,7 +471,7 @@ class Option(object):
             new_def = [h[1] for h in self['current'][0]]
             old_def = [h[1] for h in old['current'][0]]
             if new_def != old_def:
-                print 'Incompatible table definition', self['handle'], new_def, old_def
+                print('Incompatible table definition', self['handle'], new_def, old_def)
                 self._entry['current']=[self['current'][0]]
         # No type change: exit
         self._entry['parent'] = old['parent']
@@ -502,6 +502,6 @@ class Option(object):
                 nc = old['current']
             self._entry['current'] = nc
         except:
-            print 'Impossible to migrate current value', old['handle'], nc, ot
+            print('Impossible to migrate current value', old['handle'], nc, ot)
             # Remove current key
             del self._entry['current']

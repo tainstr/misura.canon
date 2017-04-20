@@ -3,7 +3,7 @@
 from reference import Reference
 from array import Array, Boolean, Rect, Meta,  Point
 from log import Log
-from profile import Profile, CumulativeProfile
+from profile import Profile, CumulativeProfile, accumulate_coords, decumulate_coords
 from binary import Binary
 from image import Image, ImageM3, ImageBMP
 from obj import Object
@@ -23,7 +23,8 @@ def get_reference(opt):
 # 	if t=='Image':
 # 		return Image
     if t == 'Profile':
-        return Profile
+        # Change this to CumulativeProfile or Profile to switch reference
+        return CumulativeProfile
     if t == 'Rect':
         return Rect
     if t == 'Point':
