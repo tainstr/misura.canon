@@ -70,12 +70,28 @@ def accumulate_coords(x,y):
     0  3  6
     4 never exists (means identity)"""
     d = (np.diff(x)+1)*3 + (np.diff(y)+1)
+    # Force even array length by appending an identity
+    if len(d) % 2 == 1:
+        d = np.concatenate((d, [4]))
+    # Compact couples of bits into bytes 
+    d = d[0::2] + d[1::2]*9
     return d.astype('uint8')
+    
+    
 
 def decumulate_coords(x0, y0, v):
     """Convert cumulative coords v into absolute coords x,y"""
-    # 4-translation and conversion to SIGNED int
-    v=v.astype('int8')-4
+    # Conversion to SIGNED int
+    v=v.astype('int8')
+    # Unpack bits from bytes
+    v_even = v % 9
+    v_odd = v // 9
+    v = np.array([v_even, v_odd]).flatten('F')
+    # Cut away padding identity if present
+    if v[-1] == 4:
+        v=v[:-1]
+    # 4-translation
+    v -= 4
     """
     Results in:
     -2  1   4

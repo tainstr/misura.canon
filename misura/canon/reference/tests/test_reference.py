@@ -25,14 +25,14 @@ class ReferenceFunctions(unittest.TestCase):
         self.assertEqual(f, f1)
         
     def test_accumulate_coords(self):
-        x = [1,2,3,4,5]
+        x = [1,2,2,3,4]
         y = [10,9,8,9,10]
         acc = reference.accumulate_coords(x, y)
-        self.assertEqual(list(acc), [6,6,8,8])
+        self.assertEqual(list(acc), [33, 80])
     
     def test_decumulate_coords(self):
-        x,y = reference.decumulate_coords(1, 10, np.array([6,6,8,8]))
-        self.assertEqual(list(x), [1,2,3,4,5])
+        x,y = reference.decumulate_coords(1, 10, np.array([33, 80]))
+        self.assertEqual(list(x), [1,2,2,3,4])
         self.assertEqual(list(y), [10,9,8,9,10])
         
     def test_accumulate_decumulate_coords(self):
