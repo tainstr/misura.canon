@@ -183,8 +183,9 @@ class Aggregative(object):
         # TODO: calc stdev here
         if function_name == 'mean':
             v = np.array(values[targets[0]]).astype(np.float32)
-            # FIXME: hack to filter out zeros
+            # FIXME: hack to filter out zeros and nans
             v1 = v[v != 0]
+            v1 = v1[np.isfinite(v1)]
             if len(v1):
                 result = float(v1.mean())
                 error = float(v1.std())

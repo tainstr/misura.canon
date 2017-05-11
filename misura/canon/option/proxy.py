@@ -2,7 +2,6 @@
 """Option persistence."""
 import re
 import collections
-import numpy as np
 
 from ..csutil import lockme
 from threading import Lock
@@ -64,7 +63,7 @@ class ConfigurationProxy(common_proxy.CommonProxy, Aggregative, Scriptable, Conf
         if not desc:
             desc = collections.OrderedDict({'self': {}})
         Scriptable.__init__(self)
-        self.log = logger.BaseLogger()
+        self.log = logging
         self.kid_base = kid_base
         Conf.__init__(self, desc['self'])
         if readLevel > 0:
