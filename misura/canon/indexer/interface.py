@@ -190,8 +190,7 @@ class SharedFile(CoreFile, DataOperator):
         if name:
             newversion = self.get_version_by_name(name)
         if newversion and overwrite:
-            self.log.debug(
-                'Found version {} saved as {}. Overwriting.'.format(name, newversion))
+            self.log.debug('Found version', name, 'saved as', newversion, '. Overwriting.')
             latest = int(newversion.split('_')[-1])
             #self.remove_version(newversion, remove_plots=False)
         else:
@@ -200,6 +199,7 @@ class SharedFile(CoreFile, DataOperator):
         
         if not name:
             name = newversion
+        name = unicode(name).encode('ascii', 'ignore')
         if not self.has_node('/', newversion[1:]):
             self.log.debug('creating new version', newversion, name)
             self.test.create_group('/', newversion[1:])
@@ -274,14 +274,14 @@ class SharedFile(CoreFile, DataOperator):
             self.create_group(self.versioned('/'), 'plot')
             if not plot_id:
                 plot_id = '0'
-
+        
         if not plot_id:
             plot_id = self.get_unique_name(plots_path)
         if not title:
             title = plot_id
         if not date:
             date = datetime.now().strftime("%H:%M:%S, %d/%m/%Y")
-
+        
         base_group = plots_path + '/' + plot_id
         if not self.has_node(base_group):
             self.create_group(plots_path, plot_id)

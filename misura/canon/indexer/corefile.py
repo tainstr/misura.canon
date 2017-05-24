@@ -198,7 +198,7 @@ class CoreFile(object):
         """Non-locking call to set_node_attr on `where` with a dict of `attrs`.
         Optionally accepts leaf `name`."""
         for k, v in attrs.iteritems():
-            self.log.debug('setting node attr', where, name, k, v)
+            self.log.debug('setting node attr', where, name, k, repr(v))
             self.test.set_node_attr(where, k, v, name=name)
 
     @lockme()

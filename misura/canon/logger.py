@@ -16,7 +16,12 @@ def concatenate_message_objects(*msg):
     # (avoid "None" objects pollute the buffer!)
     msg = list(msg)
     for i, e in enumerate(msg):
-        msg[i] = str(e)
+        if isinstance(e, unicode):
+            continue
+        elif isinstance(e, basestring):
+            msg[i] = unicode(e, errors='ignore')
+        else:
+            msg[i] = unicode(repr(e), errors='ignore')
     return msg
     
 def formatMsg(*msg, **po):
