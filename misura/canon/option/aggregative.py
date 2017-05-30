@@ -148,7 +148,7 @@ class Aggregative(object):
             pathpack = collections.defaultdict(list)
             for target in targets:
                 # Ensure all targets exist
-                if not child.has_key(target):
+                if target not in child:
                     self.log.error('calc_aggregate: missing target in child object',
                                    handle, aggregation, child['devpath'], target, targets)
                     # This cell will remain empty
@@ -229,14 +229,14 @@ class Aggregative(object):
     def update_aggregate(self, handle):
         """Update aggregation for option `handle`"""
         opt = self.gete(handle)
-        if not opt.has_key('aggregate'):
+        if 'aggregate' not in opt:
             raise RuntimeError(
                 'Cannot update: option has no aggregate: ' + handle)
         aggregation = opt['aggregate']
         result, error = self.calc_aggregate(aggregation, handle)
         if result is not None:
             self[handle] = result
-            if error is not None and opt.has_key('error'):
+            if error is not None and 'error' in opt:
                 self[opt['error']] = error
         else:
             self.log.error('Aggregation failed for ', self.get_fullpath(),
@@ -247,8 +247,8 @@ class Aggregative(object):
     def update_aggregates(self, recursive=1):
         """Updates aggregate options. recursive==1, upward; -1, downward; 0, no"""
         # TODO: move to Scriptable class! (or a new one)
-        for handle, opt in self.desc.iteritems():
-            if not opt.has_key('aggregate'):
+        for handle, opt in self.desc.items():
+            if 'aggregate' not in opt:
                 continue
             aggregation = opt['aggregate']
             try:

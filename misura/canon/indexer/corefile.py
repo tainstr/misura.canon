@@ -5,14 +5,18 @@
 ext = '.h5'
 
 import os
-from cPickle import dumps
+try:
+    from cPickle import dumps
+except:
+    from pickle import dumps
 from traceback import format_exc
 import functools
 from tables.nodes import filenode
-from .. import csutil
 from traceback import print_exc
 from time import time
 from multiprocessing import Lock
+
+from .. import csutil
 from ..csutil import lockme,  unlockme
 from ..logger import get_module_logging
 
@@ -27,7 +31,7 @@ def addHeader(func):
             del kw['reference_class']
         g = func(self, *a, **kw)
         if rc:
-            if not self._header.has_key(rc):
+            if rc not in self._header:
                 self._header[rc] = []
             self._header[rc].append(g._v_pathname)
 #		self.test.flush()
@@ -197,7 +201,7 @@ class CoreFile(object):
     def _set_attributes(self, where, name=None, attrs={}):
         """Non-locking call to set_node_attr on `where` with a dict of `attrs`.
         Optionally accepts leaf `name`."""
-        for k, v in attrs.iteritems():
+        for k, v in attrs.items():
             self.log.debug('setting node attr', where, name, k, repr(v))
             self.test.set_node_attr(where, k, v, name=name)
 
@@ -317,7 +321,7 @@ class CoreFile(object):
         self.test.remove_node(path, recursive=recursive)
         # Clean the cached header
         path += '/'
-        for k, v in self._header.iteritems():
+        for k, v in self._header.items():
             if path not in v:
                 continue
             v.remove(path)

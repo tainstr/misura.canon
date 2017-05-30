@@ -1,13 +1,17 @@
 # -*- coding: utf-8 -*-
 """Option persistence."""
 from traceback import print_exc
+from time import sleep
+try:
+    unicode('a')
+except:
+    unicode=str
 
 import ast
-import option
-from option import Option, sorter, tosave, typed_types
-import store
+from .option import Option, sorter, tosave, vkeys, str_keys, repr_keys, int_keys, type_keys, bytype, validate
+from . import store
 
-from time import sleep
+
 ###
 #  SQL PERSISTENCE
 ###
@@ -21,17 +25,17 @@ def define_columns(ctype, cols, fields=[]):
     pre = "' {},'".format(ctype)
     return "'" + pre.join(cols) + "' " + ctype
 
-tabdef = define_columns('text', option.vkeys)
+tabdef = define_columns('text', vkeys)
 
 sys_keys = ('preset', 'fullpath', 'devpath')
 # Set of all standard columns
 opt_col_set = set(
-    sys_keys + option.str_keys + option.int_keys + option.repr_keys)
+    sys_keys + str_keys + int_keys + repr_keys)
 # Definition strings by type
 opt_col_def = define_columns('text', sys_keys)
-opt_col_def += ',' + define_columns('text', option.str_keys)
-opt_col_def += ',' + define_columns('integer', option.int_keys)
-opt_col_def += ',' + define_columns('text', option.repr_keys)
+opt_col_def += ',' + define_columns('text', str_keys)
+opt_col_def += ',' + define_columns('integer', int_keys)
+opt_col_def += ',' + define_columns('text', repr_keys)
 
 # Column name: sql type, from sql function, to sql function
 base_col_def = collections.OrderedDict()
@@ -66,11 +70,11 @@ from_sql = {'integer': cvt_int,
             'real': cvt_float,
             'text': cvt_str,
             'blob': cvt_pickle}
-for c in sys_keys + option.str_keys:
+for c in sys_keys + str_keys:
     base_col_def[c] = cvt_str
-for c in option.int_keys:
+for c in int_keys:
     base_col_def[c] = cvt_int
-for c in option.repr_keys:
+for c in repr_keys:
     base_col_def[c] = cvt_repr
 
 base_col_set = set(base_col_def.keys())
@@ -79,7 +83,7 @@ base_col_set = set(base_col_def.keys())
 def define_dict(d):
     """Create column definition from dict"""
     r = ''
-    for k, c in d.iteritems():
+    for k, c in d.items():
         r += "'{}' {}, ".format(k, c[0])
     return r[:-2]
 
@@ -87,7 +91,7 @@ def define_dict(d):
 def get_converter(mtype, sqltype):
     cvt = False
     # Typed converter
-    if converters.has_key(mtype):
+    if mtype in converters:
         # Type has preference
         cvt = converters[str(mtype)]
     else:
@@ -104,14 +108,14 @@ def get_typed_cols(opt):
     """Returns typed columns converter, typed columns names, extra columns names."""
     t = opt['type']
     # Typed columns definitions
-    tk = list(option.type_keys[:])
-    bt = option.bytype.get(t, False)
+    tk = list(type_keys[:])
+    bt = bytype.get(t, False)
     if not bt:
-        print 'Undefined sql type', opt
+        print('Undefined sql type', opt)
         return False
     cvt = get_converter(t, bt)
     if not cvt:
-        print 'Undefined converter', t, bt
+        print('Undefined converter', t, bt)
         return False
 
     # Multiply typed columns
@@ -134,7 +138,7 @@ def get_typed_cols(opt):
     # Detect extra fields and add to definition
     extra = list(set(opt.keys()) - set(tk) - base_col_set)
     if len(extra):
-        print 'found extras', tk, extra, opt
+        print('found extras', tk, extra, opt)
 
     # Remove ranges for non-numerics
     if bt in ('string', 'binary', 'multicol', 'pickle') or t in ('Meta', 'Log', 'Role', 'RoleIO', 'Boolean'):
@@ -172,13 +176,13 @@ def get_insert_cmd(entry, col_def):
         return False
     cvt0, cols, extra = tc
     # Respect order
-    for k, cvt in col_def.iteritems():
+    for k, cvt in col_def.items():
         # Detect composite columns
         mk = k.split(sep_field)
         if len(mk) == 2 and k in cols:
             mk, sub = mk
             if mk not in entry:
-                print 'key not found', mk, entry
+                print('key not found', mk, entry)
                 continue
             # Meta are the only dict options
             # TODO: convert all Meta to lists?
@@ -187,12 +191,12 @@ def get_insert_cmd(entry, col_def):
             try:
                 v = entry[mk][sub]
             except:
-                print 'Missing sub entry', k, mk, repr(sub), entry[mk], entry
+                print('Missing sub entry', k, mk, repr(sub), entry[mk], entry)
                 continue
         else:
             if k not in entry:
                 continue
-            if k in option.type_keys and k not in cols:
+            if k in type_keys and k not in cols:
                 continue
             v = entry[k]
         if v in ('None', None):
@@ -213,12 +217,11 @@ def parse_row(row, col_def=base_col_def):
     Returns entry dictionary."""
     r = {}
     fields = set()
-    for i, (k, cvt) in enumerate(col_def.iteritems()):
+    for i, (k, cvt) in enumerate(col_def.items()):
         v = row[i]
         # Skip empty columns
         if v is None:
             continue
-# 		print 'converting',k,cvt[1],repr(v)
         v = cvt[1](v)
         if sep_field in k:
             mk, sub = k.split(sep_field)
@@ -238,12 +241,10 @@ def parse_row(row, col_def=base_col_def):
     # Convert to lists all non-Meta types
     if str(r['type']) != 'Meta':
         for f in fields:
-            # 			print 'found fields',f,fields
             # This will keep correct order
             r[f] = r[f].values()
     else:
         pass
-# 		print 'Found Meta',fields,r
     return r
 
 
@@ -273,7 +274,7 @@ def tree_from_rows(rows, col_def=base_col_def, tree=False):
         tree = {}
     for row in rows:
         entry = parse_row(row, col_def)
-        option.validate(entry)
+        validate(entry)
         tree_add_entry(tree, entry)
     return tree
 
@@ -332,7 +333,7 @@ class SqlStore(store.Store):
         """Parse opt table into ordered definition dictionary self.col_def"""
         self.cursor.execute('pragma table_info({});'.format(self.tabname))
         self.pragma = self.cursor.fetchall()
-        print 'pragma', self.pragma
+        print('pragma', self.pragma)
         for tup in self.pragma:
             col = tup[1]
             sqlt = tup[2]
@@ -341,7 +342,7 @@ class SqlStore(store.Store):
             if not col_cvt:
                 if sep_type in col:
                     n, mt = col.split(sep_type)
-                    print 'parse table', col, n, mt
+                    print('parse table', col, n, mt)
                     col_cvt = get_converter(mt, sqlt)
                 else:
                     col_cvt = cvt_repr
@@ -352,7 +353,6 @@ class SqlStore(store.Store):
     def clear_entry(self, entry, preset='default'):
         cmd = "delete from {} where fullpath='{}' and preset='{}';".format(
             self.tabname, entry['fullpath'], preset)
-# 		print 'deleting:\n\t',cmd
         self.cursor.execute(cmd)
         return self.cursor.fetchall()
 
@@ -363,7 +363,7 @@ class SqlStore(store.Store):
         if parse:
             self.parse_table()
         clear = True
-        for key, entry in self.desc.iteritems():
+        for key, entry in self.desc.items():
             # Add system keys
             entry['preset'] = preset
             kid = entry.get('kid', False)
@@ -371,29 +371,25 @@ class SqlStore(store.Store):
                 kid = kid.split('/')
                 kid.pop(-1)  # handle
                 if len(kid) < 2:
-                    print 'invalid kid', kid, key, entry
+                    print('invalid kid', kid, key, entry)
                     continue
                 entry['devpath'] = kid[-1]
                 entry['fullpath'] = '/'.join(kid) + '/'
                 if clear and len(self.pragma):
                     # Drop pre-existing data if first entry written
-                    # 					print 'Clearing',self.clear_entry(entry,preset)
                     clear = False
             # Define columns
             cd = self.column_definition(entry)
             if not cd:
-                print 'Invalid entry', key, entry
+                print('Invalid entry', key, entry)
                 continue
             t, sql = cd
             # Execute creation/altering
             for s in sql:
-                # 				print 'write_desc altering:\n\t ',s
                 self.cursor.execute(s)
 
             cmd, vals = get_insert_cmd(entry, self.col_def)
             cmd = "insert into '{}' {}".format(self.tabname, cmd)
-
-# 			print 'write_desc inserting:\n\t',cmd,vals
             self.cursor.execute(cmd, vals)
         return True
 
@@ -422,7 +418,7 @@ class SqlStore(store.Store):
 
     def write_tree(self, tree, preset='default', parse=True):
         """Write `tree` of options"""
-        for k, v in tree.iteritems():
+        for k, v in tree.items():
             if k == 'self':
                 try:
                     self.write_desc(v, preset, parse=parse)
@@ -458,11 +454,11 @@ class SqlStore(store.Store):
         cursor.execute(cmd)
 
         # Prepare the insertion command
-        icmd = '?,' * len(option.vkeys)
+        icmd = '?,' * len(vkeys)
         icmd = 'INSERT INTO ' + tabname + ' VALUES (' + icmd[:-1] + ')'
 
         # Reorder the options by priority
-        values = desc.items()
+        values = list(desc.items())
         values.sort(sorter)
         prio = 0
 
@@ -472,7 +468,7 @@ class SqlStore(store.Store):
             entry['priority'] = prio
             line = to_row(entry)
             if not line:
-                print 'skipping line', key
+                print('skipping line', key)
                 continue
             cursor.execute(icmd, line)
         return True
@@ -483,7 +479,7 @@ class SqlStore(store.Store):
 def from_row(row):
     """Create an Option object starting from a database row"""
     e = {}
-    for i, k in enumerate(option.vkeys):
+    for i, k in enumerate(vkeys):
         if row[i] == '':
             continue
         e[k] = ast.literal_eval(row[i])
@@ -495,8 +491,8 @@ def to_row(entry):
     if not tosave(entry):
         return False
     r = []
-    for k in option.vkeys:
-        if entry.has_key(k):
+    for k in vkeys:
+        if k in entry:
             r.append(repr(entry[k]))
         else:
             r.append('')

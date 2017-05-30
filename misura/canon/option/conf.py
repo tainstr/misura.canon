@@ -1,9 +1,14 @@
 # -*- coding: utf-8 -*-
 """Option persistence."""
 from .. import logger
-from option import Option, read_only_keys
-from store import Store
-from option import ao
+from .option import Option, read_only_keys
+from .store import Store
+from .option import ao
+
+try:
+    unicode('a')
+except:
+    unicode=str
 
 logging = logger.get_module_logging(__name__)
 
@@ -16,8 +21,8 @@ class Conf(object):
         self.log = logger.Log
         self.desc = {}
         if desc is not False:
-            for k, v in desc.iteritems():
-                if not v.has_key('handle'):
+            for k, v in desc.items():
+                if 'handle' not in v:
                     v['handle'] = k
                 if isinstance(v, dict):
                     v = Option(**v)
@@ -25,15 +30,24 @@ class Conf(object):
                 
     def __contains__(self, *a, **k):
         return self.has_key(*a, **k)
+    
+    def items(self):
+        return self.desc.items()
 
     def iteritems(self):
-        return self.desc.iteritems()
+        for item in self.desc.items():
+            yield item
+            
+    def keys(self):
+        return self.desc.keys()
 
     def iterkeys(self):
-        return self.desc.iterkeys()
+        for key in self.desc.keys():
+            yield key
 
     def itervalues(self):
-        return self.desc.itervalues()
+        for val in self.desc.values():
+            yield val
     
     def values(self):
         return self.desc.values()
@@ -64,7 +78,6 @@ class Conf(object):
 
     def get(self, name, *a):
         """Return option `name` current value"""
-#       print 'option.Conf.get', name, a
         try:
             opt = self.get_current(name)
         except:
@@ -88,9 +101,9 @@ class Conf(object):
     def set(self, name, nval, **k):
         """Set the current value of a key"""
         if self.empty:
-            if not self.has_key(name):
+            if name not in self:
                 self.sete(name, {'factory_default': nval})
-                print 'SET EMPTY',name,nval
+                print('SET EMPTY',name,nval)
         r = self.set_current(name, nval, **k)
         return r
     
@@ -108,20 +121,17 @@ class Conf(object):
     def has_key(self, key):
         """Check  `key`"""
         # Warning: slow on server side!
-        return self.desc.has_key(key)
-
-    def keys(self):
-        return self.desc.keys()
-
+        return key in self.desc
+    
     def gete(self, name):
         """Returns description dictionary for option `name`"""
         return self.desc[name]
 
     def sete(self, name, opt):
         """Sets option `name` to dictionary or Option `opt`."""
-        if not opt.has_key('type'):
+        if 'type' not in opt:
             opt['type'] = 'Empty'
-        if not opt.has_key('handle'):
+        if 'handle' not in opt:
             opt['handle'] = name
         if isinstance(opt, dict):
             opt = Option(**opt)
@@ -134,7 +144,7 @@ class Conf(object):
         Overwrite old one if existing."""
         out = {}
         overwrite = True
-        if kwargs.has_key('overwrite'):
+        if 'overwrite' in kwargs:
             overwrite = kwargs.pop('overwrite')
         ao(out, *args, **kwargs)
         out = out.values()[0]
@@ -143,7 +153,7 @@ class Conf(object):
             out['priority'] = -1
         # If option was already defined, update old one with new values
         out = Option(**out)
-        if self.has_key(key):
+        if key in self:
             # Do not do anything if not overwriting
             if not overwrite:
                 return out
@@ -161,7 +171,7 @@ class Conf(object):
     def setattr(self, handle, key, val):
         """Sets to val the `key` of `handle` option"""
         if key in read_only_keys:
-            print 'Attempt to modify read-only key'
+            print('Attempt to modify read-only key')
             return False
         opt = self.desc[handle]
         opt[key] = val
@@ -177,7 +187,7 @@ class Conf(object):
     def delete(self, name):
         """Remove key `name`"""
         # FIXME: verifica!!! del_key!???
-        if not self.desc.has_key(name):
+        if name not in self.desc:
             return False
         del self.desc[name]
         return True
@@ -186,14 +196,14 @@ class Conf(object):
     def setFlags(self, opt, upDict):
         """Update flags for `opt` with `upDict`."""
         d = self.desc[opt]
-        if not d.has_key('flags'):
+        if 'flags' not in d:
             return False
         d['flags'].update(upDict)
         self.sete(opt, d)
         return True
 
     def getFlags(self, opt):
-        if not self.desc[opt].has_key('flags'):
+        if 'flags' not in self.desc[opt]:
             return {}
         return self.desc[opt]['flags']
 
@@ -234,7 +244,7 @@ class Conf(object):
         opt.desc = self.desc
         failed = opt.validate()
         if len(failed) > 0:
-            print 'Failed validations', failed
+            print('Failed validations', failed)
         for k, v in opt.desc.iteritems():
             self.desc[k] = v
         return failed
@@ -242,7 +252,7 @@ class Conf(object):
     def iolist(self):
         """Returns a list of options having History attribute set or RoleIO type."""
         r = []
-        for opt in self.desc.itervalues():
+        for opt in self.desc.values():
             # io can point only towards History or RoleIO types
             if 'History' in opt['attr'] or opt['type'] == 'RoleIO':
                 r.append(opt['handle'])

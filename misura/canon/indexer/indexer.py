@@ -7,7 +7,11 @@ ext = '.h5'
 import hashlib
 import os
 from time import time
-import cPickle as pickle
+try:
+    import cPickle as pickle
+except:
+    import pickle
+    unicode = str
 from traceback import print_exc
 import sqlite3
 import functools
@@ -22,7 +26,7 @@ from tables.nodes import filenode
 
 from .. import csutil, option
 
-from filemanager import FileManager
+from .filemanager import FileManager
 from misura.canon.indexer.interface import SharedFile
 
 testColumn = ('file', 'serial', 'uid', 'id', 'zerotime', 'instrument',
@@ -186,7 +190,7 @@ class Indexer(object):
             db = self.dbPath
         self.dbPath = db
         if not self.dbPath:
-            print 'Indexer: no dbpath set!'
+            print('Indexer: no dbpath set!')
             return False
         self._lock.set_path(db)
         conn, cur = self.threads.get(tid(), (False, False))
@@ -367,8 +371,7 @@ class Indexer(object):
         instrument = conf.attrs.instrument
 
         test['instrument'] = instrument
-        if not tree.has_key(instrument):
-            print tree.keys()
+        if instrument not in tree:
             self.log.debug('Instrument tree missing')
             return False
 
@@ -391,7 +394,7 @@ class Indexer(object):
 #       ok=digisign.verify(table)
         # Performance problem: should be only verified on request.
         ok = False
-        print 'File verify:', ok
+        print('File verify:', ok)
         v.append(ok)
         return v, tree, instrument, test
 
@@ -421,7 +424,7 @@ class Indexer(object):
         cur = self.cur
         cmd = '?,' * len(v)
         cmd = 'INSERT INTO test VALUES (' + cmd[:-1] + ')'
-        print 'Executing', cmd, v
+        print('Executing', cmd, v)
         self.cur.execute(cmd, v)
         r = cur.fetchall()
         # ##
@@ -435,14 +438,14 @@ class Indexer(object):
             v = [file_path]
             for k in 'ii,index,material,name,comment,dim,height,volume,sintering,softening,sphere,halfSphere,melting'.split(','):
                 val = 0
-                if smp.has_key(k):
+                if k in smp:
                     val = smp[k]['current']
                 v.append(val)
             cmd = '?,' * len(v)
             cmd = 'INSERT INTO sample VALUES (' + cmd[:-1] + ')'
             cur.execute(cmd, v)
             r = cur.fetchall()
-            print 'Result:', r
+            print('Result:', r)
 
         if add_uid_to_incremental_ids_table:
             self.add_incremental_id(cur, test['uid'])
@@ -534,12 +537,8 @@ class Indexer(object):
 
     def delete_modified_files(self, database, all_files):
         modified_dates_on_db = self.get_modify_dates()
-
-        modified_dates_on_db = map(
-            lambda db_entry: (
-                db_entry[0], self.convert_to_full_path(db_entry[1]), db_entry[1]),
-            modified_dates_on_db
-        )
+        f = lambda db_entry: (db_entry[0], self.convert_to_full_path(db_entry[1]), db_entry[1])
+        modified_dates_on_db = [f(m) for m in modified_dates_on_db]
 
         old_modified_dates = {}
         for f in all_files:
@@ -558,8 +557,7 @@ class Indexer(object):
                 self.clear_file_path(relative_file_path)
 
     def add_new_files(self, all_files, database):
-        file_names_in_database = map(
-            lambda data: self.convert_to_full_path(data[0]), database)
+        file_names_in_database = [self.convert_to_full_path(d[0]) for d in database]
         for f in all_files:
             if f not in file_names_in_database:
                 self.appendFile(f)
@@ -621,7 +619,7 @@ class Indexer(object):
         r = self.cur.fetchall()
         r = list(a[0] for a in r)
         r = list(set(r))
-        print 'LIST MATERIALS', r
+        print('LIST MATERIALS', r)
         return r
 
     @dbcom
@@ -643,7 +641,7 @@ class Indexer(object):
         else:
             cnd = []
             vals = []
-            for k, v in conditions.iteritems():
+            for k, v in conditions.items():
                 cnd.append(k + ' like ?')
                 vals.append('%' + v + '%')
             cnd = ' {} '.format(operator).join(cnd)
@@ -699,7 +697,6 @@ class Indexer(object):
 
 if __name__ == '__main__':
     import sys
-    print sys.argv[1]
     sys.exit()
     db = Indexer(sys.argv[1])
     db.rebuild()

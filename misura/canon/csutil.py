@@ -4,14 +4,21 @@ import os
 import sys
 import numpy
 import multiprocessing
-import cPickle as pickle
+try:
+    import cPickle as pickle
+    import xmlrpclib
+    from exceptions import Exception, KeyboardInterrupt
+except:
+    import pickle
+    import xmlrpc as xmlrpclib
+    unicode=str
 
-import xmlrpclib
+
 import numpy as np
 import functools
 import collections
 from traceback import format_exc, print_exc
-from exceptions import Exception, KeyboardInterrupt
+
 from threading import ThreadError
 import inspect
 from operator import itemgetter
@@ -73,7 +80,7 @@ binfunc = FakeBinary
 
 
 def logprint(*a):
-    print a
+    print(a)
 
 
 class FakeLogger(object):
@@ -82,7 +89,7 @@ class FakeLogger(object):
         return logprint
 
     def __call__(self, *a, **k):
-        print k, a
+        print(k, a)
 fakelogger = FakeLogger()
 
 
@@ -220,7 +227,7 @@ def chunked_upload(upfunc, fp, sigfunc=lambda v: 0):
         upfunc(xmlrpclib.Binary(dat), i, name)
         pc = pf * i
         sigfunc(int(pc))
-        print 'sent %.2f' % (pc)
+        print('sent %.2f' % (pc))
     ui = -1
     if N == 1:
         ui = 0
@@ -261,17 +268,15 @@ def find_nearest_val(v, t, get=False, seed=None):
         g = get
 
     if len(v) <= 1:
-        print 'find_nearest_val: empty arg'
+        print('find_nearest_val: empty arg')
         return 0
     g0 = g(0)
     g_1 = g(-1)
     positive = g_1 > g0
     if (t < g0 and positive) or (t > g0 and not positive):
-        #       print 'premature exit',positive,t,g0
         return 0
     n = len(v) - 1
     if (t > g_1 and positive) or (t < g_1 and not positive):
-        #       print 'premature exit2',positive,t,g_1
         return n
     if seed is None:
         i = len(v) / 2  # starting index
@@ -293,11 +298,9 @@ def find_nearest_val(v, t, get=False, seed=None):
         # can't be better than that
         if d == 0:
             bi = i
-#           print 'found zero delta',i,t,c
             break
         # bigger d: choose smaller index
         if (d < 0 and positive) or (d > 0 and not positive):
-            #           print 'reducing',i,smaller
             if i - smaller < 1:
                 break
             bigger = i
@@ -310,7 +313,6 @@ def find_nearest_val(v, t, get=False, seed=None):
                 i = smaller + (i - smaller) / 2
         # smaller d: choose bigger index
         else:
-            #           print 'increasing',i,bigger
             if bigger - i < 1:
                 break
             smaller = i
@@ -437,7 +439,7 @@ class lockme(object):
             except KeyboardInterrupt:
                 raise KeyboardInterrupt()
             except:
-                print 'lockme: exc calling', func, args, kwargs
+                print('lockme: exc calling', func, args, kwargs)
                 print_exc()
             finally:
                 try:
@@ -491,10 +493,10 @@ class retry(object):
                 except KeyboardInterrupt:
                     raise KeyboardInterrupt()
                 except:
-                    print 'retry', retry0 - retry,  func, times
+                    print('retry', retry0 - retry,  func, times)
                     retry -= 1
                     if retry <= 0:
-                        print 'End retry'
+                        print('End retry')
                         raise
                     # Call the retry hook
                     if self.hook is not False:
@@ -519,7 +521,7 @@ def start_profiler(obj):
 def stop_profiler(obj):
     out = '{}{}_{}.prf'.format(
         profile_path, obj.__class__.__name__, str(id(obj)))
-    print 'PROFILING STATS FOR', out
+    print('PROFILING STATS FOR', out)
     s = pstats.Stats(obj.__p)
     s.sort_stats('cumulative')
     s.dump_stats(out)
@@ -552,14 +554,14 @@ def profile(func):
                                       name,
                                       fp.replace('/', '_'),
                                       prf_uid)
-        print 'START PROFILING STATS FOR', func.__name__, ' AT ', repr(self), out
+        print('START PROFILING STATS FOR', func.__name__, ' AT ', repr(self), out)
         p.enable()
         r = func(self, *a, **k)
         s = pstats.Stats(p)
         s.sort_stats('cumulative')
         s.dump_stats(out)
         p.disable()
-        print 'END PROFILING STATS FOR', func.__name__, ' AT ', repr(self), out
+        print('END PROFILING STATS FOR', func.__name__, ' AT ', repr(self), out)
         return r
     return profile_wrapper
 

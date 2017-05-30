@@ -2,10 +2,11 @@
 # -*- coding: utf-8 -*-
 """Misura Language or Mini Language.
 Secure minimal Python language subset for conditional evaluation of numerical datasets."""
-
-import exceptions
-
-from dataenv import DataEnvironment
+try:
+    from exceptions import BaseException
+except:
+    pass
+from .dataenv import DataEnvironment
 
 
 class InterfaceEnvironment(DataEnvironment):
@@ -30,7 +31,7 @@ class InterfaceEnvironment(DataEnvironment):
         self._obj = obj
         if obj in [None, False]:
             return
-        if obj.has_key('fullpath'):
+        if 'fullpath' in obj:
             # Use get() and not [] because it can be an autoproxy
             self.prefix = obj.get('fullpath')
 # 			obj.log.debug('object fullpath set to',self.prefix)
@@ -50,7 +51,6 @@ class InterfaceEnvironment(DataEnvironment):
 
     def Meta(self, name):
         """Returns meta value for script option `name`"""
-#		print self.obj.keys()
         return self.obj.get('Meta_' + name)
 
     def MetaPart(self, name, part):
@@ -70,8 +70,7 @@ class InterfaceEnvironment(DataEnvironment):
         """Returns a leaf interface object"""
         r = self.obj.child(name)
         if r is None:
-            raise exceptions.BaseException(
-                'Child object does not exist: ' + name)
+            raise BaseException('Child object does not exist: ' + name)
         # Re-instantiate any class inheriting InterfaceEnvironment
         ie = self.__class__()
         ie.obj = r

@@ -34,7 +34,7 @@ class Reference(object):
         """Output SharedFile"""
         self.write_current = write_current
         # Define static methods for unbound functions
-        for k, func in self.unbound.iteritems():
+        for k, func in self.unbound.items():
             setattr(self, k, staticmethod(func))
 
         # Read opt from reference
@@ -87,7 +87,7 @@ class Reference(object):
             if self.outfile.get_node_attr(ref, '_reference_class') == self.__class__.__name__:
                 self.path = ref
                 return False
-            print 'Removing wrong type old reference', ref
+            print('Removing wrong type old reference', ref)
             self.outfile.remove_node(ref)
         if self.folder != '/' and self.folder.endswith('/'):
             return self.folder[:-1]
@@ -116,9 +116,8 @@ class Reference(object):
 
     def set_attributes(self):
         if not self.outfile.has_node(self.path):
-            print 'ERROR: NO NODE!', self.path
+            print('ERROR: NO NODE!', self.path)
             return False
-# 		print 'set_attributes',self.opt.keys()
         ks = self.opt.keys()
         if not self.write_current:
             for k in ['current', 'factory_default']:
@@ -148,7 +147,7 @@ class Reference(object):
     def __getitem__(self, idx_or_slice):
         if isinstance(idx_or_slice, int):
             return self.decode(self.outfile.col_at(self.path, idx_or_slice, raw=True))
-        return map(self.decode, self.outfile.col(self.path, idx_or_slice, raw=True))
+        return [self.decode(d) for d in self.outfile.col(self.path, idx_or_slice, raw=True)]
 
     def time_at(self, idx=-1):
         """Returns the time label associated with the last committed point"""
@@ -164,7 +163,6 @@ class Reference(object):
 
     def commit(self, data):
         """Encode data and write it onto the reference node."""
-# 		print 'committing',self.path,data
         # Cut too old points
         n = 0
         for td in data:
@@ -184,10 +182,8 @@ class Reference(object):
         Returns False if no summary is defined, or the time vector for interpolation"""
         # Nothing to interpolate
         if self.summary is False:
-            #			print 'No summary defined',self.path
             return False
         if len(self) < 10:
-            #			print 'Not enough data',self.path,len(self)
             return False
         last = self[-1]
         if len(self.summary) == 0:
@@ -199,11 +195,10 @@ class Reference(object):
         # Not enough data to calculate a new point
         dt = last[0] - lsumt
         if dt <= step * 3:
-            #			print 'Not enough step',dt,self.path
             return False
         # Time sequence
         vt = np.arange(lsumt + step, last[0], step)[:-1]
         if len(vt) == 0:
-            print 'Time length is null', self.path
+            print('Time length is null', self.path)
             return False
         return vt

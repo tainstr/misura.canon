@@ -6,9 +6,14 @@ Secure minimal Python language subset for conditional evaluation of numerical da
 import ast
 from traceback import print_exc, format_exc
 from time import time
-from env import BaseEnvironment, ExitException
-from objenv import InterfaceEnvironment, InstrumentEnvironment, KilnEnvironment
-from validator import Validator
+from .env import BaseEnvironment, ExitException
+from .objenv import InterfaceEnvironment, InstrumentEnvironment, KilnEnvironment
+from .validator import Validator
+
+try:
+    unicode('a')
+except:
+    unicode=str
 
 
 class MiLang(object):
@@ -43,7 +48,7 @@ class MiLang(object):
     """Script originating environment (for accessing parameters, etc)"""
     last = 0.
     """Last time this script was executed"""
-    period = None
+    period = 0
     """Execution period"""
     handle = False
     """Handle of the option hosting this scipt"""
@@ -70,7 +75,7 @@ class MiLang(object):
         else:
             self.code = False
             self.tree = False
-            print 'Validation failed:', self.error
+            print('Validation failed:', self.error)
             return False
 
     def val_name(self, fname):
@@ -91,7 +96,7 @@ class MiLang(object):
                      'script': {'names': set(self.script_env.whitelist)}}
         # Something strange passed...
         if not (isinstance(script, str) or isinstance(script, unicode)):
-            print 'Wrong instance passed', type(script)
+            print('Wrong instance passed', type(script))
             return False, False
         c = ast.parse(script)
         validator = Validator(whitetree, self.blacklist)
@@ -117,8 +122,8 @@ class MiLang(object):
     def do(self):
         """Execute the code"""
         t = time()
-        if t - self.last < self.period:
-            print 'Not executing!'
+        if (self.period is not None) and (t - self.last < self.period):
+            print('Not executing!')
             return False
         self.last = time()
         self.env._reset()
@@ -131,24 +136,21 @@ class MiLang(object):
         for env in (mi, obj, ins, measure, kiln, script):
             env.handle = self.handle
         # Definizione degli ambienti subordinati (sample, kiln, etc)
-        for s, e in self.env.sub.iteritems():
+        for s, e in self.env.sub.items():
             m = "%s=mi.%s" % (s, e)
             exec(m)
-# 		print 'eval4',self.handle,obj.prefix
         if self.code:
             try:
                 exec(self.code)
             except ExitException:
-                #				print 'ExitException',self.handle
                 return False
             except:
-                print 'Error in ', self.handle, format_exc(), obj.obj
+                print('Error in ', self.handle, format_exc(), obj.obj)
                 # FIXME
 # 				if ins.obj:
 # 					ins.obj.log.error('Error in %s %s %s' % (self.handle,format_exc(),obj.obj))
                 return False
             self.env = mi
-#			print 'DONE',self.handle
             return True
         else:
             self.error = "Impossible to execute invalid or empty script"
@@ -158,7 +160,6 @@ class MiLang(object):
         """Execute the code and set the output on interface `out`. 
         Optionally make available an additional namespace ins for the calling instrument. """
         self.obj_env.obj = out
-# 		print 'eval',self.handle,out['fullpath'],self.obj_env.prefix
         self.ins_env.obj = ins
         if ins is not None:
             # 			self.set_env_outFile(ins.sharedFile)
@@ -167,15 +168,13 @@ class MiLang(object):
             self.measure_env.obj = ins.measure
         if getattr(ins, 'kiln', False) is not False:
             self.kiln_env.obj = ins.kiln
-# 		print 'eval2',self.handle,out['fullpath'],self.obj_env.prefix
         do = self.do()
         if not do:
-            #			print 'Failed',self.handle
             return False
         # Output dictionary
         m = {'temp': 'None', 'time': 'None', 'value': 'None'}
         ok = False
-        for k in m.iterkeys():
+        for k in m.keys():
             v = getattr(self.env, k)
             if v == None:
                 continue

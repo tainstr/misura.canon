@@ -11,7 +11,7 @@ _calls = []
 
 
 def dummy_callback(conf, key, old_val, new_val):
-    print 'Dummy callback', conf['fullpath'], key, old_val, new_val
+    print('Dummy callback', conf['fullpath'], key, old_val, new_val)
     _calls.append((conf['fullpath'], key, old_val, new_val))
     return new_val
 
@@ -138,7 +138,7 @@ class ConfigurationProxy(unittest.TestCase):
         targets = ['a', 'b', 'c']
         devices = {'a': [a], 'b': [b], 'c': [c]}
         
-        values = { name: [dev[0][name]] for name, dev in devices.iteritems()}
+        values = { name: [dev[0][name]] for name, dev in devices.items()}
         
         result, unit, precision, visible = option.aggregate_merge_tables(targets, values, devices)
         self.assertEqual(len(result[0]), 4)

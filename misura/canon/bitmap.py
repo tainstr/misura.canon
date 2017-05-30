@@ -5,7 +5,10 @@
 # http://pseentertainmentcorp.com/smf/index.php?topic=2034.0
 
 import struct
-import cStringIO
+try:
+    from cStringIO import StringIO
+except:
+    from io import StringIO
 
 bitmapHeader_fmt = '<BBLHHLLLLHHLLLLLL'
 bitmapHeader_len = struct.calcsize(bitmapHeader_fmt)
@@ -87,6 +90,6 @@ def convertBitmap(img):
 def decompress(img):
     if img[:2] != 'IM':  # MI is an old id
         return img
-    img = cStringIO.StringIO(img)
+    img = StringIO(img)
     img.seek(0)
     return convertBitmap(img)

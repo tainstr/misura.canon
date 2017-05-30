@@ -2,9 +2,10 @@
 # -*- coding: utf-8 -*-
 """Misura Language or Mini Language.
 Secure minimal Python language subset for conditional evaluation of numerical datasets."""
-from env import BaseEnvironment
 import numpy as np
 from scipy.interpolate import UnivariateSpline
+
+from .env import BaseEnvironment
 from .. import csutil
 
 
@@ -41,7 +42,7 @@ class DataEnvironment(BaseEnvironment):
             # but unknown if a local T dataset is available in prefix
             if not self._temperature_path:
                 curve = self.prefix + 'T'
-                print curve
+                print(curve)
                 if not self.hdf.has_node(curve):
                     curve = '/kiln/T'
                 self._temperature_path = curve
@@ -49,7 +50,7 @@ class DataEnvironment(BaseEnvironment):
             curve = self._temperature_path
         else:
             curve = self.prefix + curve
-        print '_cname returning', curve
+        print('_cname returning', curve)
         return curve
 
     def _c(self, curve0, start_time=0):
@@ -69,7 +70,7 @@ class DataEnvironment(BaseEnvironment):
         """Separately return x and y arrays as tuples"""
         n = self._c(curve, start_time)
 
-        print 'xy', type(n)
+        print('xy', type(n))
         return n[:, 0], n[:, 1]
 
     def Point(self, t=None, curve=False, idx=None):
@@ -118,7 +119,7 @@ class DataEnvironment(BaseEnvironment):
     def GetCoolingTimeAndIndex(self):
         ret = self.hdf.max('/kiln/T')
         if not ret:
-            print 'Cannot find node /kiln/T'
+            print('Cannot find node /kiln/T')
             return False
         idx, t, T = ret
         if idx + 1 >= self.hdf.len('/kiln/T'):
@@ -206,7 +207,7 @@ class DataEnvironment(BaseEnvironment):
         if len(x) < 2:
             return np.array([])
         r = np.gradient(y) / np.gradient(x)
-        print 'TimeDerivative', curve, len(r)
+        print('TimeDerivative', curve, len(r))
         return r
 
     def Coefficient(self, curve, T0, T1):

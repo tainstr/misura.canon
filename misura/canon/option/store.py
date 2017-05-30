@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
 """Option persistence."""
-from .. import logger
-from option import Option, sorter, tosave
-
 from traceback import format_exc
 import ast
 import os
+
+from .. import logger
+unicode_func = logger.unicode_func
+from .option import Option, sorter, tosave
 
 
 class Store(object):
@@ -24,7 +25,7 @@ class Store(object):
         # add priority field if not present
         # TODO: remove all priority management and substitute with
         # collections.OrderedDict
-        if opt.has_key('priority'):
+        if 'priority' in opt:
             self.priority = int(opt['priority'])
         else:
             self.priority += 1
@@ -39,13 +40,13 @@ class Store(object):
         failed = {}
         if len(self.desc) == 0:
             return failed
-        for key, entry in self.desc.iteritems():
+        for key, entry in self.desc.items():
             entry = self.update(entry)
             if entry:
                 self.desc[key] = entry
             else:
                 failed[key] = entry
-                print 'Validation failed:', key, entry, ' -- REMOVED'
+                print('Validation failed:', key, entry, ' -- REMOVED')
         return failed
 
     @classmethod
@@ -60,7 +61,7 @@ concat_sym = '|;|'
 
 def from_string(line):
     """Create an Option object starting from a csv text line"""
-    line = unicode(line, 'utf8', 'replace')
+    line = unicode_func(line, encoding='utf-8', errors='replace')
     if line[0] == '#' or len(line) < 5 or line.startswith('import:'):
         return False
     ents = line.split(concat_sym)
@@ -78,7 +79,7 @@ def to_string(opt):
     if not tosave(entry):
         return False
     line = ''
-    for key, val in entry.iteritems():
+    for key, val in entry.items():
         if key in ['kid']:
             continue
         line += '%s%s%r%s' % (key, assign_sym, val, concat_sym)
@@ -108,7 +109,6 @@ class CsvStore(Store):
             if raw.startswith('#EOF'):
                 break
             if raw.endswith('\\\n'):
-                #				print 'continuing line'
                 raw = raw.strip('\\\n')
                 line += raw + '\n'
                 continue
@@ -165,7 +165,7 @@ class CsvStore(Store):
         if not filename:
             filename = self.filename
         out = open(filename, 'w')
-        values = self.desc.items()
+        values = list(self.desc.items())
         values.sort(sorter)
         prio = 0
         for key, entry in values:
@@ -188,12 +188,12 @@ class ListStore(Store):
 
     def read_list(self, lst):
         for entry in lst:
-            ks = entry.keys()
+            ks = list(entry.keys())
             # intercept simple update requests: opt is key:val
             if len(ks) == 1:
                 k = ks[0]
-                if not self.desc.has_key(k):
-                    print 'Missing update key', entry
+                if k not in self.desc:
+                    print('Missing update key', entry)
                     continue
                 self.desc[k]['current'] = entry[k]
                 continue

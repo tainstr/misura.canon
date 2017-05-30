@@ -22,7 +22,6 @@ def list_references(parent, result=False):
     and append their path to `result`,"""
     if result is False:
         result = {}
-    #print 'Listing references', parent._v_pathname
     for child in parent._f_list_nodes():
         # Do not list paths from different versions
         path = child._v_pathname
@@ -34,9 +33,8 @@ def list_references(parent, result=False):
         # if it is of the desired reference class
         rc = getattr(child.attrs, '_reference_class', False)
         if not rc:
-            #print 'Skipping missing reference:', path
             continue
-        if not result.has_key(rc):
+        if rc not in result:
             result[rc] = []
             
         result[rc].append(path)
@@ -54,16 +52,15 @@ def get_node_hash(f, path):
         d = hashlib.md5(n[:]).hexdigest()
         n.close()
     except:
-        print 'while hashing', path
+        print('while hashing', path)
         print_exc()
-# 	print 'hash',path,d
     return d
 
 
 def calc_hash(f):
     """Create the data message used for digital sign"""
     data = {}
-    for rc, paths in list_references(f.root).iteritems():
+    for rc, paths in list_references(f.root).items():
         for path in paths:
             if path.startswith('/ver_'):
                 continue
@@ -75,7 +72,6 @@ def calc_hash(f):
     k.sort()
     for p in k:
         msg += p + ':' + data[p]
-# 	print 'sign ',data
     return msg
 
 
@@ -84,13 +80,13 @@ def verify(f):
     # Read the certificate
     key = getattr(f.root.conf.attrs, 'public_key', False)
     if not key:
-        print 'No certificate saved in the file'
+        print('No certificate saved in the file')
         return False
 
     # Read the signature
     signature = getattr(f.root.conf.attrs, 'signature', False)
     if not signature:
-        print 'No singature saved in the file'
+        print('No singature saved in the file')
         return False
 
     # Create the key

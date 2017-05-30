@@ -5,7 +5,7 @@ ext = '.h5'
 import os
 from .. import csutil
 
-from interface import SharedFile
+from .interface import SharedFile
 
 
 class FileManager(object):
@@ -28,7 +28,7 @@ class FileManager(object):
             if f is False:
                 f = self.open_file(prefix)
                 if f is False:
-                    print 'file not found', prefix
+                    print('file not found', prefix)
                     return False
             uid = self.paths[prefix]
         # open by uid
@@ -37,7 +37,7 @@ class FileManager(object):
             if f is False:
                 f = self.open_uid(prefix)
                 if f is False:
-                    print 'Failed opening by uid', prefix
+                    print('Failed opening by uid', prefix)
                     return False
             uid = prefix
         f = self.tests[uid]
@@ -100,7 +100,7 @@ class FileManager(object):
         return True
 
     def close(self):
-        for ti in self.tests.itervalues():
+        for ti in self.tests.values():
             if ti:
                 ti.close()
         self.tests = {}

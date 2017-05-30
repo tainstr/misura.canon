@@ -9,7 +9,7 @@ data_scr = """
 t0=mi.Raises('cohe',80)
 mi.t(t0)
 T=mi.At('T',t0)
-print 'Set T',T
+print('Set T',T)
 mi.T(T)
 mi.t(t0)
 # Functions should work also directly on array objects

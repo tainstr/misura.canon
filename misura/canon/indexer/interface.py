@@ -5,21 +5,26 @@
 ext = '.h5'
 
 import os
-from cPickle import dumps, loads
+try:
+    from cPickle import dumps, loads
+except: 
+    from pickle import dumps, loads
+    unicode = str
+    basestring = str
 from traceback import format_exc
 import tables
-from .. import csutil
 from datetime import datetime
-from .. import option
 import numpy as np
+
+from .. import csutil
+from .. import option
 from ..csutil import lockme
 from .. import reference
 
-
-from corefile import CoreFile
-from dataops import DataOperator
-import digisign
-from digisign import list_references
+from .corefile import CoreFile
+from .dataops import DataOperator
+from . import digisign 
+from .digisign import list_references
 
 max_string_length = 1000
 
@@ -130,7 +135,7 @@ class SharedFile(CoreFile, DataOperator):
         return v
 
     def get_version_by_name(self, name):
-        for path, data in self.get_versions().iteritems():
+        for path, data in self.get_versions().items():
             if data[0] != name:
                 continue
             return path
@@ -138,14 +143,14 @@ class SharedFile(CoreFile, DataOperator):
 
     def get_latest_version_number(self):
         v = []
-        for k in self.get_versions().iterkeys():
+        for k in self.get_versions().keys():
             v.append(0 if k == '' else int(k.split('_')[-1]))
         m = max(v)
         return m
 
     def get_versions_by_date(self):
         v = self.get_versions()
-        v = [[key] + list(val) for key, val in v.iteritems()]
+        v = [[key] + list(val) for key, val in v.items()]
         v.sort(key=lambda e: datetime.strptime(e[2]))
 
     def get_version(self):
@@ -154,7 +159,6 @@ class SharedFile(CoreFile, DataOperator):
     def set_version(self, newversion=-1):
         """Set the current version to `newversion`"""
         # Load the last used version
-
         if newversion < 0:
             self._lock.acquire()
             if '/userdata' in self.test:
@@ -483,6 +487,9 @@ class SharedFile(CoreFile, DataOperator):
         return True
 
     def has_key(self, *a, **k):
+        return False
+    
+    def __contains__(self, k):
         return False
 
     def decode(self, method):

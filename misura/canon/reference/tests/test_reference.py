@@ -93,7 +93,6 @@ class OutFile(unittest.TestCase):
     def check_decode(self, encoded, decoded):
         t, val = decoded
         dec = self.refClass.decode(encoded)
-        print 'check_decode', dec
         t1, val1 = dec
         self.assertEqual(val, val1)
         self.assertEqual(t, t1)
@@ -111,7 +110,6 @@ class OutFile(unittest.TestCase):
     def test_commit(self):
         if self.refClass is False:
             raise unittest.SkipTest('')
-        print 'test_commit', type(self)
         self.mkfile()
         opt = {'handle': 'test', 'name': 'Test',
                'unit': 'dummy', 'format': 'm4'}
@@ -124,10 +122,6 @@ class OutFile(unittest.TestCase):
             data.append(self.rand(float(i)))
         self.assertTrue(ref.commit(data))
         rdata = ref[:]
-        print data[0]
-        print ref[0]
-        print 'data', flat(data)
-        print 'ref', flat(ref[:])
         self.assertSequenceEqual(flat(data), flat(ref[:]))
         data2 = []
         for i in range(11, 20):
@@ -271,7 +265,7 @@ class Binary(OutFile):
             t = np.random.random() * 1000
         idat = np.random.random(1000) * 255
         idat = idat.astype(np.uint8)
-        data = ''.join(map(chr, idat))
+        data = ''.join([chr(d) for d in idat])
         return t, data
 
     def check_decode(self, encoded, decoded):

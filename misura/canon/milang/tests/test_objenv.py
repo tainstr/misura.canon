@@ -10,7 +10,7 @@ np = numpy
 
 
 def setUpModule():
-    print 'Starting', __name__
+    print('Starting', __name__)
 
 
 class DummyInterface(dict):

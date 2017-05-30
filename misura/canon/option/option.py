@@ -73,7 +73,7 @@ typed_types = {'integer': ('Integer', 'Boolean'),
                'pickle': ('ReadOnly', 'Hidden', 'Chooser', 'List', 'Profile', 'Table', 'Log'),
                }
 bytype = {}
-for k, v in typed_types.iteritems():
+for k, v in typed_types.items():
     for t in v:
         bytype[t] = k
 
@@ -96,20 +96,19 @@ def tosave(entry):
     if len(nowrite.intersection(set([entry['type']]))) > 0:
         print('nowrite entry by type', entry)
         return False
-    if entry.has_key('attr'):
+    if 'attr' in entry:
         if len(nowrite.intersection(set(entry['attr']))) > 0:
             print('nowrite entry by attr', entry)
             return False
     return True
 
-
 def sorter(a, b):
     """Option sorter"""
-    if not a[1].has_key('priority') and not b[1].has_key('priority'):
+    if 'priority' not in a[1] and 'priority' not in b[1]:
         return 0
-    elif a[1].has_key('priority') and not b[1].has_key('priority'):
+    elif 'priority' in a[1] and 'priority' not in b[1]:
         return -1
-    elif b[1].has_key('priority') and not a[1].has_key('priority'):
+    elif 'priority' in b[1] and 'priority' not in a[1]:
         return +1
     elif a[1]['priority'] > b[1]['priority']:
         return +1
@@ -120,11 +119,18 @@ def sorter(a, b):
 
 
 def prop_sorter(a, b):
-    if not a.has_key('priority') and not b.has_key('priority'):
+    if not a and not b:
         return 0
-    elif a.has_key('priority') and not b.has_key('priority'):
+    if not a:
+        return +1
+    if not b:
         return -1
-    elif b.has_key('priority') and not a.has_key('priority'):
+    
+    if (not 'priority' in a) and (not 'priority'  in b):
+        return 0
+    elif 'priority' in a and not ('priority' in b):
+        return -1
+    elif 'priority' in b and not ('priority' in a):
         return +1
     elif a['priority'] > b['priority']:
         return +1
@@ -212,7 +218,7 @@ def validate(entry):
             return False
         entry['type'] = etype
     # redundancy integration
-    if not entry.has_key('current'):
+    if 'current' not in entry:
         if etype in num_types:
             v = 0
         elif etype == 'List':
@@ -235,26 +241,26 @@ def validate(entry):
             v = ''
         entry['current'] = v
 
-    if etype == 'RoleIO' and not entry.has_key('options'):
+    if etype == 'RoleIO' and 'options' not in entry:
         entry['options'] = ['None', 'default', 'None']
-    if not entry.has_key('flags'):
+    if 'flags' not in entry:
         entry['flags'] = {}
     # 0=always visible; 1=user ; 2=expert ; 3=advanced ; 4=technician ;
     # 5=developer; 6=never visible
-    if not entry.has_key('readLevel'):
+    if 'readLevel' not in entry:
         entry['readLevel'] = 0
-    if not entry.has_key('writeLevel'):
+    if 'writeLevel' not in entry:
         # Inizializzo al livello readLevel+1
         entry['writeLevel'] = entry['readLevel'] + 1
-    if entry.has_key('current') and not entry.has_key('factory_default'):
+    if 'current' in entry and 'factory_default' not in entry:
         entry['factory_default'] = entry['current']
-    elif entry.has_key('factory_default') and not entry.has_key('current'):
+    elif 'factory_default' in entry and 'current' not in entry:
         entry['current'] = entry['factory_default']
-    if not entry.has_key('name'):
+    if 'name' not in entry:
         entry['name'] = entry['handle'].replace('_', ' ').capitalize()
-    if not entry.has_key('parent'):
+    if 'parent' not in entry:
         entry['parent'] = False
-    if not entry.has_key('unit'):
+    if 'unit' not in entry:
         if entry['type'] == 'Meta':
             entry['unit'] = {
                 'time': 'second', 'temp': 'celsius', 'value': 'None'}
@@ -266,10 +272,10 @@ def validate(entry):
     if entry['current'] == None:
         entry['current'] = 'None'
     # add attr field if not present
-    if not entry.has_key('attr'):
+    if 'attr' not in entry:
         entry['attr'] = []
     # add maximum=1 for Progress
-    if etype == 'Progress' and not entry.has_key('max'):
+    if etype == 'Progress' and 'max' not in entry:
         entry['max'] = 1
     return entry
 
@@ -312,10 +318,18 @@ class Option(object):
         self.entry = kw
 
     def iteritems(self):
-        return self.entry.iteritems()
+        for item in self.entry.items():
+            yield item
+            
+    def items(self):
+        return self.entry.items()
+    
+    def keys(self):
+        return self.entry.keys()
 
     def itervalues(self):
-        return self.entry.itervalues()
+        for value in self.entry.values():
+            yield value
     
     def values(self):
         return self.entry.values()
@@ -338,7 +352,7 @@ class Option(object):
 
     def pretty_format(self):
         r = '{'
-        for key, val in self.entry.iteritems():
+        for key, val in self.entry.items():
             # Avoid obvious keys
             if key in ['kid', 'priority', 'factory_default'] or \
                     (key == 'comment' and 'dummy' in val) or \
@@ -368,7 +382,7 @@ class Option(object):
         if k not in self._keys:
             print('Requested key does not exist')
             return False
-        if self._entry.has_key(k):
+        if k in self._entry:
             del self._entry[k]
         return True
 
@@ -397,7 +411,7 @@ class Option(object):
             arg.append('current')
         k = arg[0]
         # If keyword does not exist, return default if specified
-        if len(arg) == 2 and not self._entry.has_key(k):
+        if len(arg) == 2 and k not in self._entry:
             return arg[1]
         # Return the value or raise exception
         return self._entry[k]
@@ -421,10 +435,8 @@ class Option(object):
     __setitem__ = set
 
     def has_key(self, k):
-        return self._entry.has_key(k)
+        return k in self._entry
 
-    def keys(self):
-        return self._entry.keys()
 
     def set_base_kid(self, kid):
         self._entry['kid'] = kid + self._entry['handle']
@@ -445,14 +457,14 @@ class Option(object):
         # These keys can only change on software updates.
         # So, their `old` value cannot be overwritten and must be retained
         for k in ('name', 'factory_default', 'readLevel', 'writeLevel', 'mb', 'unit'):
-            if old.has_key(k):
+            if k in old:
                 self._entry[k] = old[k]
         # Retain special attributes
         oa = set([])
         na = set([])
-        if self._entry.has_key('attr'):
+        if 'attr' in self._entry:
             na = set(self._entry['attr'])
-        if old.has_key('attr'):
+        if 'attr' in old:
             oa = set(old['attr'])
         # Update user-modifiable attributes
         for a in ('ExeSummary', 'ExeEnd', 'ExeAlways', 'Enabled', 'Disabled'):
@@ -467,7 +479,7 @@ class Option(object):
         ot = old['type']
         nt = self['type']
         # Reset table option if its definition changed
-        if nt == 'Table' and self._entry.has_key('current'):
+        if nt == 'Table' and 'current' in self._entry:
             new_def = [h[1] for h in self['current'][0]]
             old_def = [h[1] for h in old['current'][0]]
             if new_def != old_def:
@@ -481,9 +493,9 @@ class Option(object):
         # Import all special keys that might be defined in old but missing in
         # self
         for k in ('type', 'step', 'max', 'min', 'options', 'values'):
-            if old.has_key(k):
+            if k in old:
                 self._entry[k] = old[k]
-        if not self._entry.has_key('current'):
+        if 'current' not in self._entry:
             return
         nc = self._entry['current']
         # New current value migration from new type (red) to old type (hard
@@ -498,7 +510,7 @@ class Option(object):
             elif ot == 'Button':
                 nc = ''
             # Keep the new current if nothing else is found
-            elif old.has_key('current'):
+            elif 'current' in old:
                 nc = old['current']
             self._entry['current'] = nc
         except:

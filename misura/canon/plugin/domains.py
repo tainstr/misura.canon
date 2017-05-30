@@ -2,6 +2,10 @@
 # -*- coding: utf-8 -*-
 import functools
 import re
+try:
+    unicode('a')
+except:
+    unicode=str
 
 from ..logger import get_module_logging
 logging = get_module_logging(__name__)
@@ -13,7 +17,7 @@ QtUserRole = 32
 
 def docname(ds):
     """Get dataset name by searching in parent document data"""
-    for name, obj in ds.document.data.iteritems():
+    for name, obj in ds.document.data.items():
         if obj == ds:
             return name
     return None
@@ -26,7 +30,7 @@ def node(func):
         n = False
         keyword = True
         # Get node from named parameter
-        if k.has_key('node'):
+        if 'node' in k:
             n = k['node']
         # Or from the first unnamed argument
         elif len(a) >= 1:
@@ -63,7 +67,7 @@ def nodes(func):
         n = []
         keyword = True
         # Get node from named parameter
-        if k.has_key('nodes'):
+        if 'nodes' in k:
             n = k['nodes']
         # Or from the first unnamed argument
         elif len(a) >= 1:

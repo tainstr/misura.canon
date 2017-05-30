@@ -9,7 +9,7 @@ np = numpy
 
 
 def setUpModule():
-    print 'Starting', __name__
+    print('Starting', __name__)
 
 
 class BaseEnvironment(unittest.TestCase):
@@ -30,7 +30,6 @@ class BaseEnvironment(unittest.TestCase):
         n = np.random.random(100)
         w0 = self.env.Where(n > 0.8)
         w1 = np.where(n > 0.8)[0][0]
-        print w0, w1
         self.assertEqual(w0, w1)
 
 

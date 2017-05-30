@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 """Option persistence on HDF files."""
-from ..parameters import cfilter
-from reference import Reference
 import numpy as np
+
+from ..parameters import cfilter
+from .reference import Reference
 
 
 class Array(Reference):
@@ -10,8 +11,8 @@ class Array(Reference):
 
     def __init__(self, outfile, folder=False, opt=False, write_current=False, with_summary=True):
         self.with_summary = with_summary
-        Reference.__init__(self, outfile, folder=folder, opt=opt, write_current=write_current)
-
+        Reference.__init__(self, outfile, folder=folder,
+                           opt=opt, write_current=write_current)
 
     def create(self, fields=False):
         """Create an EArray (enlargeable array) as data storage"""
@@ -27,13 +28,10 @@ class Array(Reference):
                                   filters=cfilter,
                                   createparents=True,
                                   reference_class=self.__class__.__name__)
-#       print 'created',f,self.folder,self.handle
         self.path = self.folder + self.handle
-#       print 'done',self.path
         self.outfile.flush()
         # Create the summary mirror
         if (not self.path.startswith('/summary')) and len(self.fields) == 2 and self.with_summary:
-            # 			print 'Creating summary',self.path
             self.summary = Array(
                 self.outfile, '/summary' + self.folder, opt=self.opt)
         return True
@@ -80,7 +78,6 @@ class Array(Reference):
             oldi -= 1
         # Decode values and separate time and value vectors
         dat = self[oldi:]
-#       print 'Getting data',self.path,dat,vt
         dat = np.array(dat)
         dat = dat.transpose()
         # Build a linear spline using vt points as knots
@@ -100,7 +97,7 @@ class Array(Reference):
             # Interpret time series
             out = f(vt)
         except:
-            print 'Array.interpolate', self.path, vt, dat
+            print('Array.interpolate', self.path, vt, dat)
             raise
         # Encode in (t,v) append-able list
         out = np.array([vt, out]).transpose()
@@ -140,7 +137,7 @@ class Meta(Array):
     def encode(cls, t, dat):
         """Flatten the Meta dictionary into a float list of t,value,time,temp"""
         if len(dat) > 3:
-            print 'wrong meta', dat, len(dat)
+            print('wrong meta', dat, len(dat))
             return None
         r = (t, dat['value'], dat['time'], dat['temp'])
         return np.array([r], dtype=cls.fields)

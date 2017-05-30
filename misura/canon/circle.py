@@ -61,7 +61,7 @@ def syn(a, b, c, step=1):
     else:
         x = vxr + vxl[::-1]
         v = vr + vl[::-1]
-    print v
+    print(v)
     return x, y, v
 
 

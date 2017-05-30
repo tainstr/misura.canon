@@ -17,7 +17,7 @@ class Conf(unittest.TestCase):
         s = option.CsvStore(c1)
         c = option.Conf(s.desc)
         self.assertEqual(c['temp'], 25)
-        self.assertFalse(c.has_key('csunit'))
+        self.assertFalse('csunit' in c)
         c.setattr('temp', 'csunit', 'kelvin')
         e = c.gete('temp')
         self.assertEqual(e['csunit'], 'kelvin')

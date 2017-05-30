@@ -1,12 +1,16 @@
 # -*- coding: utf-8 -*-
 """Option persistence on HDF files."""
 import tables
-from ..parameters import cfilter
 import numpy as np
-from reference import Reference
-from variable import VariableLength, binary_cast
-import binary
-import cPickle as pickle
+
+from ..parameters import cfilter
+from .reference import Reference
+from .variable import VariableLength, binary_cast
+from . import binary
+try:
+    import cPickle as pickle
+except:
+    import pickle
 
 
 def decode_time(node, index):
@@ -43,11 +47,10 @@ class Image(VariableLength):
         cp = np.concatenate((w, h, img.astype('uint8').flatten()))
         # VLR.cmp: more 2x compression
         scp = VariableLength.compress(cp)
-        print 'compressed', w0, h0, len(pickle.dumps(img)), len(pickle.dumps(scp))
         if as_string:
             return scp
         # translate string into unit8 for storage
-        vcp = np.array(map(ord, scp)).astype('uint8')
+        vcp = np.array([ord(d) for d in scp]).astype('uint8')
         return vcp
 
     @classmethod
@@ -55,16 +58,14 @@ class Image(VariableLength):
         """Decompress lossless image data back into 2D array."""
         # translate back uint8 into string
         if not isinstance(imgz, str):
-            imgz = ''.join(map(chr, imgz))
+            imgz = ''.join([chr(d) for d in imgz])
         # zlib decompression
         imgz = VariableLength.decompress(imgz)
         ####
         w = binary_cast(imgz[:2], 'BB', 'H')[0]
         h = binary_cast(imgz[2:4], 'BB', 'H')[0]
         img = imgz[4:]
-        print 'decompressing', w, h, len(img)
         img = np.reshape(img, (h, w))
-# 		print 'Decompression',len(imgz),len(img.flatten())
         return img
 
     @classmethod

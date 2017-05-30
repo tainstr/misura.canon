@@ -1,14 +1,16 @@
 # -*- coding: utf-8 -*-
 """Option persistence on HDF files."""
-from reference import Reference
-from array import Array, Boolean, Rect, Meta,  Point
-from log import Log
-from profile import Profile, CumulativeProfile, accumulate_coords, decumulate_coords
-from binary import Binary
-from image import Image, ImageM3, ImageBMP
-from obj import Object
-from variable import VariableLength, binary_cast
 from traceback import print_exc
+
+from .reference import Reference
+from .array import Array, Boolean, Rect, Meta,  Point
+from .log import Log
+from .profile import Profile, CumulativeProfile, accumulate_coords, decumulate_coords
+from .binary import Binary
+from .image import Image, ImageM3, ImageBMP
+from .obj import Object
+from .variable import VariableLength, binary_cast
+
 
 
 def get_reference(opt):
@@ -43,13 +45,13 @@ def get_node_reference_class(outfile, path):
 
     name = outfile.has_node_attr(path, '_reference_class')
     if name is False:
-        print 'No _reference_class attribute for', path
+        print('No _reference_class attribute for', path)
         return False
     name = outfile.get_node_attr(path, '_reference_class')
     g = globals()
     cls = g.get(name, False)
     if cls is False:
-        print 'No class for _reference_class', name, path
+        print('No class for _reference_class', name, path)
         return False
     return cls
 
@@ -66,22 +68,20 @@ def get_node_reference(outfile, path):
 def db_copy(fromdb, output_path, start=-1, end=-1):
     """Copy from fromdb onto `output` SharedFile instance all references and structures, ranging from time `start` to time `end`.
     """
-    print 'db_copy'
+    print('db_copy')
     fromdb.flush()
-    print 'flushed'
-# 		self.reopen()
-# 		print 'reopened'
+    print('flushed')
     stats = False
-    print 'getting header'
+    print('getting header')
     h = fromdb.header(False)
-    print 'got', h
+    print('got', h)
     for path in h:
         try:
-            print 'starting copy', path, start, end, output_path
+            print('starting copy', path, start, end, output_path)
             ref = get_node_reference(fromdb, path)
             stats = ref.copy(output_path, start, end, stats)
         except:
-            print 'db_copy error', path, print_exc()
+            print('db_copy error', path, print_exc())
             continue
-    print 'db_copy() DONE', stats
+    print('db_copy() DONE', stats)
     return stats

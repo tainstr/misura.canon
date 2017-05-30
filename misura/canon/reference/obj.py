@@ -1,7 +1,10 @@
 # -*- coding: utf-8 -*-
 """Option persistence on HDF files."""
-from binary import Binary
-from cPickle import dumps, loads, HIGHEST_PROTOCOL
+from .binary import Binary
+try:
+    from cPickle import dumps, loads, HIGHEST_PROTOCOL
+except:
+    from pickle import dumps, loads, HIGHEST_PROTOCOL
 
 
 class Object(Binary):

@@ -4,8 +4,24 @@ import os
 import logging
 import functools
 from datetime import datetime
-import csutil
+from . import csutil
 
+
+def unicode_func(value, **k):
+    try:
+        return str(value, **k)
+    except TypeError:  # Wasn't a bytes object, no need to decode
+        return str(value)
+    
+try:
+    unicode('a')
+    unicode_func=unicode
+except:
+    unicode = str
+    basestring= str
+    
+
+    
 root_log = logging.getLogger()
 root_log.setLevel(-1)
 formatter = logging.Formatter("%(levelname)s: %(asctime)s %(message)s")
@@ -19,9 +35,9 @@ def concatenate_message_objects(*msg):
         if isinstance(e, unicode):
             continue
         elif isinstance(e, basestring):
-            msg[i] = unicode(e, errors='ignore')
+            msg[i] = unicode_func(e, errors='ignore')
         else:
-            msg[i] = unicode(repr(e), errors='ignore')
+            msg[i] = unicode_func(repr(e), errors='ignore')
     return msg
     
 def formatMsg(*msg, **po):
@@ -53,7 +69,7 @@ def formatMsg(*msg, **po):
 
 def justPrint(*msg, **po):
     t, st, p, o, msg, pmsg = formatMsg(*msg, **po)
-    print st+' '+pmsg
+    print(st+' '+pmsg)
 
 
 def toLogging(*msg, **po):
@@ -103,7 +119,7 @@ class SubLogger(BaseLogger):
         p = po.get('p', 0)
         msg = list(msg)
         for i, e in enumerate(msg):
-            msg[i] = unicode(str(e), errors='ignore')
+            msg[i] = unicode_func(str(e), errors='ignore')
         smsg = u' '.join(tuple(msg))
         if self.parent and self.parent.desc:
             self.parent.desc.set_current('log', [p, smsg])

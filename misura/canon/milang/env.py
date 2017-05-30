@@ -4,11 +4,14 @@
 Secure minimal Python language subset for conditional evaluation of numerical datasets."""
 
 import types
-import exceptions
+try:
+    from exceptions import Exception
+except:
+    pass
 import numpy as np
 
 
-class ExitException(exceptions.Exception):
+class ExitException(Exception):
     pass
 
 

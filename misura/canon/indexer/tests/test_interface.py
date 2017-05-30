@@ -8,7 +8,7 @@ import tempfile
 from misura.canon import indexer
 from misura.canon.tests import testdir
 
-print 'Importing', __name__
+print('Importing', __name__)
 
 paths = [testdir + 'storage']
 dbPath = testdir + 'storage/db'

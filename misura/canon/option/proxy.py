@@ -2,15 +2,18 @@
 """Option persistence."""
 import re
 import collections
+from threading import Lock
 
 from ..csutil import lockme
-from threading import Lock
 from .. import logger
-from conf import Conf
-import cPickle as pickle
+from .conf import Conf
+try:
+    import cPickle as pickle
+except:
+    import pickle
 from ..milang import Scriptable
-from aggregative import Aggregative
-import common_proxy
+from .aggregative import Aggregative
+from . import common_proxy
 
 
 logging = logger.get_module_logging(__name__)
@@ -31,7 +34,7 @@ def print_tree(tree, level=0, current=False):
     """Pretty-print a dictionary configuration `tree`"""
     pre = '   ' * level
     msg = ''
-    for k, v in tree.iteritems():
+    for k, v in tree.items():
         if k == 'self':
             msg += print_tree(v, level)
             continue
@@ -56,7 +59,7 @@ class ConfigurationProxy(common_proxy.CommonProxy, Aggregative, Scriptable, Conf
     filename = False  # Filename from which this configuration was red
 
     def print_tree(self, *a, **k):
-        print print_tree(self.tree(), *a, **k)
+        print(print_tree(self.tree(), *a, **k))
 
     def __init__(self, desc=False, name='MAINSERVER', parent=False, readLevel=-1, writeLevel=-1, kid_base='/'):
         self._lock = Lock()
@@ -86,7 +89,7 @@ class ConfigurationProxy(common_proxy.CommonProxy, Aggregative, Scriptable, Conf
 #               self._Method__name=parent._Method__name+self.separator+name
 #           else:
 #               self._Method__name=name
-        if self.has_key('devpath'):
+        if 'devpath' in self:
             self['devpath'] = name
         self.autosort()
         
@@ -135,7 +138,7 @@ class ConfigurationProxy(common_proxy.CommonProxy, Aggregative, Scriptable, Conf
 
     def _update_from_children(self):
         """ Retrieve current configuration from instantiated child objects"""
-        for key, obj in self.children_obj.iteritems():
+        for key, obj in self.children_obj.items():
             obj.get_fullpath()
             d = {'self': obj.desc}
             obj._update_from_children()
@@ -159,19 +162,31 @@ class ConfigurationProxy(common_proxy.CommonProxy, Aggregative, Scriptable, Conf
         return len(self.desc)
 
     def iteritems(self):
-        return self.desc.iteritems()
+        for i in self.desc.items(): 
+            yield i 
+            
+    def items(self):
+        return self.desc.items()
 
     def itervalues(self):
-        return self.desc.itervalues()
+        for v in self.desc.values():
+            yield v
 
     def values(self):
         return self.desc.values()
 
     def iterkeys(self):
-        return self.desc.iterkeys()
+        for k in self.desc.keys():
+            yield k
+            
+    def keys(self):
+        return self.desc.keys()
 
     def has_key(self, k):
-        return self.desc.has_key(k)
+        return k in self.desc
+    
+    def __contains(self, k):
+        return k in self.desc
 
     def dumps(self):
         d = {'self': self.desc.copy()}
@@ -217,7 +232,7 @@ class ConfigurationProxy(common_proxy.CommonProxy, Aggregative, Scriptable, Conf
     def __getitem__(self, key, *a):
         if key == 'fullpath':
             return self.get_fullpath()
-        if len(a) == 1 and not self.desc.has_key(key):
+        if len(a) == 1 and key not in self.desc:
             return a[0]
         old = self.desc[key]['current']
         new = self.callback(key, old, callback_name='get')
@@ -234,7 +249,7 @@ class ConfigurationProxy(common_proxy.CommonProxy, Aggregative, Scriptable, Conf
         return val
 
     def __setitem__(self, key, val):
-        if not self.desc.has_key(key):
+        if key not in self.desc:
             self.log.error('Impossible to set non-existing option', key, val)
             return False
         if self.desc[key].get('writeLevel', 0) > self._writeLevel:
@@ -264,7 +279,7 @@ class ConfigurationProxy(common_proxy.CommonProxy, Aggregative, Scriptable, Conf
         return self.desc[key]
 
     def sete(self, key, val):
-        if not val.has_key('priority') or val['priority'] == -1:
+        if 'priority' not in val or val['priority'] == -1:
             priorities = [opt.get('priority', 0) for opt in self.desc.values()]
             if len(priorities):
                 val['priority'] = max(priorities) + 1
@@ -297,7 +312,7 @@ class ConfigurationProxy(common_proxy.CommonProxy, Aggregative, Scriptable, Conf
         if overwrite or (name not in self.children):
             self.children[name] = desc
         else:
-            for key, val in desc['self'].iteritems():
+            for key, val in desc['self'].items():
                 self.children[name]['self'][key] = val
         # Remove stale instantiated CP child
         self.children_obj.pop(name, False)
@@ -311,22 +326,22 @@ class ConfigurationProxy(common_proxy.CommonProxy, Aggregative, Scriptable, Conf
         return r
 
     def getFlags(self, opt):
-        if not self.desc[opt].has_key('flags'):
+        if 'flags' not in self.desc[opt]:
             return {}
         return self.desc[opt]['flags']
 
     def list(self):
-        return [(c, c) for c in self.children.iterkeys()]
+        return [(c, c) for c in self.children.keys()]
 
     def has_child(self, name):
         """Returns if `name` is a child"""
-        return self.children.has_key(name)
+        return name in self.children
 
     def child(self, name):
         """Return child ConfigurationProxy object by `name`"""
-        if not self.children.has_key(name):
+        if name not in self.children:
             return None
-        if not self.children_obj.has_key(name):
+        if name not in self.children_obj:
             kb = self.kid_base + name + self.separator
             obj = ConfigurationProxy(self.children[name],
                                      name=name, parent=self, kid_base=kb,
@@ -371,7 +386,7 @@ class ConfigurationProxy(common_proxy.CommonProxy, Aggregative, Scriptable, Conf
         """Search a child with the corresponding devpath=`path` and returns its name"""
         fp = self.get_fullpath().replace('//', '/')
         if not path.startswith(fp):
-            print 'searchPath: not corresponding!', path, fp
+            print('searchPath: not corresponding!', path, fp)
             return False
         # Cut itself from the path
         if not path.endswith('/'):
@@ -383,7 +398,7 @@ class ConfigurationProxy(common_proxy.CommonProxy, Aggregative, Scriptable, Conf
         for p in vpath:
             obj = obj.child(p)
             if obj is None:
-                print 'searchPath: not found', repr(p), repr(path)
+                print('searchPath: not found', repr(p), repr(path))
         return self.separator.join(vpath)
 
     def listPresets(self):
@@ -393,14 +408,14 @@ class ConfigurationProxy(common_proxy.CommonProxy, Aggregative, Scriptable, Conf
         """Iterative printing for debug purposes"""
         if not base:
             base = self
-        for k, v in base.iteritems():
-            print pre, k, v['current']
-        for sub in base.children.iterkeys():
+        for k, v in base.items():
+            print(pre, k, v['current'])
+        for sub in base.children.keys():
             base.child(sub).iterprint(pre=pre + '\t%s: ' % sub)
 
     @property
     def samples(self):
-        if not self.measure.has_key('nSamples'):
+        if 'nSamples' not in self.measure:
             self.log.debug('no nSample option!')
             return []
         n = self.measure['nSamples']
@@ -416,7 +431,7 @@ class ConfigurationProxy(common_proxy.CommonProxy, Aggregative, Scriptable, Conf
                 continue
             # Search referred sample (from device)
             s = 'smp{}'.format(i)
-            if not self.has_key(s):
+            if s not in self:
                 self.log.debug('sample not found', s)
                 continue
             # Get fullpath of the referred sample object

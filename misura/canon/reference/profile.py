@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
 """Option persistence on HDF files."""
 import tables
-from ..parameters import cfilter
 import numpy as np
-from reference import Reference
+
+from ..parameters import cfilter
+from .reference import Reference
 # TODO: Unify commit/append!!! They are basically the same!
-from variable import VariableLength, binary_cast
+from .variable import VariableLength, binary_cast
 
 
 def decode_time_uint16(node, index):

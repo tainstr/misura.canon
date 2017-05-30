@@ -4,7 +4,10 @@
 Secure minimal Python language subset for conditional evaluation of numerical datasets."""
 
 import ast
-import exceptions
+try:
+    from exceptions import BaseException
+except:
+    pass
 
 
 class Validator(ast.NodeVisitor):
@@ -18,7 +21,7 @@ class Validator(ast.NodeVisitor):
     def __init__(self, whitetree, blacklist):
         self.whitetree = whitetree
         self.whitelist = whitetree['names']
-        self.namespaces = whitetree.keys()
+        self.namespaces = list(whitetree.keys())
         self.blacklist = blacklist
         ast.NodeVisitor.__init__(self)
 
@@ -33,7 +36,7 @@ class Validator(ast.NodeVisitor):
         self.error = msg
         self.error_line = node.lineno
         self.error_col = node.col_offset
-        raise exceptions.BaseException(msg)
+        raise BaseException(msg)
 
     def visit_Attribute(self, node):
         """Verify attribute access on legal objects"""
@@ -41,11 +44,10 @@ class Validator(ast.NodeVisitor):
         attr = node.attr
         okattr = False
         okval = False
-        for ns, subtree in self.whitetree.iteritems():
+        for ns, subtree in self.whitetree.items():
             if ns == 'names':
                 continue
             if val == ns:
-                #				print "Found attr",ns,subtree['names']
                 okval = True
                 okattr = attr in subtree['names']
         if not (okattr and okval):
@@ -100,7 +102,6 @@ class Validator(ast.NodeVisitor):
             self.set_error(
                 node, "Invalid function definition name: " + node.name)
         else:
-            #			print 'Whitelisting function',node.name
             self.whitelist.append(node.name)
             self.whitetree['names'].append(node.name)
 
@@ -109,6 +110,5 @@ class Validator(ast.NodeVisitor):
         if not self.val_name(node.name):
             self.set_error(node, "Invalid class definition name: " + node.name)
         else:
-            #			print 'Whitelisting class', node.name
             self.namespaces.append(node.name)
             self.whitetree[node.name] = {'names': []}

@@ -11,8 +11,8 @@ def determine_path(root=__file__):
             root = os.path.realpath(root)
         return os.path.dirname(os.path.abspath(root))
     except:
-        print "I'm sorry, but something is wrong."
-        print "There is no __file__ variable. Please contact the author."
+        print("I'm sorry, but something is wrong.")
+        print("There is no __file__ variable. Please contact the author.")
         sys.exit()
 
 testdir = determine_path()+'/'  # Executable path
@@ -67,8 +67,8 @@ class DummyInstrument(dict):
 class FakeStorageFile(object):
 
     """Faking an hdf file"""
-    r = range(100)
-    r += range(100, 0, -1)
+    r = list(range(100))
+    r += list(range(100, 0, -1))
     nrows = len(r)
     r = np.array(r) * 1.
     t = np.arange(nrows) * 15.
@@ -118,21 +118,20 @@ class FakeStorageFile(object):
 
 def checkCompile(test, si, out):
     """Check if Script is compiled correctly"""
-    for k, opt in si.describe().iteritems():
+    for k, opt in si.describe().items():
         if opt['type'] != 'Script':
             continue
-        test.assertTrue(si.all_scripts.has_key(k), 'Missing Script ' + k)
+        test.assertTrue(k in si.all_scripts, 'Missing Script ' + k)
         si.all_scripts[k].eval(out, si)
         outopt = False
         # Find output option (child)
-        for handle, desc in out.describe().iteritems():
+        for handle, desc in out.describe().items():
             if desc['parent'] == k:
                 outopt = handle
                 break
         if not outopt:
             return
         o = out[outopt]
-        print 'checkCompile', k, repr(o)
         t = None if o['time'] == 'None' else o['time']
         T = None if o['temp'] == 'None' else o['temp']
         v = None if o['value'] == 'None' else o['value']

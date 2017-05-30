@@ -9,7 +9,7 @@ np = numpy
 
 
 def setUpModule():
-    print 'Starting', __name__
+    print('Starting', __name__)
 
 # Simple scripts for validation
 
@@ -37,11 +37,11 @@ def a(): pass
 def read(): pass
 a=open
 v=a('/etc/issue','r').read()
-print v
+print(v)
 mi.Value(v)
 """
 
-exp2_scr = "mi.At=open; v=mi.At('/etc/issue','r'); print v; mi.Value(v)"
+exp2_scr = "mi.At=open; v=mi.At('/etc/issue','r'); print(v); mi.Value(v)"
 
 exp3_scr = "mi.At,foo=(open,1); v=mi.At('/etc/issue','r')"
 
@@ -57,7 +57,7 @@ class Validator(unittest.TestCase):
     def test_failing(self):
         mi = milang.MiLang(err_scr)
         self.assertFalse(mi.code)
-        print 'Error location', mi.error_line, mi.error_col
+        print('Error location', mi.error_line, mi.error_col)
 
     def test_success(self):
         mi = milang.MiLang(ok_scr)

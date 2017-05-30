@@ -3,8 +3,11 @@
 import numpy as np
 import struct
 import zlib
-import StringIO
-from reference import Reference
+try:
+    from cStringIO import StringIO
+except:
+    from io import StringIO
+from .reference import Reference
 # TODO: Unify commit/append!!! They are basically the same!
 
 
@@ -22,7 +25,7 @@ class VariableLength(Reference):
     @classmethod
     def compress(cls, img, level=6):
         """Compress the data array into a gzip string"""
-        g = StringIO.StringIO()
+        g = StringIO()
         np.save(g, img)
         g.seek(0)
         raw = g.read()
@@ -41,7 +44,6 @@ class VariableLength(Reference):
 
     def commit(self, data):
         """Encode data and write it onto the reference node."""
-# 		print 'committing',self.path,data
         # Cut too old points
         n = 0
         for d in data:

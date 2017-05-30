@@ -11,11 +11,11 @@ db = testdir + 'storage/tmpdb'
 
 
 
-print 'Importing test_option'
+print('Importing test_option')
 
 
 def setUpModule():
-    print 'Starting test_option'
+    print('Starting test_option')
 
 
 class Option(unittest.TestCase):

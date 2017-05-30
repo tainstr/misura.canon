@@ -42,12 +42,10 @@ class CsvStore(unittest.TestCase):
         st.read_file('out.csv')
         opt1 = st.desc['maxLevel']
         self.assertEqual(opt0, opt1)
-        print opt0
-        print opt1
 
     def test_priority(self):
         st = option.CsvStore(c1)
-        self.assertTrue(st.desc.has_key('name'))
+        self.assertTrue('name' in st.desc)
         e = st.desc['PQF']
         self.assertEqual(
             e['priority'], 12, msg="Wrong priority. real=%i, teor=%i" % (e['priority'], 12))
@@ -68,13 +66,13 @@ class ListStore(unittest.TestCase):
 
     def test_read_list(self):
         s = option.ListStore(self.lst)
-        self.assertTrue(s.desc.has_key('opt'))
+        self.assertTrue('opt' in s.desc)
         s.desc['opt']['kid'] = self.teor['opt']['kid']
         self.assertEqual(s.desc, self.teor)
 
     def test_read(self):
         s = option.ListStore.read(self.lst)
-        self.assertTrue(s.has_key('opt'))
+        self.assertTrue('opt' in s)
         # Reset autokid
         s['opt']['kid'] = self.teor['opt']['kid']
         self.assertEqual(s, self.teor)

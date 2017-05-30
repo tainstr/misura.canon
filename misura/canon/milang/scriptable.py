@@ -3,9 +3,9 @@
 """Misura Language or Mini Language.
 Secure minimal Python language subset for conditional evaluation of numerical datasets."""
 
-from dataenv import DataEnvironment
-from objenv import InterfaceEnvironment
-from milang import MiLang
+from .dataenv import DataEnvironment
+from .objenv import InterfaceEnvironment
+from .milang import MiLang
 
 
 class Scriptable(object):
@@ -30,7 +30,7 @@ class Scriptable(object):
         if hdf is not False:
             self.env.hdf = hdf
             self.script_env.hdf = hdf
-        for handle, opt in self.describe().iteritems():
+        for handle, opt in self.describe().items():
             if opt['type'] != 'Script':
                 continue
             if not opt.get('enabled', True):
@@ -43,11 +43,10 @@ class Scriptable(object):
             exe.meta = opt.get('parent', False)
             # Identify scripts which output on the holding Scriptable itself
             h = 'Meta_' + handle
-            if self.has_key(h):
+            if h in self:
                 if self.gettype(h) == 'Meta':
                     exe.handle = h
             self.add_script(exe)
-        print 'all_scripts', self.all_scripts, hdf
 
     def add_script(self, exe):
         if not exe.code:
@@ -82,7 +81,6 @@ class Scriptable(object):
             scripts = self.all_scripts
 
         scripts = set(scripts)
-        print 'EXECUTING',scripts, self.scripts, self.end_scripts, self.always_scripts
         for handle in scripts:
             r1 = self.execute_script(handle, ins)
             r = r and r1 
@@ -92,7 +90,7 @@ class Scriptable(object):
         exe = self.all_scripts[handle]
         en = exe.script_env.obj.getFlags(handle).get('enabled', True)
         if not en:
-            print 'Disabled script, skipping:', handle
+            self.log.debug('Disabled script, skipping:', handle)
             return True
         if ins:
             exe.set_env_outFile(ins.outFile)
@@ -106,7 +104,7 @@ class Scriptable(object):
 
     def validate_script(self, handle):
         """Validates a script option by name"""
-        if not self.script.has_key(handle):
+        if handle not in self.script:
             self.log.info('Not a Script option!', handle)
             return False
         exe = MiLang(self[handle], self.env)

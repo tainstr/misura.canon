@@ -30,47 +30,47 @@ class SqlStore(unittest.TestCase):
         cls.desc = st0.desc
 
     def test_get_typed_cols(self):
-        print get_typed_cols(go('Integer'))
-        print get_typed_cols(go('String'))
-        print get_typed_cols(go('Point'))
-        print get_typed_cols(go('Role'))
-        print get_typed_cols(go('RoleIO'))
-        print get_typed_cols(go('Log'))
-        print get_typed_cols(go('Meta'))
+        print(get_typed_cols(go('Integer')))
+        print(get_typed_cols(go('String')))
+        print(get_typed_cols(go('Point')))
+        print(get_typed_cols(go('Role')))
+        print(get_typed_cols(go('RoleIO')))
+        print(get_typed_cols(go('Log')))
+        print(get_typed_cols(go('Meta')))
 
     def test_get_insert_cmd(self):
-        print get_insert_cmd(go('Integer'), base_col_def)
-        print get_insert_cmd(go('String'), base_col_def)
-        print get_insert_cmd(go('Point'), base_col_def)
-        print get_insert_cmd(go('Role'), base_col_def)
-        print get_insert_cmd(go('RoleIO'), base_col_def)
-        print get_insert_cmd(go('Log'), base_col_def)
-        print get_insert_cmd(go('Meta'), base_col_def)
+        print(get_insert_cmd(go('Integer'), base_col_def))
+        print(get_insert_cmd(go('String'), base_col_def))
+        print(get_insert_cmd(go('Point'), base_col_def))
+        print(get_insert_cmd(go('Role'), base_col_def))
+        print(get_insert_cmd(go('RoleIO'), base_col_def))
+        print(get_insert_cmd(go('Log'), base_col_def))
+        print(get_insert_cmd(go('Meta'), base_col_def))
 
     def test_column_definition(self):
         s = option.SqlStore()
-        print s.column_definition(go('Integer'))[1]
-        print s.column_definition(go('String'))[1]
-        print s.column_definition(go('Point'))[1]
-        print s.column_definition(go('Role'))[1]
-        print s.column_definition(go('RoleIO'))[1]
-        print s.column_definition(go('Log'))[1]
-        print s.column_definition(go('Meta'))[1]
+        print(s.column_definition(go('Integer'))[1])
+        print(s.column_definition(go('String'))[1])
+        print(s.column_definition(go('Point'))[1])
+        print(s.column_definition(go('Role'))[1])
+        print(s.column_definition(go('RoleIO'))[1])
+        print(s.column_definition(go('Log'))[1])
+        print(s.column_definition(go('Meta'))[1])
 
     def test_write_desc(self):
         s = option.SqlStore()
         s.cursor = self.conn.cursor()
         s.write_desc(self.desc)
-        print 'READING'
+        print('READING')
         r = s.read_tree()
-        print r
-        print 'print tree\n', print_tree(r)
-        print 'WRITING AGAIN'
+        print(r)
+        print('print(tree\n', print_tree(r))
+        print('WRITING AGAIN')
         s.write_tree(r)
-        print "READING AGAIN"
+        print("READING AGAIN")
         r = s.read_tree()
-        print r
-        print 'print tree2\n', print_tree(r)
+        print(r)
+        print('print(tree2\n', print_tree(r))
 
 
 #	@unittest.skip('')
@@ -79,7 +79,7 @@ class SqlStore(unittest.TestCase):
         st0.merge_file(c1)
         st = option.SqlStore(kid='ciao')
         st.desc = st0.desc
-        k0 = set(st.desc.iterkeys())
+        k0 = set(st.desc.keys())
         cursor = self.conn.cursor()
         st.write_table(cursor, 'conf1')
         self.conn.commit()
