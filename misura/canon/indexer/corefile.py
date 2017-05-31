@@ -164,7 +164,8 @@ class CoreFile(object):
             return False
         if name:
             where += '/' + name
-
+        if not where.startswith('/'):
+            where = '/'+where
         return where in self.test
 
     @lockme()

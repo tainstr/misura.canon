@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """Indexing hdf5 files"""
+from __future__ import unicode_literals
 # NOTICE: THIS FILE IS ALSO PART OF THE CLIENT. IT SHOULD NOT CONTAIN
 # REFERENCES TO THE SERVER OR TWISTED PKG.
 ext = '.h5'
@@ -75,7 +76,7 @@ class SharedFile(CoreFile, DataOperator):
             raise RuntimeError("File %s not found." % path)
 
         try:
-            self.log.debug('opening existing file', path, mode, version)
+            self.log.debug('opening existing file', path, mode, repr(version))
             self.test = tables.open_file(path, mode=mode)
             self.path = path
         except:
@@ -87,12 +88,14 @@ class SharedFile(CoreFile, DataOperator):
                 self.create_group('/', 'userdata')
                 self.set_attributes('/userdata', attrs={'active_version': ''})
             elif not version:
-                version = self.get_node_attr('/userdata', 'active_version')
+                version = self.active_version()
+                print("FOUND", version, repr(version), type(version))
+                if not self.has_node(version):
+                    print('VERSION DOES NOT EXIST', version)
+                    version = ''
             if self.has_node('/conf'):
                 if self.has_node_attr('/conf', 'uid'):
                     self.uid = self.get_node_attr('/conf', 'uid')
-                if version in ['', []]:
-                    version = -1
                 if version!=None:
                     self.set_version(version)
             else:
@@ -162,11 +165,10 @@ class SharedFile(CoreFile, DataOperator):
     def set_version(self, newversion=-1):
         """Set the current version to `newversion`"""
         # Load the last used version
-        if newversion < 0:
+        if isinstance(newversion, int) and newversion < 0:
             self._lock.acquire()
             if '/userdata' in self.test:
-                newversion = self.test.get_node_attr(
-                    '/userdata', 'active_version')
+                newversion = self._active_version()
                 self.log.debug('Found active version', newversion)
             else:
                 newversion = getattr(self.test.root.conf.attrs, 'versions', '')
@@ -186,8 +188,8 @@ class SharedFile(CoreFile, DataOperator):
         return True
 
     def _change_version(self, new_version):
-        self.log.debug('Changing version to', new_version)
-        self.version = str(new_version)
+        self.log.debug('Changing version to', new_version, type(new_version))
+        self.version = new_version
         self._set_attributes(
             '/userdata', attrs={'active_version': new_version})
 
@@ -380,6 +382,9 @@ class SharedFile(CoreFile, DataOperator):
 
     def active_version(self):
         return self.get_node_attr('/userdata', 'active_version')
+    
+    def _active_version(self):
+        return self.test.get_node_attr('/userdata', 'active_version')
 
     @lockme()
     def header(self, reference_classes=['Array'], startswith=False, refresh=False, version=False):

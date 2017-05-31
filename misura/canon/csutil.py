@@ -98,26 +98,27 @@ fakelogger = FakeLogger()
 
 
 def xmlrpcSanitize(val, attr=[], otype=False):
+    if otype == 'Profile':
+        return binfunc(pickle.dumps(val))
+    elif ('Binary' in attr):
+        return binfunc(val)
     if isinstance(val, dict):
         r = {}
         for k, v in val.items():
             r[k] = xmlrpcSanitize(v)
         return r
+    if type(val) == type(numpy.string_()):
+        return str(val)
     if isinstance(val, bytes):
         return str3(val)
-    if hasattr(val, '__iter__') and not isinstance(val, dict):
+    if hasattr(val, '__iter__') and not isinstance(val, dict) and not isinstance(val, str):
         r = list(xmlrpcSanitize(el) for el in val)
         return r
     if type(val) in [type(numpy.float64(0)), type(numpy.float32(0))]:
         return float(val)
     if type(val) in [type(numpy.int64(0)), type(numpy.int32(0)), type(numpy.int8(0))]:
         return int(val)
-    if type(val) == type(numpy.string_()):
-        return str(val)
-    if otype == 'Profile':
-        return binfunc(pickle.dumps(val))
-    elif ('Binary' in attr):
-        return binfunc(val)
+
     return val
 
 
