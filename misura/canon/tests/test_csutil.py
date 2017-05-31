@@ -2,6 +2,9 @@
 # -*- coding: utf-8 -*-
 import unittest
 import tempfile
+import numpy as np
+
+from misura.canon.csutil import xmlrpcSanitize
 from misura.canon.csutil import next_point
 from misura.canon.csutil import filter_calibration_filenames
 from misura.canon.csutil import only_hdf_files
@@ -9,6 +12,11 @@ from misura.canon.csutil import incremental_filename
 
 
 class TestCsUtil(unittest.TestCase):
+    def test_xmlrpcSanitize(self):
+        self.assertEqual(xmlrpcSanitize(b'abc'), 'abc')
+        self.assertEqual(xmlrpcSanitize([b'abc']), ['abc'])
+        self.assertEqual(type(xmlrpcSanitize(np.float64(1.1))), float)
+        
 
     def test_next_point_only_strings(self):
         curve = [[1, "curve", 2, 3], [3, "with", 4, 5],

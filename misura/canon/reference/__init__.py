@@ -42,7 +42,7 @@ def get_reference(opt):
 
 
 def get_node_reference_class(outfile, path):
-
+    
     name = outfile.has_node_attr(path, '_reference_class')
     if name is False:
         print('No _reference_class attribute for', path)

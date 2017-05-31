@@ -103,9 +103,10 @@ def xmlrpcSanitize(val, attr=[], otype=False):
         for k, v in val.items():
             r[k] = xmlrpcSanitize(v)
         return r
+    if isinstance(val, bytes):
+        return str3(val)
     if hasattr(val, '__iter__') and not isinstance(val, dict):
         r = list(xmlrpcSanitize(el) for el in val)
-#       if len(r)==1: return r[0]
         return r
     if type(val) in [type(numpy.float64(0)), type(numpy.float32(0))]:
         return float(val)
