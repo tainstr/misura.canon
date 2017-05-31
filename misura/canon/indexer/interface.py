@@ -18,7 +18,7 @@ import numpy as np
 
 from .. import csutil
 from .. import option
-from ..csutil import lockme
+from ..csutil import lockme, enc_options, str3
 from .. import reference
 
 from .corefile import CoreFile
@@ -31,6 +31,7 @@ max_string_length = 1000
 # To disable @lockme locking:
 # lockme=lambda func: func
 tables.file._FILE_OPEN_POLICY = 'default'
+
 
 
 def pathnode(path):
@@ -90,7 +91,7 @@ class SharedFile(CoreFile, DataOperator):
             if self.has_node('/conf'):
                 if self.has_node_attr('/conf', 'uid'):
                     self.uid = self.get_node_attr('/conf', 'uid')
-                if version != None:
+                if version not in [None, '', [], -1]:
                     self.set_version(version)
             else:
                 self.log.info(
@@ -321,7 +322,10 @@ class SharedFile(CoreFile, DataOperator):
             return '{}'
         # test
         self.log.debug('loading ', len(tree))
-        d = loads(tree)
+        opt = enc_options.copy()
+        if 'encoding' in opt:
+            opt['encoding'] = 'latin1'
+        d = loads(tree, **opt)
         if not isinstance(d, dict):
             self.log.debug('Wrong Conf Tree!')
             return False
@@ -390,8 +394,7 @@ class SharedFile(CoreFile, DataOperator):
             r += self._header.get(k, [])
         if startswith:
             swv = version + startswith
-            r = filter(
-                lambda el: el.startswith(startswith) or el.startswith(swv), r)
+            r = filter(lambda el: el.startswith(startswith) or el.startswith(swv), r)
         if not version:
             r = filter(lambda el: not el.startswith('/ver_'), r)
         else:
@@ -401,7 +404,7 @@ class SharedFile(CoreFile, DataOperator):
             r = filter(good, r)
             # Exclude unversioned elements having a version 
             r = filter(lambda el: version + el not in r, r)
-        return r
+        return list(r)
 
     def xmlrpc_col(self, *a, **k):
         r = self.col(*a, **k)

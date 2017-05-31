@@ -3,12 +3,12 @@
 from traceback import print_exc
 import hashlib
 
-
 import Crypto
 from Crypto.PublicKey import RSA
 import Crypto.Hash.SHA as SHA
 import Crypto.Signature.PKCS1_v1_5 as PKCS1_v1_5
 
+from ..csutil import str3
 
 def purge_path(path, result):
     for cl, refs in result.items():
@@ -34,6 +34,7 @@ def list_references(parent, result=False):
         rc = getattr(child.attrs, '_reference_class', False)
         if not rc:
             continue
+        rc = str3(rc)
         if rc not in result:
             result[rc] = []
             

@@ -31,7 +31,8 @@ class ConfigurationProxy(unittest.TestCase):
         cls.shared_file.close()
 
     def test_run_scripts(self):
-        self.shared_file.run_scripts(self.shared_file.conf.hsm)
+        r = self.shared_file.run_scripts(self.shared_file.conf.hsm)
+        self.assertTrue(r)
 
     def test_add_option(self):
         sh = self.shared_file
@@ -61,9 +62,9 @@ class ConfigurationProxy(unittest.TestCase):
         ac('T20')
         ac('T1000')
         ac('T200')
-        self.assertEqual(self.shared_file.conf.kiln.children.keys(), ['sample0',
+        self.assertEqual(set(self.shared_file.conf.kiln.children.keys()), set(['sample0',
                                                                       'T10', 'T20', 'T30', 'T100', 'T200', 'T1000',
-                                                                      'heatload', 'measure', 'new', 'regulator'])
+                                                                      'heatload', 'measure', 'new', 'regulator']))
 
     def test_calc_aggregate(self):
         base = option.ConfigurationProxy({'self': dataimport.base_dict()})

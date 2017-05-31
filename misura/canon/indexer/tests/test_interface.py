@@ -39,7 +39,7 @@ class SharedFile(unittest.TestCase):
     def test_query_time(self):
         r = self.shared_file.col('/hsm/sample0/h', slice(0, 10))
         r1 = self.shared_file.query_time('/hsm/sample0/h', r[0][0], r[-1][0])
-        r = r[:-1]  # escludo l'ultimo valore
+        r = r[:-1]  # rem last value
         self.assertEqual(len(r), len(r1))
         self.assertEqual(r[0][0], r1[0][0])
         self.assertEqual(r[-1][0], r1[-1][0])
@@ -54,8 +54,8 @@ class SharedFile(unittest.TestCase):
         shared_file = indexer.SharedFile(self.test_file)
         # Empty version
         self.assertEqual(shared_file.get_version(), '')
-        self.assertEqual(shared_file.get_versions().keys(), [''])
-        self.assertEqual(shared_file.get_versions().values()[0][0], 'Original')
+        self.assertEqual(list(shared_file.get_versions().keys()), [''])
+        self.assertEqual(list(shared_file.get_versions().values())[0][0], 'Original')
 
         # Create new version
         shared_file.create_version('pippo')
@@ -63,7 +63,7 @@ class SharedFile(unittest.TestCase):
         self.assertEqual(shared_file.get_version(), '/ver_1')
         self.assertEqual(set(vd.keys()), set(['', '/ver_1']))
         self.assertEqual(
-            set([info[0] for info in vd.values()]), set(['Original', 'pippo']))
+            set([info[0] for info in vd.values()]), set(['Original', b'pippo']))
         self.assertEqual(shared_file.test.root.conf.attrs.versions, 1)
         # Save a different /conf
         shared_file.load_conf()
@@ -85,7 +85,7 @@ class SharedFile(unittest.TestCase):
     def test_should_keep_set_version(self):
         self.shared_file.create_version('a version')
 
-        self.assertEqual(self.shared_file.get_versions()['/ver_1'][0], 'a version')
+        self.assertEqual(self.shared_file.get_versions()['/ver_1'][0], b'a version')
         #self.assertEqual(self.shared_file.get_version(), '/ver_1')
 
         self.shared_file.create_version('another version')
@@ -113,7 +113,7 @@ class SharedFile(unittest.TestCase):
         self.assertEqual(pid, '0')
         self.assertEqual(title, 'A Fake Plot')
         text, attrs = self.shared_file.get_plot('0')
-        self.assertEqual(text, 'fake plot text') 
+        self.assertEqual(text, b'fake plot text') 
         self.assertEqual(attrs['format'], 'jpg')
         self.assertEqual(attrs['title'], title)
         self.assertEqual(attrs['date'], date)
@@ -123,7 +123,7 @@ class SharedFile(unittest.TestCase):
         title1, date1, render1, format1 = plots['0']
         self.assertEqual(title1, title)
         self.assertEqual(date1, date)
-        self.assertEqual(render1, 'fake jpg data')
+        self.assertEqual(render1, b'fake jpg data')
         self.assertEqual(format1, format)
         
         

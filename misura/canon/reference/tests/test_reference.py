@@ -281,7 +281,7 @@ class Log(OutFile):
 
     @classmethod
     def rand(cls, t):
-        return [1. * t, [10, 'message%i' % t]]
+        return [1. * t, [10, b'message%i' % t]]
 
 
 if __name__ == "__main__":

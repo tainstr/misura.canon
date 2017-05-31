@@ -22,7 +22,7 @@ logging = logger.get_module_logging(__name__)
 def dictRecursiveModel(base):
     """Build a dictionary configuration tree from ConfigurationProxy `base`"""
     out = collections.OrderedDict()
-    for path, obj in base.iteritems():
+    for path, obj in base.items():
         if path == 'self':
             out[path] = obj['name']
             continue
@@ -295,7 +295,7 @@ class ConfigurationProxy(common_proxy.CommonProxy, Aggregative, Scriptable, Conf
         def sorter(item):
             key, val = item
             digits = re.sub(r"\D", '', key)
-            key = int(digits) if len(digits) else key
+            key = int(digits) if len(digits) else sum([i*25*ord(c) for i, c in enumerate(key)])
             return key
         self.children = collections.OrderedDict(
             sorted(self.children.items(), key=sorter))

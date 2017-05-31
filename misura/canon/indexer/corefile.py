@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """Indexing hdf5 files"""
+from __future__ import unicode_literals
 # NOTICE: THIS FILE IS ALSO PART OF THE CLIENT. IT SHOULD NOT CONTAIN
 # REFERENCES TO THE SERVER OR TWISTED PKG.
 ext = '.h5'
@@ -17,7 +18,7 @@ from time import time
 from multiprocessing import Lock
 
 from .. import csutil
-from ..csutil import lockme,  unlockme
+from ..csutil import lockme,  unlockme, enc_options
 from ..logger import get_module_logging
 
 
@@ -105,11 +106,14 @@ class CoreFile(object):
         return n
 
     @lockme()
-    def __len__(self, path):
+    def __len__(self, path=False):
         t = self.test
         if t is False:
             self.log.warning('Asking length without file')
             return 0
+        # Eq. to nonzero
+        if not path:
+            return True
         n = self._get_node(path)
         r = len(n)
 #		n.close()
@@ -366,7 +370,7 @@ class CoreFile(object):
             self.log.debug('writing', t2 - t1)
             self.log.debug('total', t2 - t0)
         else:
-            node.write(data)
+            node.write(bytes(data, **enc_options))
 #		node.close()
         # Restore attributes
         self.test.flush()

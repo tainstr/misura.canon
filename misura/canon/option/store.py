@@ -8,6 +8,7 @@ from .. import logger
 unicode_func = logger.unicode_func
 from .option import Option, sorter, tosave
 
+from functools import cmp_to_key
 
 class Store(object):
 
@@ -166,7 +167,7 @@ class CsvStore(Store):
             filename = self.filename
         out = open(filename, 'w')
         values = list(self.desc.items())
-        values.sort(sorter)
+        values.sort(key=cmp_to_key(sorter))
         prio = 0
         for key, entry in values:
             prio += 1

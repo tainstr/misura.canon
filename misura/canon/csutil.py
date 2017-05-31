@@ -4,6 +4,7 @@ import os
 import sys
 import numpy
 import multiprocessing
+enc_options = {}
 try:
     import cPickle as pickle
     import xmlrpclib
@@ -12,7 +13,10 @@ except:
     import pickle
     import xmlrpc as xmlrpclib
     unicode=str
-
+    enc_options['encoding'] = 'utf-8' 
+    enc_options['errors']='ignore'
+    
+str3 = lambda v : str(v, **enc_options)
 
 import numpy as np
 import functools
@@ -288,6 +292,7 @@ def find_nearest_val(v, t, get=False, seed=None):
     bd = t * 1000  # min delta
     ok = 2  # ping-pong counter
     while ok > 0:
+        i = int(i)
         c = g(i)        # current delta
         d = t - c       # delta
         b = abs(d)
@@ -324,7 +329,7 @@ def find_nearest_val(v, t, get=False, seed=None):
                 # Half-way increase towards `bigger`
                 i += (bigger - i) / 2
 
-    return bi
+    return int(bi)
 
 
 def toslice(v):

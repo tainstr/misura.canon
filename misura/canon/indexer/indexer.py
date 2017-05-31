@@ -19,7 +19,7 @@ import threading
 import multiprocessing
 import datetime
 
-from misura.canon.csutil import unlockme, lockme
+from misura.canon.csutil import unlockme, lockme, enc_options
 
 import tables
 from tables.nodes import filenode
@@ -354,7 +354,10 @@ class Indexer(object):
         node.seek(0)
         tree = node.read()
         node.close()
-        tree = pickle.loads(tree)
+        opt = enc_options.copy()
+        if 'encoding' in opt:
+            opt['encoding'] = 'latin1'
+        tree = pickle.loads(tree, **opt)
 
         # ##
         # Test row
@@ -368,17 +371,17 @@ class Indexer(object):
         relative_path = '/'.join(relative_path.split(os.sep))
         test['file'] = relative_path
 
-        instrument = conf.attrs.instrument
+        instrument = str(conf.attrs.instrument, **enc_options)
 
         test['instrument'] = instrument
         if instrument not in tree:
-            self.log.debug('Instrument tree missing')
+            self.log.debug('Instrument tree missing', instrument)
             return False
 
         for p in 'name,comment,nSamples,zerotime,elapsed,id'.split(','):
             test[p] = tree[instrument]['measure']['self'][p]['current']
         zerotime = test['zerotime']
-        test['serial'] = conf.attrs.serial
+        test['serial'] = str(conf.attrs.serial, **enc_options)
         uid = getattr(conf.attrs, 'uid', False)
         if not uid or len(uid) < 2:
             self.log.debug('UID attribute not found')
@@ -386,7 +389,7 @@ class Indexer(object):
             test['uid'] = hashlib.md5(
                 '%s_%s_%i' % (test['serial'], test['zerotime'], sname)).hexdigest()
         else:
-            test['uid'] = uid
+            test['uid'] = str(uid, **enc_options)
         test['flavour'] = 'Standard'
         v = []
         for k in 'file,serial,uid,id,zerotime,instrument,flavour,name,elapsed,nSamples,comment'.split(','):
@@ -486,7 +489,7 @@ class Indexer(object):
         if hdf_file.get_version() == '':
             hdf_file.create_version()
 
-        instrument_name = hdf_file.test.root.conf.attrs.instrument
+        instrument_name = str(hdf_file.test.root.conf.attrs.instrument, **enc_options)
         getattr(hdf_file.conf, instrument_name).measure[
             column_name] = new_value
 

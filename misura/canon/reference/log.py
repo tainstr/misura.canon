@@ -38,7 +38,7 @@ class Log(Reference):
         dat = list(dat)
         if isinstance(dat[1], unicode):
             dat[1] = dat[1].encode('ascii', 'replace')
-        if not isinstance(dat[1], str):
+        if not (isinstance(dat[1], str) or isinstance(dat[1], bytes)):
             return None
         return np.array([tuple([t] + dat)], dtype=cls.fields)
 

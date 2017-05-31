@@ -147,7 +147,7 @@ class Conf(object):
         if 'overwrite' in kwargs:
             overwrite = kwargs.pop('overwrite')
         ao(out, *args, **kwargs)
-        out = out.values()[0]
+        out = list(out.values())[0]
         key = out['handle']
         if out['priority'] == 0:
             out['priority'] = -1

@@ -6,7 +6,7 @@ try:
     unicode('a')
 except:
     unicode=str
-
+from functools import cmp_to_key
 import ast
 from .option import Option, sorter, tosave, vkeys, str_keys, repr_keys, int_keys, type_keys, bytype, validate
 from . import store
@@ -459,7 +459,7 @@ class SqlStore(store.Store):
 
         # Reorder the options by priority
         values = list(desc.items())
-        values.sort(sorter)
+        values.sort(key=cmp_to_key(sorter))
         prio = 0
 
         # Write the options
