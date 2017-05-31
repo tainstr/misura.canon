@@ -75,7 +75,7 @@ class SharedFile(CoreFile, DataOperator):
             raise RuntimeError("File %s not found." % path)
 
         try:
-            self.log.debug('opening existing file', path, mode)
+            self.log.debug('opening existing file', path, mode, version)
             self.test = tables.open_file(path, mode=mode)
             self.path = path
         except:
@@ -91,7 +91,9 @@ class SharedFile(CoreFile, DataOperator):
             if self.has_node('/conf'):
                 if self.has_node_attr('/conf', 'uid'):
                     self.uid = self.get_node_attr('/conf', 'uid')
-                if version not in [None, '', [], -1]:
+                if version in ['', []]:
+                    version = -1
+                if version!=None:
                     self.set_version(version)
             else:
                 self.log.info(

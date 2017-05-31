@@ -3,7 +3,7 @@
 import re
 import collections
 from threading import Lock
-
+from functools import cmp_to_key
 from ..csutil import lockme
 from .. import logger
 from .conf import Conf
@@ -292,13 +292,19 @@ class ConfigurationProxy(common_proxy.CommonProxy, Aggregative, Scriptable, Conf
         return True
 
     def autosort(self):
-        def sorter(item):
+        def sorter(item, item2):
             key, val = item
             digits = re.sub(r"\D", '', key)
-            key = int(digits) if len(digits) else sum([i*25*ord(c) for i, c in enumerate(key)])
-            return key
+            key = int(digits) if len(digits) else key
+            digits = re.sub(r"\D", '', item2[0])
+            key2 = int(digits) if len(digits) else item2[0]
+            if type(key)==type(key2):
+                return (key>key2) or -1
+            elif isinstance(key, int):
+                return 1
+            return -1
         self.children = collections.OrderedDict(
-            sorted(self.children.items(), key=sorter))
+            sorted(self.children.items(), key=cmp_to_key(sorter)))
         self.dump_model()
     
     @lockme()
