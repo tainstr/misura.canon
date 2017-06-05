@@ -397,7 +397,7 @@ class CoreFile(object):
             where = '/'
         self.log.debug('Creating link', link_path, referred_path, where, name)
         g = self.create_hard_link(
-            where, name, referred_path, createparents=True)
+            str(where), str(name), referred_path, createparents=True)
         if g:
             return True
         return False

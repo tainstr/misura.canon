@@ -89,9 +89,8 @@ class SharedFile(CoreFile, DataOperator):
                 self.set_attributes('/userdata', attrs={'active_version': ''})
             elif not version:
                 version = self.active_version()
-                print("FOUND", version, repr(version), type(version))
                 if not self.has_node(version):
-                    print('VERSION DOES NOT EXIST', version)
+                    self.log.info('VERSION DOES NOT EXIST', version)
                     version = ''
             if self.has_node('/conf'):
                 if self.has_node_attr('/conf', 'uid'):
