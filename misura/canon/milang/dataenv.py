@@ -20,7 +20,7 @@ class DataEnvironment(BaseEnvironment):
     """Last applied slicing interval"""
     spline_cache = {}
     """Approximating splines cache"""
-    _temperature_path = False
+    _temperature_path = ''
 
     @property
     def hdf(self):
@@ -42,11 +42,12 @@ class DataEnvironment(BaseEnvironment):
             # but unknown if a local T dataset is available in prefix
             if not self._temperature_path:
                 curve = self.prefix + 'T'
-                print(curve)
+                print('Setting temperature path', curve)
                 if not self.hdf.has_node(curve):
                     curve = '/kiln/T'
                 self._temperature_path = curve
             # Take defined temperature path
+            print('Found temperature path', curve, self._temperature_path)
             curve = self._temperature_path
         else:
             curve = self.prefix + curve
@@ -128,13 +129,15 @@ class DataEnvironment(BaseEnvironment):
 
     def AtTime(self, curve0, t):
         """t,val of curve at nearest time `t`."""
+        print('AtTime0', curve0, t)
         curve = self._cname(curve0)
         if curve is False:
             idx = csutil.find_nearest_val(curve0[:, 0], t)
             return curve0[idx]
-
         idx = self.hdf.get_time(curve, t)
-        return self.hdf.col_at(curve, idx, raw=True)
+        r = self.hdf.col_at(curve, idx, raw=True)
+        print('AtTime', curve0, curve, t, idx, r)
+        return r
 
     def AtIndex(self, curve0, idx):
         """t,val of curve at index `idx`."""
@@ -190,6 +193,7 @@ class DataEnvironment(BaseEnvironment):
     def Raises(self, curve0, val, start_time=0):
         """Returns time where curve value raises above val"""
         curve = self._cname(curve0)
+        print('Raises', curve, curve0, val, start_time, self.prefix, self.obj)
         if curve is not False:
             return self.hdf.rises(curve, val, start_time)
         # TODO: array was passed

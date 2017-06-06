@@ -29,12 +29,14 @@ class InterfaceEnvironment(DataEnvironment):
         """Set the object towards which the environment acts as an inteface.
         Set the prefix according to obj fullpath."""
         self._obj = obj
+        self._temperature_path = ''
         if obj in [None, False]:
             return
+        
         if 'fullpath' in obj:
             # Use get() and not [] because it can be an autoproxy
             self.prefix = obj.get('fullpath')
-# 			obj.log.debug('object fullpath set to',self.prefix)
+            obj.log.debug('object fullpath set to',self.prefix)
         else:
             obj.log.debug('object fullpath not found!', obj)
 

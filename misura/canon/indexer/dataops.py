@@ -225,7 +225,6 @@ No data will be evaluate if older than zerotime."""
         return self.search(path, op, cond, pos=0, start_time=start_time)
 
     def rises(self, path, val, start_time=0):
-        #		cond=lambda a,b: a>b
         cond = 'x>y'
         op = lambda y: (y, val)
         self.log.debug('rises', path, val)
