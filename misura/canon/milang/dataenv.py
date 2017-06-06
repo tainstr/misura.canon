@@ -51,6 +51,9 @@ class DataEnvironment(BaseEnvironment):
             curve = self._temperature_path
         else:
             curve = self.prefix + curve
+        summary = '/summary'+curve
+        if self.hdf.has_node(summary):
+            curve=summary
         print('_cname returning', curve)
         return curve
 
