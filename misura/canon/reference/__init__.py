@@ -3,7 +3,7 @@
 from traceback import print_exc
 
 from .reference import Reference
-from .array import Array, Boolean, Rect, Meta,  Point
+from .array import Array, FixedTimeArray, Boolean, Rect, Meta,  Point
 from .log import Log
 from .profile import Profile, CumulativeProfile, accumulate_coords, decumulate_coords
 from .binary import Binary
@@ -20,6 +20,8 @@ def get_reference(opt):
     t = opt['type']
     if t in ['Float', 'Integer', 'Progress', 'Time']:
         return Array
+    if t==['FixedTimeArray']:
+        return FixedTimeArray
     if t in ['Binary', 'String', 'TextArea', 'Image']:
         return Binary
 # 	if t=='Image':

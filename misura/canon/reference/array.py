@@ -47,6 +47,8 @@ class Array(Reference):
     def encode(cls, t, dat):
         if len(cls.fields) == 2:
             return np.array([(t, dat)], dtype=cls.fields)
+        elif len(cls.fields) == 1:
+            return np.array([dat], dtype=cls.fields)
         else:
             dat = list(dat)
             return np.array([tuple([t] + dat)], dtype=cls.fields)
@@ -103,6 +105,29 @@ class Array(Reference):
         out = np.array([vt, out]).transpose()
         self.summary.commit(out)
         return True
+
+
+class FixedTimeArray(Array):
+    """An array without a time column"""
+    fields = [('v', 'uint8')]
+    
+    def __getitem__(self, idx_or_slice):
+        t0 = self.opt['t0']
+        dt = self.opt['dt']
+        if isinstance(idx_or_slice, int):
+            return [t0+idx_or_slice*dt, self.decode(self.outfile.col_at(self.path, idx_or_slice, raw=True))]
+        t0 = t0+idx_or_slice.start*dt
+        return [[t0+i*dt, self.decode(d)] for i, d in enumerate(self.outfile.col(self.path, idx_or_slice, raw=True))]
+
+    def time_at(self, idx=-1):
+        """Returns the time label associated with the last committed point"""
+        if idx<0:
+            idx = len(self)+idx
+        return self.opt['t0']+self.opt['dt']*idx
+
+    def get_time(self, t):
+        """Finds the nearest row associated with time `t`"""
+        return int((t-self.opt['t0'])/self.opt['dt'])
 
 
 class Boolean(Array):

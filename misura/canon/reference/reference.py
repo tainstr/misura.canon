@@ -174,8 +174,6 @@ class Reference(object):
                 continue
             self.append(app)
             n += 1
-# 			self.mtime=t
-        print('AAAAAA', self.__class__.__name__, n, len(data))
         return n
 
     def interpolate(self, step=1):

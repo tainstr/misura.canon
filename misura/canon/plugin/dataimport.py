@@ -152,9 +152,13 @@ class Converter(object):
         """Override this to do the real conversion"""
         assert False,'Unimplemented'
         
-def create_dataset(outFile, node_path, opt, timecol, data, cls=reference.Array):
+def create_dataset(outFile, node_path, opt, data, timecol=None, cls=reference.Array):
     """Create on outFile, in group node_path, a dataset for option `opt`.
     Writes `timecol` and `data`. """
+    if cls==reference.FixedTimeArray:
+        opt['t0'] = timecol[0]
+        opt['dt'] = timecol[1]
+        
     ref = cls(
         outFile, node_path, opt)
     # Recreate the reference so the data is clean
@@ -164,8 +168,11 @@ def create_dataset(outFile, node_path, opt, timecol, data, cls=reference.Array):
     # Create hard links
     if not outFile.has_node(base_path):
         outFile.link(base_path, path)
-    ref.append(
-        np.array([timecol[:len(data)], data]).transpose())
+    if cls==reference.Array:
+        data = np.array([timecol[:len(data)], data]).transpose()
+    elif cls==reference.FixedTimeArray:
+        data = np.array(data).transpose()
+    ref.append(data)
     return ref
 
 data_importers = set([])
