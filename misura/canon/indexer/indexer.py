@@ -28,6 +28,7 @@ from .. import csutil, option
 
 from .filemanager import FileManager
 from misura.canon.indexer.interface import SharedFile
+from misura.canon.plugin import NullTasks
 
 testColumn = ('file', 'serial', 'uid', 'id', 'zerotime', 'instrument',
               'flavour', 'name', 'elapsed', 'nSamples', 'comment', 'verify')
@@ -93,6 +94,15 @@ def dbcom(func):
 def tid():
     return threading.current_thread().ident
 
+def convert_to_relative_path(file_path, dbdir):
+    if file_path.startswith('.'):
+        return file_path
+    relative_path = "." + \
+        file_path[len(dbdir):] if file_path.startswith(
+            dbdir) else file_path
+    relative_path = '/'.join(relative_path.split(os.sep))
+    return relative_path
+
 
 class FileSystemLock(object):
     stale_file_timeout = 10
@@ -143,6 +153,7 @@ class Indexer(object):
 
     def __init__(self, dbPath=False, paths=[], log=False):
         self._lock = FileSystemLock()
+        self.tasks = NullTasks()
         self.threads = {}
         self.dbPath = dbPath
         self.paths = paths
@@ -258,10 +269,17 @@ class Indexer(object):
     def searchUID(self, uid, full=False):
         """Search `uid` in tests table and return its path or full record if `full`"""
         return self._searchUID(uid, full)
+    
+    aborted = False
+    def abort(self):
+        """Abort current rebuild/refresh process"""
+        self.log.warning('Rebuild/refresh aborted!')
+        self.aborted = True
 
     @unlockme
     def rebuild(self):
         """Completely recreate the SQLite Database indexing all test files."""
+        self.aborted = False
         if not self.dbPath:
             return False
         # if os.path.exists(self.dbPath):
@@ -286,9 +304,12 @@ class Indexer(object):
         self.close_db()
         self._lock.release()
         tests_filenames = self.tests_filenames_sorted_by_date()
-
-        for f in tests_filenames:
+        self.tasks.jobs(len(tests_filenames),'Rebuilding database', abort=self.abort)
+        for i, f in enumerate(tests_filenames):
+            if self.aborted:
+                return 'Aborted. Indexed %i tests.' % i
             self.appendFile(f, False)
+            self.tasks.job(i,'Rebuilding database', f)
 
         self.recalculate_incremental_ids()
 
@@ -320,11 +341,11 @@ class Indexer(object):
         if not os.path.exists(file_path):
             self.log.warning('File not found', file_path)
             return False
-        r = 0
+        r = False
         table = False
         try:
             self.log.debug('Appending',  file_path)
-            table = tables.open_file(file_path, mode='r+')
+            table = tables.open_file(file_path, mode='r')
             if not getattr(table.root, 'conf', False):
                 self.log.debug('Tree configuration not found', file_path)
                 table.close()
@@ -365,10 +386,7 @@ class Indexer(object):
         test = {}
 
         dbdir = os.path.dirname(self.dbPath)
-        relative_path = "." + \
-            file_path[len(dbdir):] if file_path.startswith(
-                dbdir) else file_path
-        relative_path = '/'.join(relative_path.split(os.sep))
+        relative_path = convert_to_relative_path(file_path,dbdir)
         test['file'] = relative_path
 
         instrument = str(conf.attrs.instrument, **enc_options)
@@ -404,7 +422,7 @@ class Indexer(object):
     def save_modify_date(self, file_name):
         full_test_file_name = self.convert_to_full_path(file_name)
         modify_date = int(os.path.getmtime(full_test_file_name))
-
+        
         query = "INSERT OR REPLACE INTO modify_dates VALUES (?, ?)"
 
         self.cur.execute(query, (modify_date, file_name))
@@ -453,9 +471,7 @@ class Indexer(object):
         if add_uid_to_incremental_ids_table:
             self.add_incremental_id(cur, test['uid'])
         self.conn.commit()
-
-        modify_date = os.path.getmtime(self.convert_to_full_path(file_path))
-
+        # This is actually the relative path saved before
         self.save_modify_date(test['file'])
 
         # ##
@@ -530,13 +546,26 @@ class Indexer(object):
 
     def refresh(self):
         """Updates the database by inserting new files and removing deleted files"""
+        self.aborted = False
+        self.tasks.jobs(5, 'Refreshing database', abort=self.abort)
         database = self.execute_fetchall("select file, uid from test")
-        self.delete_not_existing_files(database)
-        database = self.execute_fetchall("select file, uid from test")
+        if self.aborted:
+            return False
+        self.tasks.job(1, 'Refreshing database', 'Deleting non-existent files')
+        database = self.delete_not_existing_files(database)
+        if self.aborted:
+            return False
+        self.tasks.job(2, 'Refreshing database', 'Checking modification dates')
         all_files = self.tests_filenames_sorted_by_date()
-        self.delete_modified_files(database, all_files)
-        database = self.execute_fetchall("select file, uid from test")
+        if self.aborted:
+            return False
+        self.tasks.job(3, 'Refreshing database', 'Forget modified files')
+        database = self.delete_modified_files(database, all_files)
+        if self.aborted:
+            return False
+        self.tasks.job(4, 'Refreshing database', 'Re-index modified files')
         self.add_new_files(all_files, database)
+        self.tasks.done('Refreshing database')
 
     def delete_modified_files(self, database, all_files):
         modified_dates_on_db = self.get_modify_dates()
@@ -546,24 +575,51 @@ class Indexer(object):
         old_modified_dates = {}
         for f in all_files:
             old_modified_dates[f] = int(os.path.getmtime(f))
-
+            
+        deleted = []
+        out = []
         for modify_date_on_db, full_test_file_name, relative_test_file_name in modified_dates_on_db:
+            if self.aborted:
+                return out
             old_modified_date = old_modified_dates.get(
                 full_test_file_name, False)
             if old_modified_date and old_modified_date != modify_date_on_db:
+                # Remove so it will be later re-added
                 self.clear_file_path(relative_test_file_name)
+                deleted.append(relative_test_file_name)
+        
+        
+        for relative_file_path, uid in database:
+            if relative_file_path not in deleted:
+                out.append([relative_file_path, uid])
+        return out
 
     def delete_not_existing_files(self, database):
-        for relative_file_path, _ in database:
+        out = []
+        for i, (relative_file_path, uid) in enumerate(database):
+            if self.aborted:
+                return out
             absolute_file_path = self.convert_to_full_path(relative_file_path)
             if not os.path.exists(absolute_file_path):
                 self.clear_file_path(relative_file_path)
+            else:
+                out.append([relative_file_path, uid])
+        return out
 
     def add_new_files(self, all_files, database):
         file_names_in_database = [self.convert_to_full_path(d[0]) for d in database]
-        for f in all_files:
+        pid = 'Adding files'
+        self.tasks.jobs(len(all_files), pid, abort=self.abort)
+        for i, f in enumerate(all_files):
+            if self.aborted:
+                return False
+            msg = ''
             if f not in file_names_in_database:
-                self.appendFile(f)
+                r = self.appendFile(f)
+                msg = f
+            self.tasks.job(i, pid, msg)
+        self.tasks.done(pid)
+        return True
 
     def remove_uid(self, uid):
         fn = self.searchUID(uid)
