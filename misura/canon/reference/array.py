@@ -44,11 +44,13 @@ class Array(Reference):
             self.summary = Array(self.outfile, '/summary' + self.path)
 
     @classmethod
-    def encode(cls, t, dat):
+    def encode(cls, dat):
+        if len(cls.fields) == 1:
+            return np.array(dat, dtype=cls.fields)
+        
+        t, dat = dat
         if len(cls.fields) == 2:
             return np.array([(t, dat)], dtype=cls.fields)
-        elif len(cls.fields) == 1:
-            return np.array([dat], dtype=cls.fields)
         else:
             dat = list(dat)
             return np.array([tuple([t] + dat)], dtype=cls.fields)
@@ -57,6 +59,8 @@ class Array(Reference):
     def decode(cls, dat):
         if len(dat) == 1:
             dat = dat[0]
+        if len(cls.fields)==1:
+            return Reference.decode((dat,))
         n = len(dat)
         if n != len(cls.fields):
             return None
@@ -109,14 +113,15 @@ class Array(Reference):
 
 class FixedTimeArray(Array):
     """An array without a time column"""
-    fields = [('v', 'uint8')]
+    fields = [('v', 'float64')]
     
     def __getitem__(self, idx_or_slice):
         t0 = self.opt['t0']
         dt = self.opt['dt']
         if isinstance(idx_or_slice, int):
             return [t0+idx_or_slice*dt, self.decode(self.outfile.col_at(self.path, idx_or_slice, raw=True))]
-        t0 = t0+idx_or_slice.start*dt
+        s = idx_or_slice.start or 0
+        t0 = t0+s*dt
         return [[t0+i*dt, self.decode(d)] for i, d in enumerate(self.outfile.col(self.path, idx_or_slice, raw=True))]
 
     def time_at(self, idx=-1):
@@ -159,8 +164,9 @@ class Meta(Array):
               ('time', 'float64'), ('temp', 'float64')]
 
     @classmethod
-    def encode(cls, t, dat):
+    def encode(cls, dat):
         """Flatten the Meta dictionary into a float list of t,value,time,temp"""
+        t, dat = dat
         if len(dat) > 3:
             print('wrong meta', dat, len(dat))
             return None

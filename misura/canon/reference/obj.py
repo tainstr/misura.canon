@@ -10,9 +10,10 @@ except:
 class Object(Binary):
 
     @classmethod
-    def encode(cls, t, dat):
+    def encode(cls, dat):
+        t, dat = dat
         dat = dumps(dat, HIGHEST_PROTOCOL)
-        return Binary.encode(t, dat)
+        return Binary.encode((t, dat))
 
     @classmethod
     def decode(cls, dat):

@@ -31,7 +31,8 @@ class Log(Reference):
         return True
 
     @classmethod
-    def encode(cls, t, dat):
+    def encode(cls, dat):
+        t, dat = dat
         if len(dat) != 2:
             print('Log: wrong data length')
             return None

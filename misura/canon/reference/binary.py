@@ -39,7 +39,8 @@ class Binary(VariableLength):
         return True
 
     @classmethod
-    def encode(cls, t, data):
+    def encode(cls, data):
+        t, data = data
         if data is False:
             return False
         ta = binary_cast([t], 'd', 'BBBBBBBB')

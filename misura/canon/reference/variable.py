@@ -50,7 +50,7 @@ class VariableLength(Reference):
             if d is False:
                 continue
             t, dat = d
-            app = self.encode(t, dat)
+            app = self.encode((t, dat))
             if app is None:
                 continue
             self.append(app)

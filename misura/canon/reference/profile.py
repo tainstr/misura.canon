@@ -35,8 +35,9 @@ class Profile(VariableLength):
         return True
 
     @classmethod
-    def encode(cls, t, prf):
+    def encode(cls, td):
         """Encode time, original image sizes, profile points into a single 2D array."""
+        t, prf = td
         if len(prf) != 3:
             return None
         if len(prf[0]) != 2:
@@ -122,8 +123,9 @@ class CumulativeProfile(Profile):
     atom = tables.UInt8Atom() 
     
     @classmethod
-    def encode(cls, t, prf):
+    def encode(cls, td):
         """Encode time, original image sizes, profile points into a single 2D array."""
+        t, prf = td
         if len(prf) != 3:
             return None
         if len(prf[0]) != 2:

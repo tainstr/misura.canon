@@ -69,8 +69,9 @@ class Image(VariableLength):
         return img
 
     @classmethod
-    def encode(cls, t, img):
+    def encode(cls, data):
         """Encode time, image into a single array containing time, width, height, and flattened pixel intensities."""
+        t, img = data
         # Cast double time into eight 8-bit integers
 #		ta=np.array(binary_cast([t],'d','hhhh'))
         ta = np.array(binary_cast([t], 'd', 'BBBBBBBB'))

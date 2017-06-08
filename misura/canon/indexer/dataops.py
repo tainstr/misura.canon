@@ -58,7 +58,7 @@ No data will be evaluate if older than zerotime."""
         """Reads an array in the requested slice. If an integer index is specified, reads just one point."""
         path = self._versioned(path)
         n = self._get_node(path)
-
+        
         # Convert to regular array
         if not raw and len(n):
             try:
@@ -69,8 +69,8 @@ No data will be evaluate if older than zerotime."""
             
         if idx_or_slice is not None:
             slc = csutil.toslice(idx_or_slice)
-
             n = n[slc]
+            
         return n
 
     def _col_at(self, path, idx, raw=False):

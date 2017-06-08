@@ -97,22 +97,31 @@ class OutFile(unittest.TestCase):
         self.assertEqual(val, val1)
         self.assertEqual(t, t1)
 
-#	@unittest.skip('')
+#    @unittest.skip('')
     def test_encode_decode(self):
         if self.refClass is False:
             raise unittest.SkipTest('')
-        t, data = self.rand(1)
-        out = self.refClass.encode(t, data)
+        tdata = self.rand(1)
+        out = self.refClass.encode(tdata)
         self.assertNotEqual(out, None)
-        self.check_decode(out, (t, data))
+        self.check_decode(out, tdata)
+        
+    @property
+    def opt(self):
+        return {'handle': 'test', 'name': 'Test',
+               'unit': 'dummy', 'format': 'm4', 
+               't0': 0.5, 'dt':0.1}
+        
+    
+    def check_data(self, data, returned_data):
+        self.assertSequenceEqual(flat(data), flat(returned_data))
 
 #	@unittest.skip('')
     def test_commit(self):
         if self.refClass is False:
             raise unittest.SkipTest('')
         self.mkfile()
-        opt = {'handle': 'test', 'name': 'Test',
-               'unit': 'dummy', 'format': 'm4'}
+        opt = self.opt
         ref = self.refClass(self.outfile, '/', opt)
         # Check attributes
         opt['_reference_class'] = ref.__class__.__name__
@@ -122,7 +131,7 @@ class OutFile(unittest.TestCase):
             data.append(self.rand(float(i)))
         self.assertTrue(ref.commit(data))
         rdata = ref[:]
-        self.assertSequenceEqual(flat(data), flat(ref[:]))
+        self.check_data(data, rdata)
         data2 = []
         for i in range(11, 20):
             data2.append(self.rand(float(i)))
@@ -141,6 +150,23 @@ class Array(OutFile):
     @classmethod
     def rand(cls, t):
         return [t, t * 10]
+    
+    
+    
+    
+class FixedTimeArray(OutFile):
+    refClass = reference.FixedTimeArray
+    __test__ = True
+
+    @classmethod
+    def rand(cls, t):
+        return [(t * 10, )]
+    
+    def check_data(self, data, returned_data):
+        """Override to ignore timecol"""
+        self.assertSequenceEqual(flat(data), flat(returned_data)[1::2])
+    
+    
 
 
 class VariableLength(object):
@@ -199,7 +225,7 @@ class Image(OutFile):
         h, w = m.shape
 #		# Theoretical compressed array
 #		mcp=[0,0,0,0,w,h,-1,1,-3,1]
-#		cp=self.refClass.encode(0,m)
+#		cp=self.refClass.encode((0,m))
 #		self.assertEqual(list(cp),mcp)
 
 

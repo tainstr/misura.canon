@@ -134,14 +134,15 @@ class Reference(object):
         return self.outfile.get_attributes(self.path)
 
     @classmethod
-    def encode(cls, t, dat):
+    def encode(cls, td):
+        t, dat = td
         return np.array([t] + dat)
 
     @classmethod
     def decode(cls, dat):
         dat = list(dat)
         if len(dat) == 1:
-            dat = list(dat[0])
+            return dat
         return [dat[0], dat[1:]]
 
     def __getitem__(self, idx_or_slice):
@@ -168,8 +169,7 @@ class Reference(object):
         for td in data:
             if td is False:
                 continue
-            t, dat = td
-            app = self.encode(t, dat)
+            app = self.encode(td)
             if app is None:
                 continue
             self.append(app)
