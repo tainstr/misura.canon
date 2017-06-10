@@ -277,6 +277,9 @@ class ConfigurationProxy(common_proxy.CommonProxy, Aggregative, Scriptable, Conf
 
     def gete(self, key):
         return self.desc[key]
+    
+    def __delitem__(self, key):
+        del self.desc[key]
 
     def sete(self, key, val):
         if 'priority' not in val or val['priority'] == -1:

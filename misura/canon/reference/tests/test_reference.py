@@ -91,11 +91,8 @@ class OutFile(unittest.TestCase):
             os.remove(self.destpath)
 
     def check_decode(self, encoded, decoded):
-        t, val = decoded
         dec = self.refClass.decode(encoded)
-        t1, val1 = dec
-        self.assertEqual(val, val1)
-        self.assertEqual(t, t1)
+        self.assertEqual(flat(dec), flat(decoded))
 
 #    @unittest.skip('')
     def test_encode_decode(self):
@@ -160,7 +157,7 @@ class FixedTimeArray(OutFile):
 
     @classmethod
     def rand(cls, t):
-        return [(t * 10, )]
+        return [(t * 10., )]
     
     def check_data(self, data, returned_data):
         """Override to ignore timecol"""

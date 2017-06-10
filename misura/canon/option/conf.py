@@ -167,6 +167,11 @@ class Conf(object):
     def getattr(self, handle, attr):
         """Returns the attribute `attr` of an option `name`"""
         return self.desc[handle][attr]
+    
+    def hasattr(self, handle, attr):
+        if not self.has_key(handle):
+            return False
+        return attr in self.desc[handle]
 
     def setattr(self, handle, key, val):
         """Sets to val the `key` of `handle` option"""
