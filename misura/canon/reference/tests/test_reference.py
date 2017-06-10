@@ -100,7 +100,7 @@ class OutFile(unittest.TestCase):
             raise unittest.SkipTest('')
         tdata = self.rand(1)
         out = self.refClass.encode(tdata)
-        self.assertNotEqual(out, None)
+        self.assertFalse(out is None)
         self.check_decode(out, tdata)
         
     @property
