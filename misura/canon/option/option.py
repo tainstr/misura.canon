@@ -456,9 +456,17 @@ class Option(object):
         Notice: the first migration always happens between hard-coded `old` and saved configuration file in self."""
         # These keys can only change on software updates.
         # So, their `old` value cannot be overwritten and must be retained
-        for k in ('name', 'factory_default', 'readLevel', 'writeLevel', 'mb', 'unit'):
+        for k in ('name', 'factory_default', 'readLevel', 'writeLevel', 
+                  'mb', 'unit', 'csunit', 'parent', 'error'):
             if k in old:
                 self._entry[k] = old[k]
+                
+        upkeys = ['step', 'max', 'min', 'options', 'values', 'precision']
+        # If those keys were defined in the old definition but not in the new, import them
+        for k in upkeys:
+            if (k in old) and (k not in self._entry):
+                self._entry[k] = old[k]
+        
         # Retain special attributes
         oa = set([])
         na = set([])
@@ -485,14 +493,14 @@ class Option(object):
             if new_def != old_def:
                 print('Incompatible table definition', self['handle'], new_def, old_def)
                 self._entry['current']=[self['current'][0]]
+        
         # No type change: exit
-        self._entry['parent'] = old['parent']
         if ot == nt:
             return
         # Hard-coded 'old' type differs from configured type:
         # Import all special keys that might be defined in old but missing in
         # self
-        for k in ('type', 'step', 'max', 'min', 'options', 'values'):
+        for k in ['type']+upkeys:
             if k in old:
                 self._entry[k] = old[k]
         if 'current' not in self._entry:
