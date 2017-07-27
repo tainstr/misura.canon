@@ -5,7 +5,7 @@ from traceback import print_exc
 from .reference import Reference
 from .array import Array, FixedTimeArray, Boolean, Rect, Meta,  Point
 from .log import Log
-from .profile import Profile, CumulativeProfile, accumulate_coords, decumulate_coords
+from .profile import Profile, CumulativeProfile, accumulate_coords, decumulate_coords, explode_jumps, couple, decouple
 from .binary import Binary
 from .image import Image, ImageM3, ImageBMP
 from .obj import Object

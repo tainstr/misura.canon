@@ -6,11 +6,12 @@ import unittest
 import tempfile
 import tables
 import numpy as np
+from pickle import loads
 
 from misura.canon import indexer
 from misura.canon.csutil import flatten as flat
 from misura.canon import reference
-
+from misura.canon import determine_path
 
 
 class ReferenceFunctions(unittest.TestCase):
@@ -273,6 +274,24 @@ class CumulativeProfile(Profile):
         x = 300 + np.cumsum(x)
         y = 300 + np.cumsum(y)
         return t, ((w, h), x.astype('uint16'), y.astype('uint16'))
+    
+    def test_real_shape(self):
+        dat = os.path.join(determine_path(__file__), 'cumulative.dat')
+        dat = open(dat, 'r').read()
+        res, x, y = loads(dat)
+        dx, dy = reference.explode_jumps(x,y)
+        d = (dx+1)*3 + (dy+1)
+        g = reference.couple(d, 20)
+        d1= reference.decouple(g, 20)
+        g2 = reference.couple(d1, 20)
+        self.assertEqual( (abs(g-g2)).sum(), 0 )
+        self.assertEqual( (abs(d-d1)).sum(), 0 )
+        
+        acc = reference.accumulate_coords(x,y)
+        x1, y1 = reference.decumulate_coords(x[0],y[0],acc)
+        self.assertEqual(x[-1], x1[-1])
+        self.assertEqual(y[-1], y1[-1])
+        
 
 #@unittest.skip('')
 

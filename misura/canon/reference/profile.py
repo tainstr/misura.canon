@@ -64,6 +64,52 @@ class Profile(VariableLength):
         h = y[1]
         return t, ((w, h), x[4:], y[4:])
 
+def explode_jumps(x, y):
+    dx = np.diff(x)
+    dy = np.diff(y)
+    ox = []
+    oy = []
+    for i, vx in enumerate(dx):
+        ax = abs(vx)
+        vy = dy[i]
+        ay = abs(vy)
+        if ax<=1 and ay<=1:
+            ox.append(vx)
+            oy.append(vy)
+            continue
+        ox += [0]*max(ax, ay)
+        oy += [0]*max(ax, ay)
+        
+        if ax:
+            ox[-ax:] = [np.sign(vx)]*ax
+        if ay:
+            oy[-ay:] = [np.sign(vy)]*ay
+    
+    ox, oy = np.array(ox), np.array(oy)
+    
+    return ox, oy
+
+scale = 9
+def couple(d, scale=9):
+    """Compact couples of bits into bytes"""
+    # Force even array length by appending an identity
+    if len(d) % 2 == 1:
+        d = np.concatenate((d, [4]))
+    #  Sum even with odd by applying a scaling
+    d1 = d[0::2] + d[1::2]*scale
+    return d1.astype('uint8')
+
+def decouple(v, scale=9):
+    # Conversion to bigger SIGNED int
+    v=v.astype('int16')
+    # Unpack bits from bytes
+    v_even = v % scale
+    v_odd = v // scale
+    v = np.array([v_even, v_odd]).flatten('F')
+    # Cut away padding identity if present
+    if v[-1] == 4:
+        v=v[:-1]
+    return v    
 
 def accumulate_coords(x,y):
     """Convert absolute coords x, y into cumulative coords relative to the starting values of x,y.
@@ -71,27 +117,14 @@ def accumulate_coords(x,y):
     1 (4) 7
     0  3  6
     4 never exists (means identity)"""
-    d = (np.diff(x)+1)*3 + (np.diff(y)+1)
-    # Force even array length by appending an identity
-    if len(d) % 2 == 1:
-        d = np.concatenate((d, [4]))
-    # Compact couples of bits into bytes 
-    d = d[0::2] + d[1::2]*9
-    return d.astype('uint8')
-    
-    
+    dx,dy = explode_jumps(x,y)
+    d = (dx+1)*3 + (dy+1)
+    return couple(d, scale)
 
 def decumulate_coords(x0, y0, v):
     """Convert cumulative coords v into absolute coords x,y"""
     # Conversion to SIGNED int
-    v=v.astype('int8')
-    # Unpack bits from bytes
-    v_even = v % 9
-    v_odd = v // 9
-    v = np.array([v_even, v_odd]).flatten('F')
-    # Cut away padding identity if present
-    if v[-1] == 4:
-        v=v[:-1]
+    v = decouple(v, scale)
     # 4-translation
     v -= 4
     """
@@ -100,14 +133,15 @@ def decumulate_coords(x0, y0, v):
     -3  (0) 3
     -4  -1  2"""
     a = np.abs(v)
+    sgn = np.sign(v)
     # Convert to single coordinate +1,0,-1 movements
     # Any abs>1 contains an x movement equal to the sign of the 4-trans
-    # Any abs<=0 contains a 0 x movement
-    x = (a>1)*np.sign(v)
+    # Any abs<=1 contains a 0 x movement
+    x = (a>1)*sgn
     # Any abs==3 contains no y movement
     # Otherwise, y movement is equal to the sign(v), unless a==2, 
     # in which case it's the opposite: (1-2*(a==2))
-    y = (a!=3)*np.sign(v)*(1-2*(a==2))
+    y = (a!=3)*sgn*(1-2*(a==2))
     # Convert to cumulative values
     x = np.concatenate(([x0], x0+np.cumsum(x)))
     y = np.concatenate(([y0], y0+np.cumsum(y)))
