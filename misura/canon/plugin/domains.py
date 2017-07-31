@@ -203,3 +203,10 @@ class NavigatorDomain(object):
         if not self.check_nodes(nodes):
             return False
         return self.add_multiary_menu(menu, nodes)
+    
+    def add_nodoc_menu(self, menu, proxy):
+        return False
+    
+    def build_nodoc_menu(self, menu, proxy):
+        """Build an out-of-anlysis menu"""
+        return self.add_nodoc_menu(menu, proxy)
