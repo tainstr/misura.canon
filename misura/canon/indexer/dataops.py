@@ -85,6 +85,15 @@ No data will be evaluate if older than zerotime."""
     def col_at(self, *a, **k):
         """Retrive single index `idx` from node `path`, locked"""
         return self._col_at(*a, **k)
+    
+    def _col_at_time(self, path, t, raw=False):
+        idx = self._get_time(path, t)
+        return self._col_at(path, idx, raw)
+    
+    @lockme()
+    def col_at_time(self, *a, **k):
+        """Retrive single time `t` from node `path`, locked"""
+        return self._col_at_time(*a, **k)        
 
     def clean_start(self, g, start):
         # FIXME: Cut start limit. Send bug to pytables
