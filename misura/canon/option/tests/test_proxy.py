@@ -11,11 +11,14 @@ _calls = []
 
 
 def dummy_callback(conf, key, old_val, new_val):
+    d = conf.gete(key)
+    if not d.get('callback_set', False)=='dummy':
+        return new_val
     print('Dummy callback', conf['fullpath'], key, old_val, new_val)
     _calls.append((conf['fullpath'], key, old_val, new_val))
     return new_val
 
-option.proxy.ConfigurationProxy.callbacks_set['dummy'] = dummy_callback
+option.proxy.ConfigurationProxy.callbacks_set.add(dummy_callback)
 
 
 class ConfigurationProxy(unittest.TestCase):

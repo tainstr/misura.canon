@@ -54,8 +54,8 @@ def print_tree(tree, level=0, current=False):
 
 class ConfigurationProxy(common_proxy.CommonProxy, Aggregative, Scriptable, Conf):
     """A configuration object behaving like a live server"""
-    callbacks_get = {}
-    callbacks_set = {}
+    callbacks_get = set()
+    callbacks_set = set()
     filename = False  # Filename from which this configuration was red
 
     def print_tree(self, *a, **k):
@@ -240,12 +240,9 @@ class ConfigurationProxy(common_proxy.CommonProxy, Aggregative, Scriptable, Conf
 
     def callback(self, key, val, callback_name='set'):
         callback_group = getattr(self, 'callbacks_' + callback_name)
-        cb = callback_group.get(
-            self.desc[key].get('callback_' + callback_name, False), False)
-        if cb:
+        for cb in callback_group:
             old = self.desc[key]['current']
             val = cb(self, key, old, val)
-            self.log.debug('Callback:', callback_name, key, old, val)
         return val
 
     def __setitem__(self, key, val):
