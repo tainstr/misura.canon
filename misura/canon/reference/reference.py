@@ -95,9 +95,11 @@ class Reference(object):
 
     def dump(self):
         """Deletes the reference and recreates it."""
-        self.outfile.remove_node(self.path)
-        self.outfile.flush()
+        if self.outfile.has_node(self.path):
+            self.outfile.remove_node(self.path)
+            self.outfile.flush()
         self.create()
+        
 
     def open(self, folder):
         """Opens an existing data structure located at `folder`"""
