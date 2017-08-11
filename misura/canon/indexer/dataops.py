@@ -158,7 +158,7 @@ No data will be evaluate if older than zerotime."""
             end_index = len(y)
         else:
             end_index = self._get_time(path, end_time)
-        y, m = op(y[start_index:end_index])
+        y1, m = op(y[start_index:end_index])
         last = -1
         # Handle special cases
         if cond == 'x>y':  # raises
@@ -171,7 +171,7 @@ No data will be evaluate if older than zerotime."""
             cond = 'y<m'
         elif cond == 'x~y':
             #FIXME: inefficient, restore find_nearest_cond!
-            d = abs(y[start_index:end_index]-m)
+            d = abs(y1-m)
             last = np.where(d==min(d))[0][0]
             #last = self.find_nearest_cond(
             #    tab, path, m, start_time=start_time, end_time=end_time)
@@ -182,7 +182,7 @@ No data will be evaluate if older than zerotime."""
             cond = 'y==m'
 
         if last < 0:
-            condvars = {'y':tab.cols.v, 'm': m}
+            condvars = {'y':y, 'm': m}
             last = list(tab.get_where_list(cond, condvars=condvars, 
                                            start=start_index,
                                            stop=end_index))
@@ -201,7 +201,7 @@ No data will be evaluate if older than zerotime."""
             if last is None or len(last) == 0:
                 self.log.debug('DataOps.search FAILED', path, cond, start_index, end_index, m, len(y), last0, last)
                 return False
-            last = last[0] 
+            last = last[0]
         return last, x[last], y[last]
 
     def max(self, path, start_time=0, end_time=-1):
