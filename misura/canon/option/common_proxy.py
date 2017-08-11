@@ -60,5 +60,12 @@ class CommonProxy(object):
     @doc.setter
     def doc(self, doc):
         self.root._doc = doc
+        
+    def asdict(self):
+        """Return all keys current values in a dictionary"""
+        r = {}
+        for k in self.keys():
+            r[k] = self[k]
+        return r
     
     
