@@ -31,9 +31,12 @@ class Array(Reference):
         self.path = self.folder + self.handle
         self.outfile.flush()
         # Create the summary mirror
-        if (not self.path.startswith('/summary')) and len(self.fields) == 2 and self.with_summary:
+        ver = self.outfile.get_version()
+        if (not self.path.startswith(ver+'/summary/')) and len(self.fields) == 2 and self.with_summary:
+            dest = ver+'/summary'+self.folder[len(ver):]
+            print('Creating Array summary mirror', dest)
             self.summary = Array(
-                self.outfile, '/summary' + self.folder, opt=self.opt)
+                self.outfile, dest, opt=self.opt)
         return True
 
     def open(self, folder):
