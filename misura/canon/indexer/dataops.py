@@ -150,7 +150,6 @@ No data will be evaluate if older than zerotime."""
         self.log.debug('searching in ', path, cond)
         tab = self._get_node(path)
         x, y = tab.cols.t, tab.cols.v
-        y, m = op(y)
         if start_time == 0:
             start_index = 0
         else:
@@ -159,33 +158,34 @@ No data will be evaluate if older than zerotime."""
             end_index = len(y)
         else:
             end_index = self._get_time(path, end_time)
+        y, m = op(y[start_index:end_index])
         last = -1
         # Handle special cases
         if cond == 'x>y':  # raises
-            if y[0] > m:
-                last = 0
-            elif max(y) < m:
-                return False
+            if y[start_index] > m:
+                last = start_index
             cond = 'y>m'
         elif cond == 'x<y':  # drops
-            if y[0] < m:
-                last = 0
-            elif min(y) > m:
-                return False
+            if y[start_index] < m:
+                last = start_index
             cond = 'y<m'
         elif cond == 'x~y':
             #FIXME: inefficient, restore find_nearest_cond!
-            d = abs(y[:]-m)
+            d = abs(y[start_index:end_index]-m)
             last = np.where(d==min(d))[0][0]
             #last = self.find_nearest_cond(
             #    tab, path, m, start_time=start_time, end_time=end_time)
             if last is None:
                 return False
+            last += start_index
         else:
             cond = 'y==m'
 
         if last < 0:
-            last = list(tab.get_where_list(cond, stop=end_index))
+            condvars = {'y':tab.cols.v, 'm': m}
+            last = list(tab.get_where_list(cond, condvars=condvars, 
+                                           start=start_index,
+                                           stop=end_index))
             last0 = last[:]
             # WARNING: start selector is not working.
             # TODO: Send bug to pytables!
@@ -201,25 +201,32 @@ No data will be evaluate if older than zerotime."""
             if last is None or len(last) == 0:
                 self.log.debug('DataOps.search FAILED', path, cond, start_index, end_index, m, len(y), last0, last)
                 return False
-            last = last[0]
-
+            last = last[0] 
         return last, x[last], y[last]
 
-    def max(self, path):
+    def max(self, path, start_time=0, end_time=-1):
         op = lambda y: (y, max(y))
-        return self.search(path, op, cond='x==y')
+        return self.search(path, op, cond='x==y', 
+                           start_time=start_time,
+                           end_time=end_time)
 
-    def min(self, path):
+    def min(self, path, start_time=0, end_time=-1):
         op = lambda y: (y, min(y))
-        return self.search(path, op, cond='x==y')
+        return self.search(path, op, cond='x==y', 
+                           start_time=start_time,
+                           end_time=end_time)
 
-    def nearest(self, path, val):
+    def nearest(self, path, val, start_time=0, end_time=-1):
         op = lambda y: (y, val)
-        return self.search(path, op, cond='x~y')
+        return self.search(path, op, cond='x~y', 
+                           start_time=start_time,
+                           end_time=end_time)
 
-    def equals(self, path, val, tol=10**-12):
+    def equals(self, path, val, tol=10**-12, start_time=0, end_time=-1):
         op = lambda y: (y, val)
-        r = self.search(path, op)
+        r = self.search(path, op, 
+                           start_time=start_time,
+                           end_time=end_time)
         if not r:
             return False
         i, xi, yi = r
@@ -227,17 +234,20 @@ No data will be evaluate if older than zerotime."""
             return False
         return i, xi, yi
 
-    def drops(self, path, val, start_time=0):
+    def drops(self, path, val, start_time=0, end_time=-1):
         cond = 'x<y'
         op = lambda y: (y, val)
         self.log.debug('drops', path, val)
-        return self.search(path, op, cond, pos=0, start_time=start_time)
+        return self.search(path, op, cond, pos=0, start_time=start_time, 
+                           end_time=end_time)
 
-    def rises(self, path, val, start_time=0):
+    def rises(self, path, val, start_time=0, end_time=-1):
         cond = 'x>y'
         op = lambda y: (y, val)
         self.log.debug('rises', path, val)
-        return self.search(path, op, cond, pos=0, start_time=start_time)
+        return self.search(path, op, cond, pos=0,  
+                           start_time=start_time,
+                           end_time=end_time)
 
     def _get_time(self, path, t, get=False, seed=None):
         """Optimized search of the nearest index to time `t` using the getter function `get` and starting from `seed` index."""
