@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from misura.canon.logger import get_module_logging
+from __builtin__ import False
 logging = get_module_logging(__name__)
 import re
 
@@ -67,5 +68,24 @@ class CommonProxy(object):
         for k in self.keys():
             r[k] = self[k]
         return r
+    
+    def resolve_role(self, key):
+        opt = self.gete(key)
+        return resolve_role(self, opt)
+    
+def resolve_role(obj, opt):
+    if not opt['type'].startswith('Role'):
+        return obj, False
+    pt = opt['options'][:]
+    pt.append(False)
+    path, preset, io = pt[:3]
+    if path in (False, None, 'None'):
+        return False, False
+    obj = obj.root.toPath(path)
+    if obj is None:
+        return False, False
+    if io:
+        io = obj.gete(io)
+    return obj, io
     
     
