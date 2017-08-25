@@ -36,14 +36,23 @@ def resolve_role(obj, opt):
     return obj, io
 
         
-def scan_option(obj, key, out=False):
+def scan_option(obj, keys, out=False):
     """Return a dictionary containing all possible object paths 
     containing an option named key and its current value"""
     out= out or {}
-    if key in obj:
-        out[obj['fullpath']] = obj[key]
+    
+    vals = {}
+    for key in keys:
+        if key in obj:
+            vals[key] = obj[key]
+        else:
+            break
+        
+    if len(vals)==len(keys): 
+        out[obj['fullpath']] = vals
+        
     for sub in obj.devices:
-        scan_option(sub, key, out)
+        out = scan_option(sub, keys, out)
     return out
 
 class CommonProxy(object):
@@ -99,8 +108,9 @@ class CommonProxy(object):
         opt = self.gete(key)
         return resolve_role(self, opt)
     
-    def compare_option(self, key):
-        return scan_option(self.root, key)
+    def compare_option(self, *keys):
+        r = scan_option(self.root, keys)
+        return r
         
         
         
