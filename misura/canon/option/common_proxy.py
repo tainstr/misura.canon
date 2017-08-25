@@ -19,6 +19,32 @@ def from_column(column, proxy=False):
     obj = proxy.toPath(branches)
     return obj, name
 
+    
+def resolve_role(obj, opt):
+    if not opt['type'].startswith('Role'):
+        return obj, False
+    pt = opt['options'][:]
+    pt.append(False)
+    path, preset, io = pt[:3]
+    if path in (False, None, 'None'):
+        return False, False
+    obj = obj.root.toPath(path)
+    if obj is None:
+        return False, False
+    if io:
+        io = obj.gete(io)
+    return obj, io
+
+        
+def scan_option(obj, key, out=False):
+    """Return a dictionary containing all possible object paths 
+    containing an option named key and its current value"""
+    out= out or {}
+    if key in obj:
+        out[obj['fullpath']] = obj[key]
+    for sub in obj.devices:
+        scan_option(sub, key, out)
+    return out
 
 class CommonProxy(object):
     separator = '/'
@@ -73,19 +99,12 @@ class CommonProxy(object):
         opt = self.gete(key)
         return resolve_role(self, opt)
     
-def resolve_role(obj, opt):
-    if not opt['type'].startswith('Role'):
-        return obj, False
-    pt = opt['options'][:]
-    pt.append(False)
-    path, preset, io = pt[:3]
-    if path in (False, None, 'None'):
-        return False, False
-    obj = obj.root.toPath(path)
-    if obj is None:
-        return False, False
-    if io:
-        io = obj.gete(io)
-    return obj, io
+    def compare_option(self, key):
+        return scan_option(self.root, key)
+        
+        
+        
+        
+
     
     
