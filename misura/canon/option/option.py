@@ -141,10 +141,11 @@ def prop_sorter(a, b):
 
 
 def ao(d, handle=False, type='Empty', current=None, name=False,
-       priority=-1, parent=False, flags={}, unit=None, options=False,
+       priority=-1, parent=False, flags=False, unit=None, options=False,
        values=False, attr=[], **kw):
     if not handle:
         return d
+    flags = flags or {}
     if current is None:
         if bytype[type] in ('float', 'integer'):
             current = 0
