@@ -36,9 +36,8 @@ class InterfaceEnvironment(DataEnvironment):
         if 'fullpath' in obj:
             # Use get() and not [] because it can be an autoproxy
             self.prefix = obj.get('fullpath')
-            obj.log.debug('object fullpath set to',self.prefix)
         else:
-            obj.log.debug('object fullpath not found!', obj)
+            obj.log.warning('object fullpath not found!', obj)
 
     def Log(self, *s):
         """Log a message both on MiLang and on the interfaced object"""

@@ -94,9 +94,7 @@ class Scriptable(object):
             return True
         if ins:
             exe.set_env_outFile(ins.outFile)
-        self.log.debug('execute_script:', handle, exe, exe.env._hdf, 
-                       exe.obj_env._hdf,  exe.ins_env._hdf, exe.kiln_env._hdf, 
-                       exe.script_env._hdf, exe.measure_env._hdf)
+        self.log.debug('execute_script:', handle)
         u = exe.eval(self, ins=ins)
         self.log.debug('execute_script done:', handle, u, 
                        exe.env.time, exe.env.temp, exe.env.value)
