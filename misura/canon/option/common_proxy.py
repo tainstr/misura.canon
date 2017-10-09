@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 from misura.canon.logger import get_module_logging
-from __builtin__ import False
 logging = get_module_logging(__name__)
 import re
 
