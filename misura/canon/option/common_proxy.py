@@ -51,6 +51,8 @@ def scan_option(obj, keys, out=False):
         out[obj['fullpath']] = vals
         
     for sub in obj.devices:
+        if sub==obj:
+            continue
         out = scan_option(sub, keys, out)
     return out
 
@@ -107,9 +109,7 @@ class CommonProxy(object):
         opt = self.gete(key)
         return resolve_role(self, opt)
     
-    def compare_option(self, *keys):
-        r = scan_option(self.root, keys)
-        return r
+
         
         
         

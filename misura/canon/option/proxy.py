@@ -469,3 +469,7 @@ class ConfigurationProxy(common_proxy.CommonProxy, Aggregative, Scriptable, Conf
 
     def check_write(self, opt):
         return self.desc[opt].get('writeLevel', 0) <= self._writeLevel
+    
+    def compare_option(self, *keys):
+        r = common_proxy.scan_option(self.root, keys)
+        return r
