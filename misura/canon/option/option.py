@@ -87,7 +87,7 @@ int_keys = ('readLevel', 'writeLevel', 'mb', 'priority')
 type_keys = ('current', 'factory_default', 'min', 'max', 'step')
 repr_keys = ('attr', 'flags', 'options', 'values')  # and any other....
 
-nowrite = set(['Binary', 'Runtime'])  # attributes which should not be saved
+nowrite = set(['Binary', 'Runtime', 'ReadOnly'])  # attributes/types which should not be saved
 # TODO: limit the nowrite just to the current and factory_default properties.
 
 
@@ -462,7 +462,8 @@ class Option(object):
             if k in old:
                 self._entry[k] = old[k]
                 
-        upkeys = ['step', 'max', 'min', 'options', 'values', 'precision']
+        upkeys = ['step', 'max', 'min', 'options', 'values', 'visible', 'precision',
+                  'unit']
         # If those keys were defined in the old definition but not in the new, import them
         for k in upkeys:
             if (k in old) and (k not in self._entry):
@@ -520,7 +521,9 @@ class Option(object):
                 nc = ''
             # Keep the new current if nothing else is found
             elif 'current' in old:
-                nc = old['current']
+                oc = old['current']
+                if type(nc)!=type(oc):
+                    nc = oc
             self._entry['current'] = nc
         except:
             print('Impossible to migrate current value', old['handle'], nc, ot)
