@@ -1,7 +1,7 @@
 #############
 ## General Analytical Options
 #############
-priority=>0|;|handle=>'name'|;|name=>'Analyzer'|;|current=>'HSM Image Analyzer'|;|factory_default=>'dummy name'|;|type=>'String'|;|attr=>['ReadOnly']
+priority=>0|;|handle=>'name'|;|name=>'Analyzer'|;|current=>'HSM Image Analyzer'|;|factory_default=>'dummy name'|;|type=>'String'
 
 handle=>'ExcessROI'|;|name=>'ROI % Area Excess'|;|current=>60|;|maximum=>100|;|step=>1|;|minimum=>20|;|type=>'Integer'
 handle=>'VarROI'|;|name=>'ROI Maximum % variability between frames'|;|current=>1|;|maximum=>50|;|step=>1|;|minimum=>0|;|type=>'Integer'

@@ -2,8 +2,8 @@ handle=>'name'|;|name=>'Choose a name'|;|current=>'Simulator'|;|factory_default=
 handle=>'comment'|;|name=>'Add a comment'|;|current=>'dummy com'|;|factory_default=>'dummy com'|;|type=>'String'
 
 
-handle=>'devpath'|;|name=>'Device path'|;|current=>'none'|;|factory_default=>False|;|type=>'ReadOnly'
-handle=>'dev'|;|name=>'Device node'|;|current=>'dummy name'|;|factory_default=>'dummy name'|;|type=>'ReadOnly'
+handle=>'devpath'|;|name=>'Device path'|;|current=>'none'|;|factory_default=>False|;|type=>'String'
+handle=>'dev'|;|name=>'Device node'|;|current=>'dummy name'|;|factory_default=>'dummy name'|;|type=>'String'
 
 
 handle=>'temp'|;|name=>'Temperature'|;|current=>25|;|type=>'Float'|;|attr=>['History']
