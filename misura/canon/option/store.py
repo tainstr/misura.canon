@@ -42,6 +42,7 @@ class Store(object):
         if len(self.desc) == 0:
             return failed
         for key, entry in self.desc.items():
+            print(key,entry)
             entry = self.update(entry)
             if entry:
                 self.desc[key] = entry
@@ -190,6 +191,7 @@ class ListStore(Store):
     def read_list(self, lst):
         for entry in lst:
             ks = list(entry.keys())
+            entry = Option(**entry)
             # intercept simple update requests: opt is key:val
             if len(ks) == 1:
                 k = ks[0]
@@ -199,7 +201,7 @@ class ListStore(Store):
                 self.desc[k]['current'] = entry[k]
                 continue
             # Else, add the option
-            entry = self.update(Option(**entry))
+            entry = self.update(entry)
             if not entry:
                 continue
             self.desc[entry['handle']] = entry

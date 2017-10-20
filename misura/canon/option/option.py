@@ -87,17 +87,18 @@ int_keys = ('readLevel', 'writeLevel', 'mb', 'priority')
 type_keys = ('current', 'factory_default', 'min', 'max', 'step')
 repr_keys = ('attr', 'flags', 'options', 'values')  # and any other....
 
-nowrite = set(['Binary', 'Runtime', 'ReadOnly'])  # attributes/types which should not be saved
+nowrite = set(['Binary', 'Runtime'])  # attributes/types which should not be saved
 # TODO: limit the nowrite just to the current and factory_default properties.
 
 
-def tosave(entry):
+def tosave(entry, excl=[]):
+    excl = set(excl).union(nowrite)
     """Determine if this option should be saved or not"""
-    if len(nowrite.intersection(set([entry['type']]))) > 0:
+    if len(excl.intersection(set([entry['type']]))) > 0:
         print('nowrite entry by type', entry)
         return False
     if 'attr' in entry:
-        if len(nowrite.intersection(set(entry['attr']))) > 0:
+        if len(excl.intersection(set(entry['attr']))) > 0:
             print('nowrite entry by attr', entry)
             return False
     return True
