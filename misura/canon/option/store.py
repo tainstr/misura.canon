@@ -42,7 +42,6 @@ class Store(object):
         if len(self.desc) == 0:
             return failed
         for key, entry in self.desc.items():
-            print(key,entry)
             entry = self.update(entry)
             if entry:
                 self.desc[key] = entry
