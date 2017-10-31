@@ -366,17 +366,18 @@ class ConfigurationProxy(common_proxy.CommonProxy, Aggregative, Scriptable, Conf
 
     def toPath(self, lst):
         """Returns a copy of the object at the path expressed in list lst"""
-        if isinstance(lst, str):
+        if isinstance(lst, basestring):
             lst = lst.split(self.separator)
-            if lst[0] in ['server', '']:
+            while lst[0] in ('server', ''):
                 lst.pop(0)
-            if lst[-1] == '':
+            while lst[-1] == '':
                 lst.pop(-1)
         obj = self.copy()
         for p in lst:
-            if obj is None:
-                return None
             obj = obj.child(p)
+            if obj is None:
+                logging.error('toPath: Cannot find child path', p, lst)
+                return None
         return obj
 
     def from_column(self, col0):
