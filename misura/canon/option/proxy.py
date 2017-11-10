@@ -262,7 +262,13 @@ class ConfigurationProxy(common_proxy.CommonProxy, Aggregative, Scriptable, Conf
     def multiget(self, keys):
         r = {}
         for k in keys:
-            r[k] = self[k]
+            obj = self
+            k = k.split('/')
+            while len(k)>1:
+                obj.child(k[0])
+                k.pop(0)
+            k = k[0]
+            r[k] = obj[k]
         return r
 
     def __getattr__(self, path):
