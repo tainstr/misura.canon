@@ -271,6 +271,10 @@ No data will be evaluate if older than zerotime."""
     @lockme()
     def get_time_cumulative_profile(self, path, t):
         return self._get_time(path, t, get=reference.CumulativeProfile.unbound['decode_time'])
+    
+    @lockme()
+    def get_time_func(self, path, t, func):
+        return self._get_time(path, t, get=func)   
 
     @lockme()
     def get_time_image(self, path, t):

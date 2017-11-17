@@ -52,6 +52,7 @@ def render_meta(obj):
             
 class NodeAccessor(object):
     _node = False
+    route = ['get_time']
     def __init__(self, sharedfile, path='/'):
         self._sh = sharedfile
         self._path = path
@@ -68,7 +69,6 @@ class NodeAccessor(object):
             return object.__getattribute__(self, subpath)
         if subpath not in self.node:
             return object.__getattribute__(self, subpath)
-           
         if not self._path.endswith('/'):
             s = self._path+'/'+subpath
         else: 
@@ -81,6 +81,19 @@ class NodeAccessor(object):
     
     def __getitem__(self, *a, **k):
         return self().__getitem__(*a, **k)
+
+    def values_at_time(self, t, names):
+        """Returns indexes and values for `names` at time `t`"""
+        idxes = []
+        vals = []
+        for var in names:
+            p1 = getattr(self, var)()
+            idx = p1.get_time(t)
+            val = p1[idx]
+            idxes.append(idx)
+            vals.append(val)
+            
+        return idxes, vals
         
     def get_profile(self, idx=None, T=None, t=None):
         if not 'profile' in self.node:
@@ -90,10 +103,13 @@ class NodeAccessor(object):
         if T is not None:
             idx, t, val = self._sh.nearest(self._path+'/T', T)
         if t is not None:
-            idx = self._sh.get_time_cumulative_profile(self._path+'/profile', t)
+            idx = self._sh.get_time_func(self._path+'/profile', t, 
+                                         func  = p.unbound['decode_time'])
         if idx is not None:
             dat = p[idx]
-        return dat
+            return dat
+        print('No profile found.')
+        return False
         
     def draw_profile(self, idx=None, T=None, t=None):
         dat = self.get_profile(idx=idx, T=T, t=t)
