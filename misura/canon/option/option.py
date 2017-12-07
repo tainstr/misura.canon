@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 """Option persistence."""
+from ..logger import get_module_logging
+logging = get_module_logging(__name__)
 
 defined_attr = {'Binary': 'Binary blob',
                 'Runtime': 'Do not save this value',
@@ -261,6 +263,9 @@ def validate(entry):
     if 'name' not in entry:
         entry['name'] = entry['handle'].replace('_', ' ').capitalize()
     if 'parent' not in entry:
+        entry['parent'] = False
+    if entry['parent'] == entry['handle']:
+        logging.critical('Option parent must differ from handle!')
         entry['parent'] = False
     if 'unit' not in entry:
         if entry['type'] == 'Meta':
