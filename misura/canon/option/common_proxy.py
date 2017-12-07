@@ -109,6 +109,10 @@ class CommonProxy(object):
         opt = self.gete(key)
         return resolve_role(self, opt)
     
+    def is_live(self):
+        """Returns if the proxy refers to a remotely connected object or to a local data structure"""
+        return False
+    
 
         
         
