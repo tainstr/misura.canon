@@ -27,8 +27,13 @@ from threading import ThreadError
 import inspect
 from operator import itemgetter
 
-profiling = True
 
+profiling = True
+isWindows = os.name=='nt'
+if isWindows:
+    import psutil
+else:
+    psutil = False
 #############
 # TIME SCALING (testing)
 ###
@@ -212,6 +217,9 @@ def iter_cron_sort(top, field=1, reverse=False):
 
 def disk_free(path, unit=1048576.):
     """Calculate free disk space"""
+    if isWindows:
+        u = psutil.disk_usage(path)
+        return u.free/unit, u.total/unit, u.used/unit
     st = os.statvfs(path)
     f = st.f_frsize / unit
     free = st.f_bavail * f
