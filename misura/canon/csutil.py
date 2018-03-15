@@ -623,3 +623,14 @@ def filter_calibration_filenames(filenames):
 
 def only_hdf_files(filenames):
     return [filename for filename in filenames if filename.endswith('.h5')]
+
+class SharedProcessResources(object):
+    res = []
+    def register(self, setter, value):
+        self.res.append((setter, value))
+    def __call__(self):
+        for (setter, value) in self.res:
+            setter(value)
+
+sharedProcessResources = SharedProcessResources()
+        
