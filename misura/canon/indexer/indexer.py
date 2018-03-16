@@ -19,7 +19,7 @@ import threading
 import multiprocessing
 import datetime
 
-from misura.canon.csutil import unlockme, lockme, enc_options
+from misura.canon.csutil import unlockme, lockme, enc_options, sharedProcessResources
 
 import tables
 from tables.nodes import filenode
@@ -110,6 +110,22 @@ class FileSystemLock(object):
     def __init__(self,  path=False):
         self._lock = multiprocessing.Lock()
         self.path = path
+        sharedProcessResources.register(self.restore_lock, self._lock)
+
+    def restore_lock(self, lk):
+        print('FileSystemLock.restore_lock')
+        self._lock = lk
+        
+    def __getstate__(self):
+        r = self.__dict__.copy()
+        r.pop('_lock')
+        return r
+    
+    def __setstate__(self, s):
+        self.__dict__ = s
+        self._lock = multiprocessing.Lock()
+        
+    
 
     def set_path(self, path):
         self.path = path

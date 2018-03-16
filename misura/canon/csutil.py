@@ -635,14 +635,14 @@ class SharedProcessResources(object):
         self.name = '{}-{}'.format(self.pid, random())
     
     def register(self, setter, *args, **kwargs): 
-        if os.name!='nt':
-            return
+        #if os.name!='nt':
+        #    return
         print('Register', self.name)   
         self.res.append((setter, args, kwargs))
     
     def __call__(self):
-        if os.name!='nt':
-            return
+        #if os.name!='nt':
+        #    return
         t0 = time()
         print('Restoring', self.name,len(self.res))
         for (setter, args, kwargs) in self.res:
