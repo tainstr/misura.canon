@@ -624,13 +624,26 @@ def filter_calibration_filenames(filenames):
 def only_hdf_files(filenames):
     return [filename for filename in filenames if filename.endswith('.h5')]
 
+
+from time import time
+from random import random
 class SharedProcessResources(object):
-    res = []
-    def register(self, setter, value):
-        self.res.append((setter, value))
+    
+    def __init__(self):
+        self.res = []
+        self.pid = multiprocessing.current_process().pid
+        self.name = '{}-{}'.format(self.pid, random())
+    
+    def register(self, setter, *args, **kwargs): 
+        print('Register', self.name)   
+        self.res.append((setter, args, kwargs))
+    
     def __call__(self):
-        for (setter, value) in self.res:
-            setter(value)
+        t0 = time()
+        print('Restoring', self.name,len(self.res))
+        for (setter, args, kwargs) in self.res:
+            setter(*args, **kwargs)
+        print('RESTORED', 1000*(time()-t0))
 
 sharedProcessResources = SharedProcessResources()
         
