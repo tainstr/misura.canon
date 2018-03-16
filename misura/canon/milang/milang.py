@@ -54,7 +54,8 @@ class MiLang(object):
     """Handle of the option hosting this scipt"""
     meta = False
     """Metadata option, where to record the output point"""
-
+    script = False
+    
     def __init__(self, script, env=False, obj_env=False, script_env=False):
         if env:
             self.env = env
@@ -64,6 +65,18 @@ class MiLang(object):
         if script_env:
             self.script_env = script_env
         self.set_script(script)
+        
+    def __getstate__(self):
+        r = self.__dict__.copy()
+        r.pop('code')
+        r.pop('tree')
+        return r
+    
+    def __setstate__(self, s):
+        self.__dict__ = s 
+        if self.script:
+            self.set_script(self.script)
+        
 
     def set_script(self, script):
         val, tree = self.validate(script)

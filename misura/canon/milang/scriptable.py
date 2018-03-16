@@ -18,7 +18,7 @@ class Scriptable(object):
         self.always_scripts = []
         self.all_scripts = []
         self.env = DataEnvironment()
-
+    
     def compile_scripts(self, hdf=False):
         """Compile all Script-type options,
         assigning them to the appropriate container dictionary."""
@@ -138,7 +138,9 @@ class Scriptable(object):
         for smp in self.samples:
             self.log.debug('distributing sample scripts',smp)
             smp.compile_scripts(hdf)
-    xmlrpc_distribute_scripts = distribute_scripts
+            
+    def xmlrpc_distribute_scripts(self, *a, **k):
+        return self.distribute_scripts(*a, **k)
 
     def characterization(self, period=False):
         """Execute scripts."""
