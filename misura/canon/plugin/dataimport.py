@@ -63,6 +63,7 @@ def kiln_dict():
     ao(out, 'minControlTemp', 'Float', 0, 'Min Control Temp', readLevel=3)
     ao(out, 'maxElementTemp', 'Float', 0, 'Max Element Temp', readLevel=3)
     ao(out, 'minElementTemp', 'Float', 0, 'Min Element Temp', readLevel=3)
+    ao(out, 'ksn', 'String', readLevel=4)
     return out
 
 def instr_dict():
@@ -82,6 +83,7 @@ def server_dict():
     ao(out, 'runningInstrument', 'String')
     ao(out, 'lastInstrument', 'String')
     ao(out, 'log', 'Log')
+    ao(out, 'eq_sn', 'String', readLevel=4)
     return out
 
 
