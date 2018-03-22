@@ -13,6 +13,7 @@ from . import option
 from . import reference
 from . import plugin
 
+from .version import __version__
 
 import os, sys
 

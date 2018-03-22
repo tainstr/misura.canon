@@ -625,7 +625,7 @@ def only_hdf_files(filenames):
     return [filename for filename in filenames if filename.endswith('.h5')]
 
 
-from time import time
+
 from random import random
 class SharedProcessResources(object):
     
@@ -643,11 +643,11 @@ class SharedProcessResources(object):
     def __call__(self):
         if os.name!='nt':
             return
-        t0 = time()
+        t0 = standardTime.time()
         print('Restoring', self.name,len(self.res))
         for (setter, args, kwargs) in self.res:
             setter(*args, **kwargs)
-        print('RESTORED', 1000*(time()-t0))
+        print('RESTORED', 1000*(standardTime.time()-t0))
 
 sharedProcessResources = SharedProcessResources()
         
