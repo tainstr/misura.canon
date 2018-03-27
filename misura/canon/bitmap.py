@@ -88,7 +88,7 @@ def convertBitmap(img):
 
 
 def decompress(img):
-    if img[:2] != 'IM':  # MI is an old id
+    if img[:2] not in ('IM', 'MI'):  # MI is an old id
         return img
     img = StringIO(img)
     img.seek(0)
