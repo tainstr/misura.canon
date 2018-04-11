@@ -50,6 +50,8 @@ def get_node_reference_class(outfile, path):
         print('No _reference_class attribute for', path)
         return False
     name = outfile.get_node_attr(path, '_reference_class')
+    if isinstance(name, list):
+        name=name[0]
     g = globals()
     cls = g.get(name, False)
     if cls is False:

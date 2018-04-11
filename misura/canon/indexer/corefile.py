@@ -13,6 +13,7 @@ except:
 from traceback import format_exc
 import functools
 from tables.nodes import filenode
+from tables.file import _open_files
 from traceback import print_exc
 from time import time
 from multiprocessing import Lock
@@ -134,6 +135,8 @@ class CoreFile(object):
         try:
             if self.test is not False:
                 self.test.close()
+            for h in list(_open_files.get_handlers_by_name(self.path)):
+                h.close()
             return True
         except:
             self.log.debug("Reopening:", format_exc())
@@ -146,15 +149,23 @@ class CoreFile(object):
         os.remove(self.path)
         return True
 
-    def reopen(self):
+    def reopen(self, mode=None):
         self.log.debug('Reopening', self.path)
+        kw = {}
         if self.test:
             try:
+                kw['mode'] = self.test.mode
+                if mode and mode==kw.get('mode', None):
+                    return True
+                self.log.debug('Closing for reopeining:', self.path)
                 self.test.close()
+
             except:
                 self.log.debug('While reopening', self.path)
                 print_exc()
-        self.open_file(self.path)
+        if mode:
+            kw['mode'] = mode
+        self.open_file(self.path, **kw)
         return True
 
     ######################
@@ -340,6 +351,7 @@ class CoreFile(object):
         # TODO: better use of the mode param
         if self.test is False:
             return False
+        self.reopen(mode='a')
         n = False
         attrs = {}
         self.log.debug('CoreFile.filenode_write', path)

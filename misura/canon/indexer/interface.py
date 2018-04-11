@@ -104,6 +104,11 @@ class SharedFile(CoreFile, DataOperator):
         if self.conf is False:
             self.conf = option.ConfigurationProxy()
         return self.test, self.path
+    
+    def writable(self):
+        if not self.test:
+            return False
+        return self.test.mode in ('a','r+')
 
     def load_conf(self):
         d = self.conf_tree()
@@ -135,7 +140,8 @@ class SharedFile(CoreFile, DataOperator):
                 latest = ver
             v[node._v_pathname] = (node._f_getattr('name'),
                                    node._f_getattr('date'))
-        self.test.root.conf.attrs.versions = latest
+        if self.writable():
+            self.test.root.conf.attrs.versions = latest
         self.log.debug('returning versions', v)
         return v
 
@@ -189,11 +195,13 @@ class SharedFile(CoreFile, DataOperator):
     def _change_version(self, new_version):
         self.log.debug('Changing version to', new_version, type(new_version))
         self.version = new_version
-        self._set_attributes(
-            '/userdata', attrs={'active_version': new_version})
+        if self.writable():
+            self._set_attributes(
+                '/userdata', attrs={'active_version': new_version})
 
     def create_version(self, name=False, overwrite=True):
         """Create a new version with `name`. `overwrite` a previous version with same name."""
+        self.reopen(mode='a')
         newversion = False
         if name:
             newversion = self.get_version_by_name(name)
@@ -224,6 +232,7 @@ class SharedFile(CoreFile, DataOperator):
         return newversion
 
     def remove_version(self, version_path, remove_plots=True):
+        self.reopen(mode='a')
         if remove_plots:
             self.remove_node(version_path, recursive=True)
             self.log.info('Removed version', version_path)
@@ -277,6 +286,7 @@ class SharedFile(CoreFile, DataOperator):
             self.log.error(
                 'Cannot save plots for original version. Please make a new version first.')
             return False
+        self.reopen(mode='a')
         plots_path = self.version + '/plot'
         if not self.has_node(plots_path):
             self.create_group(self.versioned('/'), 'plot')

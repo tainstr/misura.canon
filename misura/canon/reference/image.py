@@ -7,10 +7,6 @@ from ..parameters import cfilter
 from .reference import Reference
 from .variable import VariableLength, binary_cast
 from . import binary
-try:
-    import cPickle as pickle
-except:
-    import pickle
 
 
 def decode_time(node, index):

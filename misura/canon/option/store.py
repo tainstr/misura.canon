@@ -58,7 +58,8 @@ class Store(object):
 
 assign_sym = '=>'
 concat_sym = '|;|'
-
+assign_sym_mask='@!@assign!_!sym!_!mask@!@'
+concat_sym_mask = '@!@concat!_!sym!_!mask@!@'
 
 def from_string(line):
     """Create an Option object starting from a csv text line"""
@@ -68,6 +69,9 @@ def from_string(line):
     ents = line.split(concat_sym)
     entry = {}
     for ent in ents:
+        ent = ent.replace(assign_sym_mask, 
+                          assign_sym).replace(concat_sym_mask, 
+                                              concat_sym)
         key, val = ent.split(assign_sym)
         val = ast.literal_eval(val)
         entry[key] = val
@@ -83,7 +87,12 @@ def to_string(opt):
     for key, val in entry.items():
         if key in ['kid']:
             continue
-        line += '%s%s%r%s' % (key, assign_sym, val, concat_sym)
+        val = '%r' % val
+        val = val.replace(assign_sym, 
+                          assign_sym_mask).replace(concat_sym, 
+                                                        concat_sym_mask)
+        
+        line += '%s%s%s%s' % (key, assign_sym, val, concat_sym)
     line = line[0:-3]
     return line
 
