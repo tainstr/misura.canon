@@ -136,7 +136,9 @@ class CoreFile(object):
             if self.test is not False:
                 self.test.close()
             for h in list(_open_files.get_handlers_by_name(self.path)):
+                self.log.debug('Closing handler:', id(h), h.mode, self.path)
                 h.close()
+            self.log.debug('Remaining handlers:', _open_files.get_handlers_by_name(self.path))
             return True
         except:
             self.log.debug("Reopening:", format_exc())
@@ -157,8 +159,8 @@ class CoreFile(object):
                 kw['mode'] = self.test.mode
                 if mode and mode==kw.get('mode', None):
                     return True
-                self.log.debug('Closing for reopeining:', self.path)
-                self.test.close()
+                self.log.debug('Closing for reopening:', self.path)
+                self.close()
 
             except:
                 self.log.debug('While reopening', self.path)
