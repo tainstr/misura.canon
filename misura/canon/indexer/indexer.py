@@ -373,6 +373,10 @@ class Indexer(object):
         if table:
             table.close()
         return r
+    
+    @property
+    def dbdir(self):
+        return os.path.dirname(self.dbPath)
 
     def get_test_data(self, table, file_path, add_uid_to_incremental_ids_table):
         conf = getattr(table.root, 'conf', False)
@@ -400,9 +404,8 @@ class Indexer(object):
         # Test row
         # ##
         test = {}
-
-        dbdir = os.path.dirname(self.dbPath)
-        relative_path = convert_to_relative_path(file_path,dbdir)
+        
+        relative_path = convert_to_relative_path(file_path, self.dbdir)
         test['file'] = relative_path
 
         instrument = str(conf.attrs.instrument, **enc_options)
@@ -529,11 +532,37 @@ class Indexer(object):
         hdf_file.close()
 
         return update_function(new_value, uid)
+    
+    def change_filename(self, original_file_path, new_filename, uid):
+        """Change filename and update db (not directory)"""
+        folder = os.path.dirname(original_file_path)
+        new_filename = os.path.basename(new_filename)
+        if new_filename.endswith(ext):
+            new_filename = new_filename[:-len(ext)]
+        num = ''
+        i = -1
+        while True:
+            path = os.path.join(folder, new_filename+num+ext)
+            if not os.path.exists(path):
+                break
+            i += 1 
+            num = '_{}'.format(i)
+        self.log.debug('change_filename rename', original_file_path, path)
+        # Rename the file
+        os.rename(original_file_path, path)
+        
+        # Update the db
+        relative_path = convert_to_relative_path(path, self.dbdir)
+        self.change_column_on_database('file', relative_path, uid)
+        return path
 
     def change_name(self, new_name, uid, hdf_file_name):
         if not new_name:
             return 0
-
+        
+        # Rename the hdf5 file
+        hdf_file_name = self.change_filename(hdf_file_name, new_name, uid)
+        
         return self.change_column('name',
                                   self.change_name_on_database,
                                   new_name,
@@ -755,8 +784,7 @@ class Indexer(object):
         if file_path.startswith("."):
             if file_path.startswith('.\\'):
                 file_path = '/'.join(file_path.split('\\'))
-            dbdir = os.path.dirname(self.dbPath)
-            relative_path = [dbdir] + file_path[1:].split('/')
+            relative_path = [self.dbdir] + file_path[1:].split('/')
             relative_path = os.path.join(*relative_path)
             return relative_path
 
