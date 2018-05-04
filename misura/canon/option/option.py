@@ -171,7 +171,7 @@ def ao(d, handle=False, type='Empty', current=None, name=False,
             current = ''
     if not name:
         name = handle
-    if priority < 0:
+    if priority < 0 or priority==None:
         priority = len(d)
 
     ent = {'priority': priority, 'handle': handle, 'name': name, 'current': current,

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """Option persistence."""
-from traceback import format_exc
+from traceback import format_exc, print_exc
 import ast
 import os
 
@@ -87,12 +87,12 @@ def to_string(opt):
     for key, val in entry.items():
         if key in ['kid']:
             continue
-        val = '%r' % val
+        val = '{!r}'.format(val)
         val = val.replace(assign_sym, 
                           assign_sym_mask).replace(concat_sym, 
                                                         concat_sym_mask)
         
-        line += '%s%s%s%s' % (key, assign_sym, val, concat_sym)
+        line += '{!s}{!s}{!s}{!s}'.format(key, assign_sym, val, concat_sym)
     line = line[0:-3]
     return line
 
@@ -181,7 +181,12 @@ class CsvStore(Store):
         for key, entry in values:
             prio += 1
             entry['priority'] = prio
-            line = to_string(entry)
+            line = False
+            try:
+                line = to_string(entry)
+            except:
+                print('to_string error on:', key, entry)
+                print_exc()
             if not line:
                 continue
             out.write(line + '\n')
