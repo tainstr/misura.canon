@@ -468,11 +468,13 @@ class Option(object):
             if k in old:
                 self._entry[k] = old[k]
                 
+                
         upkeys = ['step', 'max', 'min', 'options', 'values', 'visible', 'precision',
                   'unit']
-        # If those keys were defined in the old definition but not in the new, import them
-        for k in upkeys:
-            if (k in old) and (k not in self._entry):
+        
+        # Import any key which was defined in the old definition, but is missing from the new
+        for k in old.keys():
+            if k not in self._entry:
                 self._entry[k] = old[k]
         
         # Retain special attributes
