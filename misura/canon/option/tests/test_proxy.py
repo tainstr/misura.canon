@@ -12,11 +12,12 @@ _calls = []
 
 def dummy_callback(conf, key, old_val, new_val):
     d = conf.gete(key)
-    if not d.get('callback_set', False)=='dummy':
+    if not d.get('callback_set', False) == 'dummy':
         return new_val
     print('Dummy callback', conf['fullpath'], key, old_val, new_val)
     _calls.append((conf['fullpath'], key, old_val, new_val))
     return new_val
+
 
 option.proxy.ConfigurationProxy.callbacks_set.add(dummy_callback)
 
@@ -66,8 +67,8 @@ class ConfigurationProxy(unittest.TestCase):
         ac('T1000')
         ac('T200')
         self.assertEqual(set(self.shared_file.conf.kiln.children.keys()), set(['sample0',
-                                                                      'T10', 'T20', 'T30', 'T100', 'T200', 'T1000',
-                                                                      'heatload', 'measure', 'new', 'regulator']))
+                                                                               'T10', 'T20', 'T30', 'T100', 'T200', 'T1000',
+                                                                               'heatload', 'measure', 'new', 'regulator']))
 
     def test_calc_aggregate(self):
         base = option.ConfigurationProxy({'self': dataimport.base_dict()})
@@ -93,65 +94,75 @@ class ConfigurationProxy(unittest.TestCase):
         add_target('ch1', 1)
         add_target('ch2', 2)
         add_target('ch3', 6)
-        aval, error = base.calc_aggregate('sum(a)')
+        aval, error, tree = base.calc_aggregate('sum(a)')
         self.assertEqual(aval, 9)
         self.assertEqual(error, None)
-        aval, error = base.calc_aggregate('mean(a)')
+        self.assertEqual(tree, [[1], [2], [6]])
+        aval, error, tree = base.calc_aggregate('mean(a)')
         self.assertEqual(aval, 3)
         self.assertAlmostEqual(error, 2.1602468)
-        aval, error = base.calc_aggregate('prod(a)')
+        self.assertEqual(tree, [[1], [2], [6]])
+        aval, error, tree = base.calc_aggregate('prod(a)')
         self.assertEqual(aval, 12)
+        self.assertEqual(tree, [[1], [2], [6]])
         self.assertEqual(error, None)
-        aval, error = base.calc_aggregate('table(a,b)', 'table')
+        aval, error, tree = base.calc_aggregate('table(a,b)', 'table')
         self.assertEqual(
             aval, [[('Col A', 'Float'), ('Col B', 'Float')], [1, 2], [2, 4], [6, 12]])
-        aval2, error = base.calc_aggregate('table( a, b)', 'table')
+        self.assertEqual(tree, [[1, 2], [2, 4], [6, 12]])
+        aval2, error, tree = base.calc_aggregate('table( a, b)', 'table')
         self.assertEqual(aval, aval2)
-        aval, error = base.calc_aggregate('makegold(a)')
+        aval, error, tree = base.calc_aggregate('makegold(a)')
         self.assertEqual(aval, None)
-        
+
         base.update_aggregates()
         self.assertEqual(base['a'], 9)
         self.assertEqual(base['sum'], 9)
+        self.assertEqual(base.getattr('sum', 'tree'), [[1], [2], [6]])
         self.assertEqual(base['mean'], 3)
+        self.assertEqual(base.getattr('mean', 'tree'), [[1], [2], [6]])
         self.assertAlmostEqual(base['meanError'], 2.1602468)
         self.assertEqual(base['prod'], 12)
+        self.assertEqual(base.getattr('prod', 'tree'), [[1], [2], [6]])
         self.assertEqual(base['table'], [
                          [('Col A', 'Float'), ('Col B', 'Float')], [1, 2], [2, 4], [6, 12]])
-        
+        self.assertEqual(base.getattr('table', 'tree'),
+                         [[1, 2], [2, 4], [6, 12]])
+
     def test_aggregate_merge_tables(self):
         a = option.ConfigurationProxy({'self': dataimport.base_dict()})
         a.add_option('a', 'Table',
-                        [[('Key', 'Float'), ('A', 'Float')], 
-                         [1, 10], [2, 20], [3, 30], [4, 40], [5, 50]], 'Tab A', 
-                     unit=['meter', 'second'],precision=[1,2])
+                     [[('Key', 'Float'), ('A', 'Float')],
+                         [1, 10], [2, 20], [3, 30], [4, 40], [5, 50]], 'Tab A',
+                     unit=['meter', 'second'], precision=[1, 2])
         a['name'] = 'Dev A'
         b = option.ConfigurationProxy({'self': dataimport.base_dict()})
         b.add_option('b', 'Table',
-                        [[('Key', 'Float'), ('B', 'Float')],
+                     [[('Key', 'Float'), ('B', 'Float')],
                          [1, 0.1], [2, 0.2], [3, 0.3], [4, 0.4], [5, 0.5]], 'Tab B',
-                     unit=['meter', 'celsius'],precision=[1,3])
+                     unit=['meter', 'celsius'], precision=[1, 3])
         b['name'] = 'Dev B'
         c = option.ConfigurationProxy({'self': dataimport.base_dict()})
         c.add_option('c', 'Table',
-                        [[('Key', 'Float'), ('C', 'Float')],
+                     [[('Key', 'Float'), ('C', 'Float')],
                          [1, 100], [2, 200], [3, 300], [4, 400], [5, 500]], 'Tab C',
-                     unit=['meter', 'volt'],precision=[1,4])
+                     unit=['meter', 'volt'], precision=[1, 4])
         c['name'] = 'Dev C'
-        
+
         targets = ['a', 'b', 'c']
         devices = {'a': [a], 'b': [b], 'c': [c]}
-        
-        values = { name: [dev[0][name]] for name, dev in devices.items()}
-        
-        result, unit, precision, visible = option.aggregate_merge_tables(targets, values, devices)
+
+        values = {name: [dev[0][name]] for name, dev in devices.items()}
+
+        result, unit, precision, visible = option.aggregate_merge_tables(
+            targets, values, devices)
         self.assertEqual(len(result[0]), 4)
-        self.assertEqual(result[0], [('Key', 'Float'), ('Dev A\nA', 'Float'), 
+        self.assertEqual(result[0], [('Key', 'Float'), ('Dev A\nA', 'Float'),
                                      ('Dev B\nB', 'Float'), ('Dev C\nC', 'Float')])
         self.assertEqual(len(result[1]), 4)
         self.assertEqual(result[5], [5, 50, 0.5, 500])
         self.assertEqual(unit, ['meter', 'second', 'celsius', 'volt'])
-        self.assertEqual(precision, [1,2,3,4])
+        self.assertEqual(precision, [1, 2, 3, 4])
 
     def test_callback(self):
         base = option.ConfigurationProxy({'self': dataimport.base_dict()})

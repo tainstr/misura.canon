@@ -141,6 +141,7 @@ class Aggregative(object):
         values = collections.defaultdict(list)
         devices = collections.defaultdict(list)
         fullpaths = collections.defaultdict(list)
+        tree = []
         for child in self.devices:
             target = None
             pack = collections.defaultdict(list)
@@ -164,19 +165,28 @@ class Aggregative(object):
                     pack[target].append(child[target])
                 devpack[target].append(child)
                 pathpack[target].append(child['fullpath'])
+                
             if pack:
+                subtree = []
                 for t in targets:
                     values[t] += pack[t]
                     fullpaths[t] += pathpack[t]
                     devices[t] += devpack[t]
+
+                    opt = child.gete(t)
+                    if 'tree' in opt:
+                        subtree.append(opt['tree'])
+                    else:
+                        subtree.append(child[t])
+                tree.append(subtree)
             else:
                 self.log.error(
                     'calc_aggregate: no values packed for', child['devpath'], target)
 
-        return function_name, targets, values, fullpaths, devices
+        return function_name, targets, values, fullpaths, devices, tree
 
     def calc_aggregate(self, aggregation, handle=False):
-        function_name, targets, values, fullpaths, devices = self.collect_aggregate(
+        function_name, targets, values, fullpaths, devices, tree = self.collect_aggregate(
             aggregation, handle=handle)
         result = None
         error = None
@@ -224,7 +234,7 @@ class Aggregative(object):
         else:
             self.log.error(
                 'Aggregate function not found:', function_name, aggregation)
-        return result, error
+        return result, error, tree
 
     def update_aggregate(self, handle):
         """Update aggregation for option `handle`"""
@@ -233,9 +243,10 @@ class Aggregative(object):
             raise RuntimeError(
                 'Cannot update: option has no aggregate: ' + handle)
         aggregation = opt['aggregate']
-        result, error = self.calc_aggregate(aggregation, handle)
+        result, error, tree = self.calc_aggregate(aggregation, handle)
         if result is not None:
             self[handle] = result
+            self.setattr(handle, 'tree', tree)
             if error is not None and 'error' in opt:
                 self[opt['error']] = error
         else:
