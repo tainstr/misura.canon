@@ -21,6 +21,60 @@ def dummy_callback(conf, key, old_val, new_val):
 
 option.proxy.ConfigurationProxy.callbacks_set.add(dummy_callback)
 
+def add_target(base, name, val):
+    child = option.ConfigurationProxy({'self': dataimport.base_dict()})
+    child.add_option('a', 'Float', val, 'Col A')
+    child.add_option('b', 'Float', val * 2, 'Col B')
+    child.add_option(
+        'sum', 'Float', -1, 'Aggregate result', aggregate='sum(a)')
+    child.add_option(
+        'mean', 'Float', -1, 'Aggregate result', aggregate='mean(a)', error='meanError')
+    child.add_option('meanError', 'Float', -1, 'Mean result error',)
+    child.add_option(
+        'prod', 'Float', -1, 'Aggregate result', aggregate='prod(a)')
+    child.add_option('table', 'Table',
+                    [[('Bla Bla', 'Float'), ('Bla Bla Bla', 'Float')],
+                     [7, 8]], 'Aggregate result',
+                    aggregate='table(a,b)')
+    child.add_option('table_flat', 'Table', [],'Aggregate table flat',
+                    aggregate='table_flat(a,b)')
+    base.add_child(name, child.describe())
+
+def create_aggregate():
+    base = option.ConfigurationProxy({'self': dataimport.base_dict()})
+    base.add_option(
+        'a', 'Float', -1, 'Aggregate result', aggregate='sum()')
+    base.add_option(
+        'sum', 'Float', -1, 'Aggregate sum', aggregate='sum(a)')
+    base.add_option(
+        'mean', 'Float', -1, 'Aggregate mean', aggregate='mean(a)', error='meanError')
+    base.add_option('meanError', 'Float', -1, 'Mean result error',)
+    base.add_option(
+        'prod', 'Float', -1, 'Aggregate table', aggregate='prod(a)')
+    base.add_option('table', 'Table',
+                    [[('Bla Bla', 'Float'), ('Bla Bla Bla', 'Float')],
+                     [7, 8]], 'Aggregate result',
+                    aggregate='table(a,b)')
+    base.add_option('table_flat', 'Table', 'Aggregate table flat',
+                    aggregate='table_flat(a,b)')
+
+    add_target(base, 'ch1', 1)
+    add_target(base, 'ch2', 2)
+    add_target(base, 'ch3', 6)
+    
+    add_target(base.child('ch1'), 'sch11', 10)
+    add_target(base.child('ch1'), 'sch12', 20)
+    add_target(base.child('ch1'), 'sch13', 60)
+     
+    add_target(base.child('ch2'), 'sch21', 100)
+    add_target(base.child('ch2'), 'sch22', 200)
+    add_target(base.child('ch2'), 'sch23', 600)
+     
+    add_target(base.child('ch3'), 'sch31', 0.1)
+    add_target(base.child('ch3'), 'sch32', 0.2)
+    add_target(base.child('ch3'), 'sch33', 0.6)
+    return base
+    
 
 class ConfigurationProxy(unittest.TestCase):
 
@@ -70,64 +124,85 @@ class ConfigurationProxy(unittest.TestCase):
                                                                                'T10', 'T20', 'T30', 'T100', 'T200', 'T1000',
                                                                                'heatload', 'measure', 'new', 'regulator']))
 
-    def test_calc_aggregate(self):
-        base = option.ConfigurationProxy({'self': dataimport.base_dict()})
-        base.add_option(
-            'a', 'Float', -1, 'Aggregate result', aggregate='sum()')
-        base.add_option(
-            'sum', 'Float', -1, 'Aggregate result', aggregate='sum(a)')
-        base.add_option(
-            'mean', 'Float', -1, 'Aggregate result', aggregate='mean(a)', error='meanError')
-        base.add_option('meanError', 'Float', -1, 'Mean result error',)
-        base.add_option(
-            'prod', 'Float', -1, 'Aggregate result', aggregate='prod(a)')
-        base.add_option('table', 'Table',
-                        [[('Bla Bla', 'Float'), ('Bla Bla Bla', 'Float')],
-                         [7, 8]], 'Aggregate result',
-                        aggregate='table(a,b)')
 
-        def add_target(name, val):
-            child = option.ConfigurationProxy({'self': dataimport.base_dict()})
-            child.add_option('a', 'Float', val, 'Col A')
-            child.add_option('b', 'Float', val * 2, 'Col B')
-            base.add_child(name, child.describe())
-        add_target('ch1', 1)
-        add_target('ch2', 2)
-        add_target('ch3', 6)
+    
+    def test_calc_aggregate(self):
+        base = create_aggregate()
         aval, error, tree = base.calc_aggregate('sum(a)')
         self.assertEqual(aval, 9)
         self.assertEqual(error, None)
-        self.assertEqual(tree, [[1], [2], [6]])
+        oktree = [[1, 'ch1'], [2, 'ch2'], [6, 'ch3']]
+        self.assertEqual(tree, oktree)
         aval, error, tree = base.calc_aggregate('mean(a)')
         self.assertEqual(aval, 3)
         self.assertAlmostEqual(error, 2.1602468)
-        self.assertEqual(tree, [[1], [2], [6]])
+        self.assertEqual(tree, oktree)
         aval, error, tree = base.calc_aggregate('prod(a)')
         self.assertEqual(aval, 12)
-        self.assertEqual(tree, [[1], [2], [6]])
+        self.assertEqual(tree, oktree)
         self.assertEqual(error, None)
         aval, error, tree = base.calc_aggregate('table(a,b)', 'table')
         self.assertEqual(
             aval, [[('Col A', 'Float'), ('Col B', 'Float')], [1, 2], [2, 4], [6, 12]])
-        self.assertEqual(tree, [[1, 2], [2, 4], [6, 12]])
-        aval2, error, tree = base.calc_aggregate('table( a, b)', 'table')
+        self.assertEqual(tree, [[1, 2, 'ch1'], [2, 4, 'ch2'], [6, 12, 'ch3']])
+        aval2, error, tree = base.calc_aggregate('table( a , b)', 'table')
         self.assertEqual(aval, aval2)
+        
+        aval, error, tree = base.calc_aggregate('table_flat(a,b)', 'table')
+        self.assertEqual(
+            aval, [[('Col A', 'Float'),
+   ('ch1 Col A', 'Float'),
+   ('ch2 Col A', 'Float'),
+   ('ch3 Col A', 'Float'),
+   ('Col B', 'Float'),
+   ('ch1 Col B', 'Float'),
+   ('ch2 Col B', 'Float'),
+  ('ch3 Col B', 'Float')],
+  [1, 1, 2, 6, 2, 2, 4, 12],
+  [2, 1, 2, 6, 4, 2, 4, 12],
+  [6, 1, 2, 6, 12, 2, 4, 12]])
+        
         aval, error, tree = base.calc_aggregate('makegold(a)')
         self.assertEqual(aval, None)
 
         base.update_aggregates()
         self.assertEqual(base['a'], 9)
         self.assertEqual(base['sum'], 9)
-        self.assertEqual(base.getattr('sum', 'tree'), [[1], [2], [6]])
+        self.assertEqual(base.getattr('sum', 'tree'), oktree)
         self.assertEqual(base['mean'], 3)
-        self.assertEqual(base.getattr('mean', 'tree'), [[1], [2], [6]])
+        self.assertEqual(base.getattr('mean', 'tree'), oktree)
         self.assertAlmostEqual(base['meanError'], 2.1602468)
         self.assertEqual(base['prod'], 12)
-        self.assertEqual(base.getattr('prod', 'tree'), [[1], [2], [6]])
+        self.assertEqual(base.getattr('prod', 'tree'), oktree)
         self.assertEqual(base['table'], [
                          [('Col A', 'Float'), ('Col B', 'Float')], [1, 2], [2, 4], [6, 12]])
         self.assertEqual(base.getattr('table', 'tree'),
-                         [[1, 2], [2, 4], [6, 12]])
+                        [[1, 2, 'ch1'], [2, 4, 'ch2'], [6, 12, 'ch3']])
+        
+    def test_table_flat(self):
+        base= create_aggregate()
+        ch1 = base.child('ch1') 
+        sch11 = ch1.child('sch11')
+        sch11.update_aggregates()
+        # A leaf cannot aggregate
+        self.assertEqual(sch11['table'],[[('Bla Bla', 'Float'), ('Bla Bla Bla', 'Float')], [7, 8]])
+        self.assertEqual(sch11['table_flat'],[])
+        # First level
+        self.assertEqual(ch1['table'], [[('Col A', 'Float'), ('Col B', 'Float')], [10, 20], [20, 40], [60, 120]])
+        self.assertEqual(ch1['table_flat'], [[('Col A', 'Float'),
+   ('sch11 Col A', 'Float'),
+   ('sch12 Col A', 'Float'),
+   ('sch13 Col A', 'Float'),
+   ('Col B', 'Float'),
+   ('sch11 Col B', 'Float'),
+   ('sch12 Col B', 'Float'),
+   ('sch13 Col B', 'Float')],
+  [10, 10, 20, 60, 20, 20, 40, 120],
+  [20, 10, 20, 60, 40, 20, 40, 120],
+  [60, 10, 20, 60, 120, 20, 40, 120]])
+        
+        
+        
 
     def test_aggregate_merge_tables(self):
         a = option.ConfigurationProxy({'self': dataimport.base_dict()})

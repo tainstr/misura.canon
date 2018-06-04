@@ -10,13 +10,20 @@ logging = get_module_logging(__name__)
 import numpy as np
 
 
-def aggregate_table(targets, values, devices, precision=[], visible=[]):
+def aggregate_table(targets, values, devices, tree, precision=[], visible=[], function_name='table'):
     """Calculate the table() aggregate"""
     result = []
+    flat = function_name=='table_flat'
+    devpaths = []
     for i, x in enumerate(values[targets[0]]):
         row = []
-        for t in targets:
+        for j, t in enumerate(targets):
             row.append(values[t][i])
+            # Add subtree columns
+            if flat:
+                for el in tree:
+                    row.append(el[j])
+        devpaths.append(tree[i][-1])
         result.append(row)
     # Reorder by first column
     result = sorted(result, key=lambda e: e[0])
@@ -31,18 +38,52 @@ def aggregate_table(targets, values, devices, precision=[], visible=[]):
             logging.error('No device found for target', t)
             return None, None, None, None
         d = d[0]
+        # Get the target option
         opt = d.gete(t)
         h = opt.get('column', opt['name'])
         header.append((h, opt['type']))
         units.append(opt.get('unit', False))
+        # Calculate visibility and precision
         if i >= N:
-            # Hide if has a parent
-            v = not opt.get('parent', False)
-            # Hide also if the 'error' is found (should use is_error_col...)
-            v *= 'error' not in h.lower()
-            visible.append(not opt.get('parent', False))
+            # Extend visibility
+            visible.append(True)
             if opt['type'] in ['Float', 'Integer', 'Number']:
                 precision.append(opt.get('precision', 2))
+        # Hide if has a parent
+        v = not opt.get('parent', False)
+        # Hide also if the 'error' is found (should use is_error_col...)
+        v *= 'error' not in h.lower()
+        # Hide also if hidden
+        v *= 'Hidden' not in opt['attr']
+        visible[i] = v
+    
+    # Extend attributes if table is flat
+    if flat:
+        h1,v1,u1,p1 = [],[],[],[]
+        
+        for i,h in enumerate(header):
+            v = visible[i]
+            u = units[i]
+            p = precision[i]
+            h1.append(h)
+            v1 += [v]*(len(devpaths)+1)
+            u1 += [u]*(len(devpaths)+1)
+            p1 += [p]*(len(devpaths)+1)
+            
+            for d in devpaths:
+                h1.append(('{} {}'.format(d, h[0]), h[1]))
+            
+        header= h1
+        units = u1
+        visible = v1
+        precision = p1
+        
+        print 'header',header
+        print 'visible',visible
+        print 'precision',precision
+        print 'units',units
+ 
+            
     result = [header] + result
     return result, units, precision, visible
 
@@ -84,7 +125,11 @@ def aggregate_merge_tables(targets, values, devices):
                 unit += u[key_col+1:]
             v = opt.get('visible', n)
             if v and v!='None':
-                visible += v[key_col+1:]
+                visval = 'Hidden' not in opt['attr']
+                if not visval:
+                    visible += [visval]*len(v[key_col+1:])
+                else:
+                    visible += v[key_col+1:]
 
             xlen += len(h) 
             all_y += [row[key_col] for row in tab[1:]]
@@ -178,6 +223,7 @@ class Aggregative(object):
                         subtree.append(opt['tree'])
                     else:
                         subtree.append(child[t])
+                subtree.append(child['devpath'])
                 tree.append(subtree)
             else:
                 self.log.error(
@@ -207,7 +253,7 @@ class Aggregative(object):
         elif function_name == 'prod':
             result = float(
                 np.array(values[targets[0]]).astype(np.float32).prod())
-        elif function_name == 'table':
+        elif function_name in ('table', 'table_flat'):
             opt = False
             visible = []
             precision = []
@@ -216,7 +262,7 @@ class Aggregative(object):
                 visible = opt.get('visible', visible)
                 precision = opt.get('precision', precision)
             result, units, precision, visible = aggregate_table(
-                targets, values, devices, precision, visible)
+                targets, values, devices, tree, precision, visible, function_name)
             if opt and result:
                 opt['unit'] = units
                 opt['visible'] = visible
