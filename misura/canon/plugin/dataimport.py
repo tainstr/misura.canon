@@ -131,9 +131,10 @@ class Converter(object):
     def post_open_file(self, navigator, *a, **k):
         return False
         
-    def log(self, msg, priority=10):
+    def log(self, *msg, **kw):
         # TODO: check zerotime
-        logging.info(msg)
+        priority = kw.get('priority', 10)
+        msg = logging.info(*msg)
         # Create log reference if missing
         if not self.log_ref and self.outFile:
             log_opt = ao({}, 'log', 'Log')['log']

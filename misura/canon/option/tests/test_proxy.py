@@ -26,18 +26,20 @@ def add_target(base, name, val):
     child.add_option('a', 'Float', val, 'Col A')
     child.add_option('b', 'Float', val * 2, 'Col B')
     child.add_option(
-        'sum', 'Float', -1, 'Aggregate result', aggregate='sum(a)')
+        'sum', 'Float', -1, 'Aggregate sum', aggregate='sum(a)')
     child.add_option(
-        'mean', 'Float', -1, 'Aggregate result', aggregate='mean(a)', error='meanError')
+        'mean', 'Float', -1, 'Aggregate mean', aggregate='mean(a)', error='meanError')
     child.add_option('meanError', 'Float', -1, 'Mean result error',)
     child.add_option(
-        'prod', 'Float', -1, 'Aggregate result', aggregate='prod(a)')
+        'prod', 'Float', -1, 'Aggregate prod', aggregate='prod(a)')
     child.add_option('table', 'Table',
                     [[('Bla Bla', 'Float'), ('Bla Bla Bla', 'Float')],
                      [7, 8]], 'Aggregate result',
                     aggregate='table(a,b)')
     child.add_option('table_flat', 'Table', [],'Aggregate table flat',
                     aggregate='table_flat(a,b)')
+    child.add_option('table_flat_aggr', 'Table', [], 'Aggregate table flat from aggregates',
+                    aggregate='table_flat(sum,mean)')
     base.add_child(name, child.describe())
 
 def create_aggregate():
@@ -50,13 +52,16 @@ def create_aggregate():
         'mean', 'Float', -1, 'Aggregate mean', aggregate='mean(a)', error='meanError')
     base.add_option('meanError', 'Float', -1, 'Mean result error',)
     base.add_option(
-        'prod', 'Float', -1, 'Aggregate table', aggregate='prod(a)')
+        'prod', 'Float', -1, 'Aggregate prod', aggregate='prod(a)')
+    
     base.add_option('table', 'Table',
                     [[('Bla Bla', 'Float'), ('Bla Bla Bla', 'Float')],
-                     [7, 8]], 'Aggregate result',
+                     [7, 8]], 'Aggregate table',
                     aggregate='table(a,b)')
-    base.add_option('table_flat', 'Table', 'Aggregate table flat',
+    base.add_option('table_flat', 'Table', [], 'Aggregate table flat',
                     aggregate='table_flat(a,b)')
+    base.add_option('table_flat_aggr', 'Table', [], 'Aggregate table flat from aggregates',
+                    aggregate='table_flat(sum,mean)')
 
     add_target(base, 'ch1', 1)
     add_target(base, 'ch2', 2)
@@ -180,28 +185,58 @@ class ConfigurationProxy(unittest.TestCase):
                         [[1, 2, 'ch1'], [2, 4, 'ch2'], [6, 12, 'ch3']])
         
     def test_table_flat(self):
-        base= create_aggregate()
+        base = create_aggregate()
+        base.update_aggregates(recursive=-1)
         ch1 = base.child('ch1') 
         sch11 = ch1.child('sch11')
         sch11.update_aggregates()
         # A leaf cannot aggregate
         self.assertEqual(sch11['table'],[[('Bla Bla', 'Float'), ('Bla Bla Bla', 'Float')], [7, 8]])
         self.assertEqual(sch11['table_flat'],[])
-        # First level
+        self.assertEqual(sch11['table_flat_aggr'],[])
+        
+        ###
+        # Second level
+        ###
         self.assertEqual(ch1['table'], [[('Col A', 'Float'), ('Col B', 'Float')], [10, 20], [20, 40], [60, 120]])
-        self.assertEqual(ch1['table_flat'], [[('Col A', 'Float'),
-   ('sch11 Col A', 'Float'),
-   ('sch12 Col A', 'Float'),
-   ('sch13 Col A', 'Float'),
-   ('Col B', 'Float'),
-   ('sch11 Col B', 'Float'),
-   ('sch12 Col B', 'Float'),
-   ('sch13 Col B', 'Float')],
-  [10, 10, 20, 60, 20, 20, 40, 120],
-  [20, 10, 20, 60, 40, 20, 40, 120],
-  [60, 10, 20, 60, 120, 20, 40, 120]])
+        # Not involving sub-aggregates
+        self.assertEqual(ch1['table_flat'], [[('Col A', 'Float'), ('Col B', 'Float')], [10, 20], [20, 40], [60, 120]])
+        
+        print 'TREE',ch1.gete('table_flat_aggr')['tree'][1]
+        print 'TABLE header', ch1['table_flat_aggr'][0]
+        print 'TABLE row[0]', ch1['table_flat_aggr'][1]        
+          
+        # Only contains empty sub-aggregates
+        self.assertEqual(ch1['table_flat_aggr'], [[('Aggregate sum', 'Float'), ('Aggregate mean', 'Float')],
+                                                    [-1, -1],
+                                                    [-1, -1],
+                                                    [-1, -1]])
+        
+        ###        
+        # First level
+        ###
+        self.assertEqual(base['table'], [[('Col A', 'Float'), ('Col B', 'Float')], [1, 2], [2, 4], [6, 12]])
+        # Not involving sub-aggregates, it's equal to table():
+        self.assertEqual(base['table_flat'],[[('Col A', 'Float'), ('Col B', 'Float')], [1, 2], [2, 4], [6, 12]])
         
         
+        
+        print 'TREE',base.gete('table_flat_aggr')['tree'][1]
+        print 'TABLE header', base['table_flat_aggr'][0]
+        print 'TABLE row[0]', base['table_flat_aggr'][1]
+        for i,h in enumerate(base['table_flat_aggr'][0]):
+            print h, [row[i] for row in base['table_flat_aggr'][1:]]
+        self.assertEqual(base['table_flat_aggr'], [[('Aggregate sum', 'Float'), 
+                                                   ('sch11 Aggregate sum', 'Float'), 
+                                                   ('sch12 Aggregate sum', 'Float'), 
+                                                   ('sch13 Aggregate sum', 'Float'), 
+                                                   ('Aggregate mean', 'Float'), 
+                                                   ('sch11 Aggregate mean', 'Float'), 
+                                                   ('sch12 Aggregate mean', 'Float'), 
+                                                   ('sch13 Aggregate mean', 'Float')],
+                                                    [0.9000000357627869, 0.1, 0.2, 0.6, 0.30000001192092896, 0.1, 0.2, 0.6],
+                                                    [90.0, 10, 20, 60, 30.0, 10, 20, 60],
+                                                    [900.0, 100, 200, 600, 300.0, 100, 200, 600]])
         
 
     def test_aggregate_merge_tables(self):

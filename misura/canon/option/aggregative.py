@@ -9,7 +9,14 @@ logging = get_module_logging(__name__)
 
 import numpy as np
 
-
+def extract_subelements(el):
+    sub=[]
+    if isinstance(el,list):
+        sub+=[e[0] for e in el]
+    else:
+        sub.append(el)
+    return sub
+        
 def aggregate_table(targets, values, devices, tree, precision=[], visible=[], function_name='table'):
     """Calculate the table() aggregate"""
     result = []
@@ -21,16 +28,29 @@ def aggregate_table(targets, values, devices, tree, precision=[], visible=[], fu
             row.append(values[t][i])
             # Add subtree columns
             if flat:
-                for el in tree:
-                    row.append(el[j])
-        devpaths.append(tree[i][-1])
+                devpaths.append([])
+                # Retrieve corresponding subaggregation for target and row
+                subtree = tree[t][i] 
+                # Require unary sub-aggregation
+                if len(subtree[1])>1:
+                    logging.debug('Excluding multiary aggregation from table_flat', subtree.keys())
+                    continue
+                # Second level of aggregation
+                subelem = list(subtree[1].values())[0]
+                print 'SUBTREE', subtree, subelem
+                for el in subelem: 
+                    print 'Appending flat subelements', t, 'j', j, 'sub', el[0], 'el', el
+                    row.append(el[0])
+                    devpaths[-1].append(el[-1])
         result.append(row)
     # Reorder by first column
     result = sorted(result, key=lambda e: e[0])
     # Calculate table properties
     header = []
     units = []
-    N = len(precision)
+    precision = []
+    N = len(visible)
+    
     for i, t in enumerate(targets):
         # Take the first device
         d = devices[t]
@@ -43,12 +63,12 @@ def aggregate_table(targets, values, devices, tree, precision=[], visible=[], fu
         h = opt.get('column', opt['name'])
         header.append((h, opt['type']))
         units.append(opt.get('unit', False))
+        if opt['type'] in ['Float', 'Integer', 'Number']:
+            precision.append(opt.get('precision', 2))
         # Calculate visibility and precision
         if i >= N:
             # Extend visibility
             visible.append(True)
-            if opt['type'] in ['Float', 'Integer', 'Number']:
-                precision.append(opt.get('precision', 2))
         # Hide if has a parent
         v = not opt.get('parent', False)
         # Hide also if the 'error' is found (should use is_error_col...)
@@ -66,12 +86,15 @@ def aggregate_table(targets, values, devices, tree, precision=[], visible=[], fu
             u = units[i]
             p = precision[i]
             h1.append(h)
-            v1 += [v]*(len(devpaths)+1)
-            u1 += [u]*(len(devpaths)+1)
-            p1 += [p]*(len(devpaths)+1)
+            v1 += [v]
+            n = len(devpaths[i])
+            # Subordered columns are not visible by default
+            v1  += [False]*n
+            u1 += [u]*(n+1)
+            p1 += [p]*(n+1)
             
-            for d in devpaths:
-                h1.append(('{} {}'.format(d, h[0]), h[1]))
+            for d in devpaths[i]:
+                h1.append(('{} {}'.format(h[0], d), h[1]))
             
         header= h1
         units = u1
@@ -186,7 +209,8 @@ class Aggregative(object):
         values = collections.defaultdict(list)
         devices = collections.defaultdict(list)
         fullpaths = collections.defaultdict(list)
-        tree = []
+        subtree = collections.defaultdict(list)
+        
         for child in self.devices:
             target = None
             pack = collections.defaultdict(list)
@@ -212,27 +236,33 @@ class Aggregative(object):
                 pathpack[target].append(child['fullpath'])
                 
             if pack:
-                subtree = []
+
                 for t in targets:
                     values[t] += pack[t]
                     fullpaths[t] += pathpack[t]
                     devices[t] += devpack[t]
-
+                    
                     opt = child.gete(t)
                     if 'tree' in opt:
-                        subtree.append(opt['tree'])
+                        subtree[t].append(opt['tree']) 
+                        print('Found an aggregate', t, subtree[t][-1])
                     else:
-                        subtree.append(child[t])
-                subtree.append(child['devpath'])
-                tree.append(subtree)
+                        # If the option is not an aggregate itself, create an empty subtree
+                        subtree[t].append([child[t], {t:[]}, child['devpath']])
+                        print('Not an aggregate', t, subtree[t][-1])
+                
+                # Revert to normal dict
+                subtree = dict(subtree)
+                
+                
+                
             else:
                 self.log.error(
                     'calc_aggregate: no values packed for', child['devpath'], target)
-
-        return function_name, targets, values, fullpaths, devices, tree
+        return function_name, targets, values, fullpaths, devices, subtree
 
     def calc_aggregate(self, aggregation, handle=False):
-        function_name, targets, values, fullpaths, devices, tree = self.collect_aggregate(
+        function_name, targets, values, fullpaths, devices, subtree = self.collect_aggregate(
             aggregation, handle=handle)
         result = None
         error = None
@@ -262,7 +292,7 @@ class Aggregative(object):
                 visible = opt.get('visible', visible)
                 precision = opt.get('precision', precision)
             result, units, precision, visible = aggregate_table(
-                targets, values, devices, tree, precision, visible, function_name)
+                targets, values, devices, subtree, precision, visible, function_name)
             if opt and result:
                 opt['unit'] = units
                 opt['visible'] = visible
@@ -280,7 +310,7 @@ class Aggregative(object):
         else:
             self.log.error(
                 'Aggregate function not found:', function_name, aggregation)
-        return result, error, tree
+        return result, error, subtree
 
     def update_aggregate(self, handle):
         """Update aggregation for option `handle`"""
@@ -289,10 +319,10 @@ class Aggregative(object):
             raise RuntimeError(
                 'Cannot update: option has no aggregate: ' + handle)
         aggregation = opt['aggregate']
-        result, error, tree = self.calc_aggregate(aggregation, handle)
+        result, error, subtree = self.calc_aggregate(aggregation, handle)
         if result is not None:
             self[handle] = result
-            self.setattr(handle, 'tree', tree)
+            self.setattr(handle, 'tree', [result, subtree, self['devpath']])
             if error is not None and 'error' in opt:
                 self[opt['error']] = error
         else:
