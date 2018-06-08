@@ -73,11 +73,12 @@ def create_aggregate():
      
     add_target(base.child('ch2'), 'sch21', 100)
     add_target(base.child('ch2'), 'sch22', 200)
-    add_target(base.child('ch2'), 'sch23', 600)
+    #add_target(base.child('ch2'), 'sch23', 600)
      
     add_target(base.child('ch3'), 'sch31', 0.1)
     add_target(base.child('ch3'), 'sch32', 0.2)
     add_target(base.child('ch3'), 'sch33', 0.6)
+    add_target(base.child('ch3'), 'sch34', 0.8)
     return base
     
 
@@ -227,16 +228,18 @@ class ConfigurationProxy(unittest.TestCase):
         for i,h in enumerate(base['table_flat_aggr'][0]):
             print h, [row[i] for row in base['table_flat_aggr'][1:]]
         self.assertEqual(base['table_flat_aggr'], [[('Aggregate sum', 'Float'), 
-                                                   ('sch11 Aggregate sum', 'Float'), 
-                                                   ('sch12 Aggregate sum', 'Float'), 
-                                                   ('sch13 Aggregate sum', 'Float'), 
+                                                   ('Aggregate sum sch31', 'Float'), 
+                                                   ('Aggregate sum sch32', 'Float'), 
+                                                   ('Aggregate sum sch33', 'Float'),
+                                                   ('Aggregate sum sch34', 'Float'), 
                                                    ('Aggregate mean', 'Float'), 
-                                                   ('sch11 Aggregate mean', 'Float'), 
-                                                   ('sch12 Aggregate mean', 'Float'), 
-                                                   ('sch13 Aggregate mean', 'Float')],
-                                                    [0.9000000357627869, 0.1, 0.2, 0.6, 0.30000001192092896, 0.1, 0.2, 0.6],
-                                                    [90.0, 10, 20, 60, 30.0, 10, 20, 60],
-                                                    [900.0, 100, 200, 600, 300.0, 100, 200, 600]])
+                                                   ('Aggregate mean sch31', 'Float'), 
+                                                   ('Aggregate mean sch32', 'Float'), 
+                                                   ('Aggregate mean sch33', 'Float'),
+                                                   ('Aggregate mean sch34', 'Float'),],
+                                                    [1.7000000476837158, 0.1, 0.2, 0.6, 0.8, 0.42500001192092896, 0.1, 0.2, 0.6, 0.8],
+                                                    [90.0, 10, 20, 60, None, 30.0, 10, 20, 60, None],
+                                                    [300.0, 100, 200, None, None, 150.0, 100, 200, None, None]])
         
 
     def test_aggregate_merge_tables(self):

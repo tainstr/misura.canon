@@ -9,26 +9,40 @@ logging = get_module_logging(__name__)
 
 import numpy as np
 
-def extract_subelements(el):
-    sub=[]
-    if isinstance(el,list):
-        sub+=[e[0] for e in el]
-    else:
-        sub.append(el)
-    return sub
         
 def aggregate_table(targets, values, devices, tree, precision=[], visible=[], function_name='table'):
     """Calculate the table() aggregate"""
     result = []
     flat = function_name=='table_flat'
     devpaths = []
+    elements = []
+    
+    # Determine aggregate subelements for table flattening
+    if flat:
+        for i, x in enumerate(values[targets[0]]):
+            subelements = []
+            subdev = []
+            for j, t in enumerate(targets):
+                # Retrieve corresponding subaggregation for target and row
+                subtree = tree[t][i] 
+                # Require unary sub-aggregation
+                if len(subtree[1])>1:
+                    logging.debug('Excluding multiary aggregation from table_flat', subtree.keys())
+                    subelements.append([])
+                    continue
+                # Second level of aggregation
+                subelem = list(subtree[1].values())[0]
+                subelements.append(subelem) 
+                subdev.append([el[-1] for el in subelem])
+            elements.append(subelements)
+            devpaths.append(subdev)
+    
     for i, x in enumerate(values[targets[0]]):
         row = []
         for j, t in enumerate(targets):
             row.append(values[t][i])
             # Add subtree columns
             if flat:
-                devpaths.append([])
                 # Retrieve corresponding subaggregation for target and row
                 subtree = tree[t][i] 
                 # Require unary sub-aggregation
@@ -36,13 +50,19 @@ def aggregate_table(targets, values, devices, tree, precision=[], visible=[], fu
                     logging.debug('Excluding multiary aggregation from table_flat', subtree.keys())
                     continue
                 # Second level of aggregation
-                subelem = list(subtree[1].values())[0]
-                print 'SUBTREE', subtree, subelem
+                subelem = elements[i][j]
                 for el in subelem: 
-                    print 'Appending flat subelements', t, 'j', j, 'sub', el[0], 'el', el
+                    print('Appending flat subelements', t, 'j', j, 'sub', el[0], 'el', el)
                     row.append(el[0])
-                    devpaths[-1].append(el[-1])
+                # Normalize target length
+                N = max([len(rowel[j]) for rowel in elements])                
+                m = len(subelem)
+                if m<N:
+                    row += [None]*(N-m)
+                
+                    
         result.append(row)
+        
     # Reorder by first column
     result = sorted(result, key=lambda e: e[0])
     # Calculate table properties
@@ -87,13 +107,20 @@ def aggregate_table(targets, values, devices, tree, precision=[], visible=[], fu
             p = precision[i]
             h1.append(h)
             v1 += [v]
-            n = len(devpaths[i])
+            # Collect all devpaths for header target `i`
+            dp = [d[i] for d in devpaths]
+            # Take maximum length
+            n = max([len(d) for d in dp])
+            # Arbirtarily take the longest target to extend the header
+            for d in dp:
+                if len(d)==n:
+                    longest = d
             # Subordered columns are not visible by default
             v1  += [False]*n
             u1 += [u]*(n+1)
             p1 += [p]*(n+1)
             
-            for d in devpaths[i]:
+            for d in longest:
                 h1.append(('{} {}'.format(h[0], d), h[1]))
             
         header= h1
@@ -101,10 +128,10 @@ def aggregate_table(targets, values, devices, tree, precision=[], visible=[], fu
         visible = v1
         precision = p1
         
-        print 'header',header
-        print 'visible',visible
-        print 'precision',precision
-        print 'units',units
+        print('header',header)
+        print('visible',visible)
+        print('precision',precision)
+        print('units',units)
  
             
     result = [header] + result
