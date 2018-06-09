@@ -9,7 +9,29 @@ logging = get_module_logging(__name__)
 
 import numpy as np
 
-        
+def calc_aggregate_subelements(targets, values, tree):
+    devpaths = []
+    elements = []
+    for i in range(len(values[targets[0]])):
+        subelements = []
+        subdev = []
+        for target in targets:
+            # Retrieve corresponding subaggregation for target and row
+            subtree = tree[target][i] 
+            # Require unary sub-aggregation
+            if len(subtree[1])>1:
+                logging.debug('Excluding multiary aggregation from table_flat', subtree.keys())
+                subelements.append([])
+                continue
+            # Second level of aggregation
+            subelem = list(subtree[1].values())[0]
+            subelements.append(subelem) 
+            subdev.append([el[-1] for el in subelem])
+        elements.append(subelements)
+        devpaths.append(subdev)
+            
+    return elements, devpaths
+     
 def aggregate_table(targets, values, devices, tree, precision=[], visible=[], function_name='table'):
     """Calculate the table() aggregate"""
     result = []
@@ -19,27 +41,12 @@ def aggregate_table(targets, values, devices, tree, precision=[], visible=[], fu
     
     # Determine aggregate subelements for table flattening
     if flat:
-        for i, x in enumerate(values[targets[0]]):
-            subelements = []
-            subdev = []
-            for j, t in enumerate(targets):
-                # Retrieve corresponding subaggregation for target and row
-                subtree = tree[t][i] 
-                # Require unary sub-aggregation
-                if len(subtree[1])>1:
-                    logging.debug('Excluding multiary aggregation from table_flat', subtree.keys())
-                    subelements.append([])
-                    continue
-                # Second level of aggregation
-                subelem = list(subtree[1].values())[0]
-                subelements.append(subelem) 
-                subdev.append([el[-1] for el in subelem])
-            elements.append(subelements)
-            devpaths.append(subdev)
+        elements, devpaths = calc_aggregate_subelements(targets, values, tree)
     
     for i, x in enumerate(values[targets[0]]):
         row = []
         for j, t in enumerate(targets):
+            # i=row, j=column
             row.append(values[t][i])
             # Add subtree columns
             if flat:
@@ -94,8 +101,9 @@ def aggregate_table(targets, values, devices, tree, precision=[], visible=[], fu
         # Hide also if the 'error' is found (should use is_error_col...)
         v *= 'error' not in h.lower()
         # Hide also if hidden
-        v *= 'Hidden' not in opt['attr']
-        visible[i] = v
+        attr = opt['attr']
+        v *= ('Hidden' not in attr) and ('ClientHide' not in attr)
+        visible[i] = bool(v)
     
     # Extend attributes if table is flat
     if flat:
@@ -106,20 +114,19 @@ def aggregate_table(targets, values, devices, tree, precision=[], visible=[], fu
             u = units[i]
             p = precision[i]
             h1.append(h)
-            v1 += [v]
+            v1.append(v)
             # Collect all devpaths for header target `i`
             dp = [d[i] for d in devpaths]
             # Take maximum length
             n = max([len(d) for d in dp])
-            # Arbirtarily take the longest target to extend the header
-            for d in dp:
-                if len(d)==n:
-                    longest = d
             # Subordered columns are not visible by default
             v1  += [False]*n
             u1 += [u]*(n+1)
             p1 += [p]*(n+1)
-            
+            # Arbirtarily take one longest target to extend the header
+            for d in dp:
+                if len(d)==n:
+                    longest = d
             for d in longest:
                 h1.append(('{} {}'.format(h[0], d), h[1]))
             
@@ -127,11 +134,6 @@ def aggregate_table(targets, values, devices, tree, precision=[], visible=[], fu
         units = u1
         visible = v1
         precision = p1
-        
-        print('header',header)
-        print('visible',visible)
-        print('precision',precision)
-        print('units',units)
  
             
     result = [header] + result
@@ -272,11 +274,11 @@ class Aggregative(object):
                     opt = child.gete(t)
                     if 'tree' in opt:
                         subtree[t].append(opt['tree']) 
-                        print('Found an aggregate', t, subtree[t][-1])
+                        #print('Found an aggregate', t, subtree[t][-1])
                     else:
                         # If the option is not an aggregate itself, create an empty subtree
                         subtree[t].append([child[t], {t:[]}, child['devpath']])
-                        print('Not an aggregate', t, subtree[t][-1])
+                        #print('Not an aggregate', t, subtree[t][-1])
                 
                 # Revert to normal dict
                 subtree = dict(subtree)

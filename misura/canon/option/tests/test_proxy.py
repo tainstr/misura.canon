@@ -137,7 +137,7 @@ class ConfigurationProxy(unittest.TestCase):
         aval, error, tree = base.calc_aggregate('sum(a)')
         self.assertEqual(aval, 9)
         self.assertEqual(error, None)
-        oktree = [[1, 'ch1'], [2, 'ch2'], [6, 'ch3']]
+        oktree = {'a': [[1, {'a': []}, 'ch1'], [2, {'a': []}, 'ch2'], [6, {'a': []}, 'ch3']]}
         self.assertEqual(tree, oktree)
         aval, error, tree = base.calc_aggregate('mean(a)')
         self.assertEqual(aval, 3)
@@ -150,23 +150,14 @@ class ConfigurationProxy(unittest.TestCase):
         aval, error, tree = base.calc_aggregate('table(a,b)', 'table')
         self.assertEqual(
             aval, [[('Col A', 'Float'), ('Col B', 'Float')], [1, 2], [2, 4], [6, 12]])
-        self.assertEqual(tree, [[1, 2, 'ch1'], [2, 4, 'ch2'], [6, 12, 'ch3']])
+        self.assertEqual(tree, {'a': [[1, {'a': []}, 'ch1'], [2, {'a': []}, 'ch2'], [6, {'a': []}, 'ch3']], 
+                                'b': [[2, {'b': []}, 'ch1'], [4, {'b': []}, 'ch2'], [12, {'b': []}, 'ch3']]})
         aval2, error, tree = base.calc_aggregate('table( a , b)', 'table')
         self.assertEqual(aval, aval2)
         
         aval, error, tree = base.calc_aggregate('table_flat(a,b)', 'table')
         self.assertEqual(
-            aval, [[('Col A', 'Float'),
-   ('ch1 Col A', 'Float'),
-   ('ch2 Col A', 'Float'),
-   ('ch3 Col A', 'Float'),
-   ('Col B', 'Float'),
-   ('ch1 Col B', 'Float'),
-   ('ch2 Col B', 'Float'),
-  ('ch3 Col B', 'Float')],
-  [1, 1, 2, 6, 2, 2, 4, 12],
-  [2, 1, 2, 6, 4, 2, 4, 12],
-  [6, 1, 2, 6, 12, 2, 4, 12]])
+            aval, [[('Col A', 'Float'), ('Col B', 'Float')], [1, 2], [2, 4], [6, 12]])
         
         aval, error, tree = base.calc_aggregate('makegold(a)')
         self.assertEqual(aval, None)
@@ -174,16 +165,17 @@ class ConfigurationProxy(unittest.TestCase):
         base.update_aggregates()
         self.assertEqual(base['a'], 9)
         self.assertEqual(base['sum'], 9)
-        self.assertEqual(base.getattr('sum', 'tree'), oktree)
+        self.assertEqual(base.getattr('sum', 'tree')[1], oktree)
         self.assertEqual(base['mean'], 3)
-        self.assertEqual(base.getattr('mean', 'tree'), oktree)
+        self.assertEqual(base.getattr('mean', 'tree')[1], oktree)
         self.assertAlmostEqual(base['meanError'], 2.1602468)
         self.assertEqual(base['prod'], 12)
-        self.assertEqual(base.getattr('prod', 'tree'), oktree)
+        self.assertEqual(base.getattr('prod', 'tree')[1], oktree)
         self.assertEqual(base['table'], [
                          [('Col A', 'Float'), ('Col B', 'Float')], [1, 2], [2, 4], [6, 12]])
-        self.assertEqual(base.getattr('table', 'tree'),
-                        [[1, 2, 'ch1'], [2, 4, 'ch2'], [6, 12, 'ch3']])
+        self.assertEqual(base.getattr('table', 'tree')[1],
+                        {'a': [[1, {'a': []}, 'ch1'], [2, {'a': []}, 'ch2'], [6, {'a': []}, 'ch3']],
+                            'b': [[2, {'b': []}, 'ch1'], [4, {'b': []}, 'ch2'], [12, {'b': []}, 'ch3']]})
         
     def test_table_flat(self):
         base = create_aggregate()
