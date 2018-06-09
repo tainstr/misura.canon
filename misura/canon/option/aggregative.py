@@ -80,13 +80,21 @@ def aggregate_table(targets, values, devices, tree, precision=[], visible=[], fu
     
     for i, t in enumerate(targets):
         # Take the first device
-        d = devices[t]
-        if not len(d):
+        devs = devices[t]
+        if not len(devs):
             logging.error('No device found for target', t)
-            return None, None, None, None
-        d = d[0]
+            continue
+            #return None, None, None, None
         # Get the target option
-        opt = d.gete(t)
+        opt = None
+        for d in devs:
+            if t in d:
+                opt = d.gete(t)
+                break
+        if not opt:
+            logging.error('No device found for target', t)
+            continue
+        
         h = opt.get('column', opt['name'])
         header.append((h, opt['type']))
         units.append(opt.get('unit', False))
@@ -97,7 +105,8 @@ def aggregate_table(targets, values, devices, tree, precision=[], visible=[], fu
             # Extend visibility
             visible.append(True)
         # Hide if has a parent
-        v = not opt.get('parent', False)
+        #v = not opt.get('parent', False)
+        v = True
         # Hide also if the 'error' is found (should use is_error_col...)
         v *= 'error' not in h.lower()
         # Hide also if hidden
@@ -270,6 +279,9 @@ class Aggregative(object):
                     values[t] += pack[t]
                     fullpaths[t] += pathpack[t]
                     devices[t] += devpack[t]
+                    
+                    if not t in child:
+                        continue
                     
                     opt = child.gete(t)
                     if 'tree' in opt:
