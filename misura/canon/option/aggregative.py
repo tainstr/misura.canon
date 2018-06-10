@@ -46,8 +46,13 @@ def aggregate_table(targets, values, devices, tree, precision=[], visible=[], fu
     for i, x in enumerate(values[targets[0]]):
         row = []
         for j, t in enumerate(targets):
-            # i=row, j=column
-            row.append(values[t][i])
+            # i=row, j=column=t
+            v = values[t][i]
+            if devices[t][i] is None or v is None:
+                logging.debug('Not collecting', t, i, v, devices[t][i])
+                continue
+            
+            row.append(v)
             # Add subtree columns
             if flat:
                 # Retrieve corresponding subaggregation for target and row
@@ -72,6 +77,8 @@ def aggregate_table(targets, values, devices, tree, precision=[], visible=[], fu
         
     # Reorder by first column
     result = sorted(result, key=lambda e: e[0])
+    
+    ############
     # Calculate table properties
     header = []
     units = []
@@ -88,6 +95,8 @@ def aggregate_table(targets, values, devices, tree, precision=[], visible=[], fu
         # Get the target option
         opt = None
         for d in devs:
+            if d is None:
+                continue
             if t in d:
                 opt = d.gete(t)
                 break
@@ -112,6 +121,7 @@ def aggregate_table(targets, values, devices, tree, precision=[], visible=[], fu
         # Hide also if hidden
         attr = opt['attr']
         v *= ('Hidden' not in attr) and ('ClientHide' not in attr)
+        print 'visible for', t, v, 'error' not in h.lower(), ('Hidden' not in attr), ('ClientHide' not in attr), attr, d['fullpath']
         visible[i] = bool(v)
     
     # Extend attributes if table is flat
@@ -144,7 +154,7 @@ def aggregate_table(targets, values, devices, tree, precision=[], visible=[], fu
         visible = v1
         precision = p1
  
-            
+    print 'aggregate_table', result, units, precision, visible
     result = [header] + result
     return result, units, precision, visible
 
@@ -218,6 +228,7 @@ def aggregate_merge_tables(targets, values, devices):
             # Move the X cursor
             xpos += len(row) - 1 - key_col
     result = [header] + result
+    
     return result, unit, precision, visible
 
 
@@ -254,6 +265,7 @@ class Aggregative(object):
             pack = collections.defaultdict(list)
             devpack = collections.defaultdict(list)
             pathpack = collections.defaultdict(list)
+            found = False
             for target in targets:
                 # Ensure all targets exist
                 if target not in child:
@@ -270,8 +282,13 @@ class Aggregative(object):
                 else:
                     #Target is fine
                     pack[target].append(child[target])
-                devpack[target].append(child)
-                pathpack[target].append(child['fullpath'])
+                    found = True
+                if found:
+                    devpack[target].append(child)
+                    pathpack[target].append(child['fullpath'])
+                else:
+                    devpack[target].append(None)
+                    pathpack[target].append(None)                 
                 
             if pack:
 
@@ -364,8 +381,9 @@ class Aggregative(object):
         if result is not None:
             self[handle] = result
             self.setattr(handle, 'tree', [result, subtree, self['devpath']])
-            if error is not None and 'error' in opt:
+            if error is not None and 'error' in opt and opt['error'] in self:
                 self[opt['error']] = error
+            self.log.debug('Updated aggregate', handle, result, error)
         else:
             self.log.error('Aggregation failed for ', self.get_fullpath(),
                            handle, aggregation)
