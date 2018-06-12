@@ -32,7 +32,7 @@ def calc_aggregate_subelements(targets, values, tree):
             
     return elements, devpaths
      
-def aggregate_table(targets, values, devices, tree, precision=[], visible=[], function_name='table'):
+def aggregate_table(targets, values, devices, tree, precision=[], visible=[], function_name='table', readLevel=6):
     """Calculate the table() aggregate"""
     result = []
     flat = function_name=='table_flat'
@@ -48,7 +48,7 @@ def aggregate_table(targets, values, devices, tree, precision=[], visible=[], fu
         for j, t in enumerate(targets):
             # i=row, j=column=t
             v = values[t][i]
-            if devices[t][i] is None or v is None:
+            if devices[t][i] is None:
                 logging.debug('Not collecting', t, i, v, devices[t][i])
                 continue
             
@@ -83,6 +83,7 @@ def aggregate_table(targets, values, devices, tree, precision=[], visible=[], fu
     header = []
     units = []
     precision = []
+    visible = []
     N = len(visible)
     
     for i, t in enumerate(targets):
@@ -121,7 +122,8 @@ def aggregate_table(targets, values, devices, tree, precision=[], visible=[], fu
         # Hide also if hidden
         attr = opt['attr']
         v *= ('Hidden' not in attr) and ('ClientHide' not in attr)
-        print 'visible for', t, v, 'error' not in h.lower(), ('Hidden' not in attr), ('ClientHide' not in attr), attr, d['fullpath']
+        v *= readLevel>=opt.get('readLevel',-1)
+        print 'visible for', i, t, v, 'error' not in h.lower(), ('Hidden' not in attr), ('ClientHide' not in attr), attr, readLevel>=opt.get('readLevel',-1), d['fullpath']
         visible[i] = bool(v)
     
     # Extend attributes if table is flat
@@ -250,6 +252,7 @@ def encode_aggregation(function_name, targets=[]):
 
 class Aggregative(object):
     """A configuration object fragment proving aggregate capability"""
+    _readLevel = 6
 
     def collect_aggregate(self, aggregation, handle=False):
         function_name, targets = decode_aggregation(aggregation)
@@ -349,8 +352,8 @@ class Aggregative(object):
                 opt = self.gete(handle)
                 visible = opt.get('visible', visible)
                 precision = opt.get('precision', precision)
-            result, units, precision, visible = aggregate_table(
-                targets, values, devices, subtree, precision, visible, function_name)
+            result, units, precision, visible = aggregate_table(targets, values, devices, subtree, 
+                                                                precision, visible, function_name, self._readLevel)
             if opt and result:
                 opt['unit'] = units
                 opt['visible'] = visible
