@@ -72,7 +72,6 @@ def aggregate_table(targets, values, devices, tree, precision=[], visible=[], fu
                 if m<N:
                     row += [None]*(N-m)
                 
-                    
         result.append(row)
         
     # Reorder by first column
@@ -155,6 +154,21 @@ def aggregate_table(targets, values, devices, tree, precision=[], visible=[], fu
         units = u1
         visible = v1
         precision = p1
+        
+    # Remove empty columns
+    rcol = []
+    for i in range(len(result[0])):
+        col = [row[i] for row in result]
+        if set(col)==set([None]):
+            rcol.append(i)
+    # Remove columns in reversed order
+    for r in rcol[::-1]:
+        for i, row in enumerate(result):
+            row.pop(r)
+            result[i] = row
+        
+                
+            
  
     print 'aggregate_table', result, units, precision, visible
     result = [header] + result
