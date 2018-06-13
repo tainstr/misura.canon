@@ -106,7 +106,7 @@ class ConfigurationProxy(common_proxy.CommonProxy, Aggregative, Scriptable, Conf
         return result
 
     def __setstate__(self, state):
-        map(lambda a: setattr(self, *a), s.items())
+        map(lambda a: setattr(self, *a), state.items())
         self.children_obj = {}
         self.callbacks_set = self.__class__.callbacks_set
         self.callbacks_get = self.__class__.callbacks_get
