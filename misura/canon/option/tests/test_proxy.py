@@ -184,9 +184,9 @@ class ConfigurationProxy(unittest.TestCase):
         sch11 = ch1.child('sch11')
         sch11.update_aggregates()
         # A leaf cannot aggregate
-        self.assertEqual(sch11['table'],[[('Bla Bla', 'Float'), ('Bla Bla Bla', 'Float')], [7, 8]])
-        self.assertEqual(sch11['table_flat'],[])
-        self.assertEqual(sch11['table_flat_aggr'],[])
+        self.assertEqual(sch11['table'],[[]])
+        self.assertEqual(sch11['table_flat'],[[]])
+        self.assertEqual(sch11['table_flat_aggr'],[[]])
         
         ###
         # Second level
