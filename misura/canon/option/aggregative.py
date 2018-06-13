@@ -32,6 +32,22 @@ def calc_aggregate_subelements(targets, values, tree):
             
     return elements, devpaths
      
+def remove_empty_columns(result):
+    if not len(result):
+        return result
+    rcol = []
+    for i in range(len(result[0])):
+        col = [row[i] for row in result]
+        if set(col)==set([None]):
+            rcol.append(i)
+    # Remove columns in reversed order
+    for r in rcol[::-1]:
+        for i, row in enumerate(result):
+            row.pop(r)
+            result[i] = row 
+    return result   
+     
+     
 def aggregate_table(targets, values, devices, tree, precision=[], visible=[], function_name='table', readLevel=6):
     """Calculate the table() aggregate"""
     result = []
@@ -101,7 +117,7 @@ def aggregate_table(targets, values, devices, tree, precision=[], visible=[], fu
                 opt = d.gete(t)
                 break
         if not opt:
-            logging.error('No device found for target', t)
+            logging.error('No device found with target', t, [d['fullpath'] for d in devs])
             continue
         
         h = opt.get('column', opt['name'])
@@ -155,21 +171,9 @@ def aggregate_table(targets, values, devices, tree, precision=[], visible=[], fu
         visible = v1
         precision = p1
         
-    # Remove empty columns
-    rcol = []
-    for i in range(len(result[0])):
-        col = [row[i] for row in result]
-        if set(col)==set([None]):
-            rcol.append(i)
-    # Remove columns in reversed order
-    for r in rcol[::-1]:
-        for i, row in enumerate(result):
-            row.pop(r)
-            result[i] = row
-        
+
+    result = remove_empty_columns(result)
                 
-            
- 
     print 'aggregate_table', result, units, precision, visible
     result = [header] + result
     return result, units, precision, visible
