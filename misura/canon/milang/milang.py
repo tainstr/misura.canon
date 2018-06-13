@@ -73,7 +73,7 @@ class MiLang(object):
         return r
     
     def __setstate__(self, s):
-        self.__dict__ = s 
+        map(lambda a: setattr(self, *a), s.items())
         if self.script:
             self.set_script(self.script)
         
