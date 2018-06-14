@@ -153,7 +153,7 @@ class SharedFile(CoreFile, DataOperator):
         return False
 
     def get_latest_version_number(self):
-        v = []
+        v = [0]
         for k in self.get_versions().keys():
             v.append(0 if k == '' else int(k.split('_')[-1]))
         m = max(v)
@@ -193,7 +193,7 @@ class SharedFile(CoreFile, DataOperator):
         return True
 
     def _change_version(self, new_version):
-        self.log.debug('Changing version to', new_version, type(new_version))
+        self.log.debug('Changing version to', repr(new_version), type(new_version))
         self.version = new_version
         if self.writable():
             self._set_attributes(
