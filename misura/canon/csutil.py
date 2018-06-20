@@ -635,8 +635,8 @@ class SharedProcessResources(object):
         self.name = '{}-{}'.format(self.pid, random())
     
     def register(self, setter, *args, **kwargs): 
-        #if os.name!='nt':
-        #    return
+        if os.name!='nt':
+            return
         print('Register', self.name)   
         self.res.append((setter, args, kwargs))
     
