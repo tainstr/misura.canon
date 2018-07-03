@@ -273,7 +273,7 @@ class CumulativeProfile(Profile):
         x += (x == 0) * (y == 0)
         x = 300 + np.cumsum(x)
         y = 300 + np.cumsum(y)
-        return t, ((w, h), x.astype('uint16'), y.astype('uint16'))
+        return t, ((w, h), x.astype('int16'), y.astype('int16'))
     
     def test_real_shape(self):
         dat = os.path.join(determine_path(__file__), 'cumulative.dat')

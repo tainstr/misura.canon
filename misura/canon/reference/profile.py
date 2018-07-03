@@ -42,7 +42,7 @@ class Profile(VariableLength):
             return None
         if len(prf[0]) != 2:
             return None
-        (w, h), x, y = prf.astype(np.uint16)
+        (w, h), x, y = prf
         # Cast double time into four 16-bit integers
         ta = np.array(binary_cast([t], 'd', 'HHHH'))
         # Create the concatenated arrays
@@ -79,12 +79,11 @@ def explode_jumps(x, y):
             continue
         ox += [0]*max(ax, ay)
         oy += [0]*max(ax, ay)
-        
         if ax:
             ox[-ax:] = [np.sign(vx)]*ax
         if ay:
             oy[-ay:] = [np.sign(vy)]*ay
-    
+            
     ox, oy = np.array(ox), np.array(oy)
     
     return ox, oy
@@ -101,7 +100,7 @@ def couple(d, scale=9):
 
 def decouple(v, scale=9):
     # Conversion to bigger SIGNED int
-    v=v.astype(np.uint16)
+    v=v.astype(np.int16)
     # Unpack bits from bytes
     v_even = v % scale
     v_odd = v // scale
@@ -167,7 +166,7 @@ class CumulativeProfile(Profile):
         (w, h), x, y = prf
         # Cast double time,  16-bits integer dimensions and starting coords into 16 8-bits unsigned integers
         coords = np.array(binary_cast([t, w, h, x[0], y[0]], 'dHHHH', '<16B'))
-        cumul = accumulate_coords(x.astype(np.uint8),y.astype(np.uint8))
+        cumul = accumulate_coords(x,y).round(0).astype(np.uint8)
         out = np.concatenate((coords, cumul))
         return out
 
