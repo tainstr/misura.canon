@@ -127,6 +127,8 @@ class Converter(object):
         self.outFile = False
         self.log_ref = False
         self.conversion_start_time = time()
+        from misura.client.confwidget import check_default_database
+        check_default_database()
         
     def post_open_file(self, navigator, *a, **k):
         return False
