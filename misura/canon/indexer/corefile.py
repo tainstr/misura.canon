@@ -153,6 +153,8 @@ class CoreFile(object):
 
     def reopen(self, mode=None):
         self.log.debug('Reopening', self.path)
+        if not self.path:
+            return False
         kw = {}
         if self.test:
             try:
