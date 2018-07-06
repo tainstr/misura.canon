@@ -40,7 +40,7 @@ col_serial = testColumn.index('serial')
 columns_to_translate = testColumn + ('incremental_id',)
 
 testColumnDefault = ['file', 'serial', 'uid', 'id', 'zerotime',
-                     'instrument', 'flavour', 'name', 1, 1, 'comment', 0]
+                     'instrument', 'flavour', 'name', 'elapsed', 'nSamples', 'comment', 'verify', 'incremental_id']
 testColDef = ('text', 'text', 'text', 'text', 'date', 'text',
               'text', 'text', 'real', 'integer', 'text', 'bool')
 testTableDef = '''(file text unique, serial text, uid text primary key,
