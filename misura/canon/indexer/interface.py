@@ -69,6 +69,9 @@ class SharedFile(CoreFile, DataOperator):
         if not path:
             self.log.debug('No path supplied', path, self.path, uid)
             return False
+        # Always open the real, normalize path
+        path = os.path.realpath(os.path.normpath(path))
+        
         if mode == 'w':
             self.log.debug('Creating in write mode', path)
             tables.open_file(path, mode='w', title=title).close()
