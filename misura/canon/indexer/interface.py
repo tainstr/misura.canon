@@ -128,8 +128,10 @@ class SharedFile(CoreFile, DataOperator):
     def get_versions(self):
         """List available versions. Returns a dictionary {path: (name,date)}"""
         if not self.test:
+            self.log.debug('get_versions: no test defined')
             return {}
         if not self._has_node('/conf'):
+            self.log.debug('get_versions: no /conf')
             return {}
         v = {'': ('Original', self.test.root.conf.attrs.date)}
         # skip 0 and seek a little farer
@@ -201,6 +203,8 @@ class SharedFile(CoreFile, DataOperator):
         if self.writable():
             self._set_attributes(
                 '/userdata', attrs={'active_version': new_version})
+            return True
+        return False
 
     def create_version(self, name=False, overwrite=True):
         """Create a new version with `name`. `overwrite` a previous version with same name."""
