@@ -94,6 +94,21 @@ class NavigatorDomain(object):
 
     def __init__(self, navigator):
         self.navigator = navigator
+        self.create_shortcuts()
+        
+    def create_shortcuts(self):
+        pass
+    
+
+    @nodes
+    def get_datasets_from_selection(self, nodes=False):
+        header = [node.path for node in nodes]
+        header = filter(lambda path: path in self.doc.data, header)
+        return header
+
+    def iternodes(self, nodes, func, *args, **kwargs):
+        for node in nodes:
+            func(node, *args, **kwargs)
 
     @property
     def model(self):
