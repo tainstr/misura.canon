@@ -176,7 +176,7 @@ class Conf(object):
     def setattr(self, handle, key, val):
         """Sets to val the `key` of `handle` option"""
         if key in read_only_keys:
-            print('Attempt to modify read-only key')
+            print('Attempt to modify read-only key', handle, key, val)
             return False
         opt = self.desc[handle]
         opt[key] = val

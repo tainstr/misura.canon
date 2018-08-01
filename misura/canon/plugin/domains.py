@@ -37,10 +37,12 @@ def node(func):
             n = a[0]
             keyword = False
         # If node was not specified, get from currentIndex
-        if n is False:
+        if n in (None, False):
             n = self.model().data(self.currentIndex(), role=QtUserRole)
+            logging.debug('@node not specified: got selected', n)
         elif isDataset(n):
             n = docname(n)
+            logging.debug('@node was a dataset: found path', n)
 
         # If node was expressed as/converted to string, get its corresponding
         # tree entry
@@ -55,7 +57,7 @@ def node(func):
             a = list(a)
             a[0] = n
             a = tuple(a)
-        logging.debug('@node with', n, type(n), isinstance(n, unicode))
+        logging.debug('@node returning', n, type(n), isinstance(n, unicode))
         return func(self, *a, **k)
     return node_wrapper
 
