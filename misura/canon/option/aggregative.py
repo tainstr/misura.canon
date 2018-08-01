@@ -403,7 +403,9 @@ class Aggregative(object):
             self[handle] = result
             self.setattr(handle, 'tree', [result, subtree, self['devpath']])
             if error is not None and 'error' in opt and opt['error'] in self:
-                self[opt['error']] = error
+                if not opt.hasattr('error', 'aggregate'):
+                    # Assign only if the destination is not an aggregate itself
+                    self[opt['error']] = error
             self.log.debug('Updated aggregate', handle, result, error)
         else:
             self.log.error('Aggregation failed for ', self.get_fullpath(),
