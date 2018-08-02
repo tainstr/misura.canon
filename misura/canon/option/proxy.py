@@ -57,9 +57,11 @@ class ConfigurationProxy(common_proxy.CommonProxy, Aggregative, Scriptable, Conf
     callbacks_get = set()
     callbacks_set = set()
     filename = False  # Filename from which this configuration was red
-
+    _changeset = 0
+    
     def print_tree(self, *a, **k):
         print(print_tree(self.tree(), *a, **k))
+        
 
     def __init__(self, desc=False, name='MAINSERVER', parent=False, readLevel=-1, writeLevel=-1, kid_base='/'):
         self._lock = Lock()
@@ -92,6 +94,15 @@ class ConfigurationProxy(common_proxy.CommonProxy, Aggregative, Scriptable, Conf
         if 'devpath' in self:
             self['devpath'] = name
         self.autosort()
+        self._changeset = 0
+        
+    def recursive_changeset(self):
+        """Calculate cumulative changeset by recursing across all children"""
+        n = self._changeset
+        for k, c in self.children_obj.items():
+            t = c.recursive_changeset()
+            n += t
+        return n
         
 
     def __getstate__(self):
@@ -134,6 +145,7 @@ class ConfigurationProxy(common_proxy.CommonProxy, Aggregative, Scriptable, Conf
         path.reverse()
         r = '/' + '/'.join(path) + '/'
         self['fullpath'] = r
+        self._changeset -= 1
         return r
 
     def _update_from_children(self):
@@ -214,6 +226,7 @@ class ConfigurationProxy(common_proxy.CommonProxy, Aggregative, Scriptable, Conf
         self._navigator = obj._navigator
         self._doc = obj._doc
         self.filename = obj.filename
+        self._changeset = obj._changeset
 
     def copy(self):
         p = ConfigurationProxy()
@@ -253,7 +266,10 @@ class ConfigurationProxy(common_proxy.CommonProxy, Aggregative, Scriptable, Conf
             self.log.error(
                 'No authorization to edit the option', key, self._writeLevel)
             return False
-        self.desc[key]['current'] = self.callback(key, val)
+        val = self.callback(key, val)
+        #cur = self.desc[key]['current']
+        self.desc[key]['current'] = val
+        self._changeset += 1
         return True
 
     def gettype(self, key):
@@ -295,6 +311,7 @@ class ConfigurationProxy(common_proxy.CommonProxy, Aggregative, Scriptable, Conf
                 'No authorization to edit the option', key, self._writeLevel)
             return False
         self.desc[key] = val
+        self._changeset += 1
         return True
 
     def autosort(self):

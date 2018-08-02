@@ -68,6 +68,7 @@ class CommonProxy(object):
     _navigator = None
     """Navigator instance for configuration-plot interactions"""
     _doc = None
+    _changeset = 0
     
     def dump_model(self):
         self._rmodel = False
