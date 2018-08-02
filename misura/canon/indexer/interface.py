@@ -51,7 +51,7 @@ class SharedFile(CoreFile, DataOperator):
 
     start_profiler = csutil.start_profiler
     stop_profiler = csutil.stop_profiler
-    version = ''
+    version = None
     """Current file version"""
     conf = False
     """Configuration dictionary"""
@@ -61,7 +61,7 @@ class SharedFile(CoreFile, DataOperator):
         CoreFile.__init__(self, *a, **k)
         self.node_cache = {}
 
-    def open_file(self, path=False, uid='', mode='a', title='', header=True, version='', conf=False):
+    def open_file(self, path=False, uid='', mode='a', title='', header=True, version='', load_conf=True):
         """opens the hdf file in `path` or `uid`"""
         self.node_cache = {}
         if not path:
@@ -86,8 +86,8 @@ class SharedFile(CoreFile, DataOperator):
             self.log.error('Error opening file:', format_exc(), path)
             return False
         self.uid = uid
-        if header and mode != 'w':
-            if not self.has_node('/userdata'):
+        if header and mode!='w':
+            if not self.has_node('/userdata') and mode!='r':
                 self.create_group('/', 'userdata')
                 self.set_attributes('/userdata', attrs={'active_version': ''})
             elif not version:
@@ -99,11 +99,11 @@ class SharedFile(CoreFile, DataOperator):
                 if self.has_node_attr('/conf', 'uid'):
                     self.uid = self.get_node_attr('/conf', 'uid')
                 if version!=None:
-                    self.set_version(version)
+                    self.set_version(version, load_conf=load_conf)
             else:
                 self.log.info(
                     'No configuration object was found', path, version)
-                self.header(refresh=True, version=self.version)
+                self.header(refresh=False, version=self.version)
         if self.conf is False:
             self.conf = option.ConfigurationProxy()
         return self.test, self.path
@@ -137,13 +137,13 @@ class SharedFile(CoreFile, DataOperator):
         # skip 0 and seek a little farer
         latest = 0
         for node in self.test.list_nodes('/'):
-            name = node._v_name
+            name = str(node._v_name)
             if not name.startswith('ver_'):
                 continue
             ver = int(name.split('_')[-1])
             if ver > latest:
                 latest = ver
-            v[node._v_pathname] = (node._f_getattr('name'),
+            v[str(node._v_pathname)] = (node._f_getattr('name'),
                                    node._f_getattr('date'))
         if self.writable():
             self.test.root.conf.attrs.versions = latest
@@ -170,22 +170,26 @@ class SharedFile(CoreFile, DataOperator):
         v.sort(key=lambda e: datetime.strptime(e[2]))
 
     def get_version(self):
-        return self.version
+        return self.version or ''
 
-    def set_version(self, newversion=-1):
+    def set_version(self, newversion=-1, load_conf=True):
         """Set the current version to `newversion`"""
         # Load the last used version
-        if isinstance(newversion, int) and newversion < 0:
+        if newversion == -1:
             self._lock.acquire()
             if '/userdata' in self.test:
                 newversion = self._active_version()
                 self.log.debug('Found active version', newversion)
             else:
-                newversion = getattr(self.test.root.conf.attrs, 'versions', '')
-                self.log.debug('Take latest version', newversion)
+                newversion = getattr(self.test.root.conf.attrs, 'versions', '')-1
+                if newversion>0:
+                    self.log.debug('Take latest version', newversion)
+                else:
+                    newversion = ''
+                    self.log.debug('Last version was not found. Taking original')
             self._lock.release()
 
-        if not isinstance(newversion, basestring):
+        if not isinstance(newversion, basestring) and newversion!='':
             newversion = '/ver_{}'.format(newversion)
 
         if self.version == newversion and self.conf:
@@ -193,13 +197,14 @@ class SharedFile(CoreFile, DataOperator):
             return True
 
         self._change_version(newversion)
-        self.load_conf()
-        self.header(refresh=True)
+        if not load_conf:
+            self.load_conf()
+        self.header(refresh=False)
         return True
 
     def _change_version(self, new_version):
         self.log.debug('Changing version to', repr(new_version), type(new_version))
-        self.version = new_version
+        self.version = str(new_version)
         if self.writable():
             self._set_attributes(
                 '/userdata', attrs={'active_version': new_version})
@@ -233,7 +238,8 @@ class SharedFile(CoreFile, DataOperator):
         self.test.root.conf.attrs.versions = latest
         # Set current version (will be empty until some transparent writing
         # occurs)
-        self.version = newversion
+        self.version = str(newversion)
+        self.log.debug('New version is now active', newversion)
         self._change_version(newversion)
         self.test.flush()
         return newversion
@@ -243,12 +249,19 @@ class SharedFile(CoreFile, DataOperator):
         if remove_plots:
             self.remove_node(version_path, recursive=True)
             self.log.info('Removed version', version_path)
-            self.flush()
-            return True
-        for node in self.list_nodes():
-            if node == 'plots':
-                continue
-            self.remove_node(version_path + '/' + node)
+        else:
+            for node in self.list_nodes():
+                if node == 'plots':
+                    continue
+                self.remove_node(version_path + '/' + node)
+        if version_path==self.version:
+            self._change_version('')
+        n = int(version_path.split('_')[-1])-1
+        if self.test.root.conf.attrs.versions==n:
+            self.test.root.conf.attrs.versions-=1
+        self.header(refresh=True)
+        self.log.debug('Removed version', version_path, n)
+        self.flush()
         return True
 
     @lockme()
@@ -397,7 +410,10 @@ class SharedFile(CoreFile, DataOperator):
             self._header['Array'].append(path)
 
     def active_version(self):
-        return self.get_node_attr('/userdata', 'active_version')
+        if self.has_node('/userdata'):
+            return self.get_node_attr('/userdata', 'active_version')
+        else:
+            return ''
     
     def _active_version(self):
         return self.test.get_node_attr('/userdata', 'active_version')
@@ -405,11 +421,28 @@ class SharedFile(CoreFile, DataOperator):
     @lockme()
     def header(self, reference_classes=['Array'], startswith=False, refresh=False, version=False):
         """Returns all available data references"""
+        from time import time
         if not version:
-            version = self.version
+            version = self.version or ''
+            
+        # Try to read cached header from file
+        if not refresh and len(self._header)==0 and self._has_node('/userdata'):
+            t0 = time()
+            try:
+                self._header = self.test.get_node_attr('/userdata', 'header')
+            except:
+                self._header = {}
+            self.log.debug('Loaded cached header', len(self._header), 1000*(time()-t0))
+            
+        # Rebuild the header
         if refresh or len(self._header) == 0:
+            t0 = time()
             self._header = list_references(self.test.root)
-            self.log.debug('References', len(self._header))
+            self.log.debug('References', len(self._header), 1000*(time()-t0))
+            if self.writable() and self._has_node('/userdata'):
+                self.test.set_node_attr('/userdata', 'header', self._header)
+                self.log.debug('Written cached header', len(self._header), 1000*(time()-t0))
+                
         if reference_classes is False:
             reference_classes = self._header.keys()
         r = []

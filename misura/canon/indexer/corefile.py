@@ -47,7 +47,7 @@ class CoreFile(object):
 
     def __init__(self, path=False, uid='', mode='a', title='', 
                  log=get_module_logging(__name__), 
-                 header=True, version= ''):
+                 header=True, version= '', load_conf=False):
         self._header = {}  # static header listing
         self.node_cache = {}
         self.path = False
@@ -55,10 +55,13 @@ class CoreFile(object):
         self._test = False  # currently opened HDF file
         self.log = log
         self._lock = Lock()
-        self.version = ''
+        self.version = None
         # FIXME: open_file is defined in SharedFile...!!!!
         if path is not False:
-            self.open_file(path, uid, mode=mode, header=header, version=version)
+            self.open_file(path, uid, mode=mode, 
+                           header=header, 
+                           version=version, 
+                           load_conf=load_conf)
 
     def fileno(self):
         return self.test.fileno()
@@ -431,7 +434,7 @@ class CoreFile(object):
         """Translate standard orig path into configured version path.
         Eg: /conf to /ver_1/conf"""
         if version is False:
-            version = self.version
+            version = self.version or ''
         if version and not path.startswith(version):
             path1 = version + path
             if self._has_node(path1):
