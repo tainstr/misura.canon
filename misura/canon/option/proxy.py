@@ -299,6 +299,7 @@ class ConfigurationProxy(common_proxy.CommonProxy, Aggregative, Scriptable, Conf
     
     def __delitem__(self, key):
         del self.desc[key]
+        self._changeset += 1
 
     def sete(self, key, val):
         if 'priority' not in val or val['priority'] == -1:
@@ -352,6 +353,7 @@ class ConfigurationProxy(common_proxy.CommonProxy, Aggregative, Scriptable, Conf
         r = self.child(name)
         # Autocalc path
         r.get_fullpath()
+        self._changeset += 1
         return r
 
     def getFlags(self, opt):
