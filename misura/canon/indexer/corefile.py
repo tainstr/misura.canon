@@ -130,7 +130,19 @@ class CoreFile(object):
 
     def __nonzero__(self):
         return self.test is not False
-
+    
+    @staticmethod
+    def close_handlers(path, mode=False):
+        r = []
+        for h in list(_open_files.get_handlers_by_name(path)):
+            if mode and h.mode != mode:
+                r.append(('Keeping handler:', id(h), h.mode, mode, path))
+                print(r[-1])
+                continue
+            r.append(('Closing handler:', id(h), h.mode, path))
+            print(r[-1])
+            h.close()
+        return r
     @lockme()
     def close(self):
         self.log.debug('CoreFile.close', self.path, type(self.test))
@@ -138,10 +150,9 @@ class CoreFile(object):
         try:
             if self.test is not False:
                 self.test.close()
-            for h in list(_open_files.get_handlers_by_name(self.path)):
-                self.log.debug('Closing handler:', id(h), h.mode, self.path)
-                h.close()
-            self.log.debug('Remaining handlers:', _open_files.get_handlers_by_name(self.path))
+            r = CoreFile.close_handlers(self.path)
+            for msg in r:
+                self.log.debug(*msg)
             return True
         except:
             self.log.debug("Reopening:", format_exc())
