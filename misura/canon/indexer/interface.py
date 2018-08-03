@@ -103,7 +103,7 @@ class SharedFile(CoreFile, DataOperator):
             else:
                 self.log.info(
                     'No configuration object was found', path, version)
-                self.header(refresh=False, version=self.version)
+                self.header(refresh=False, version=self.get_version())
         if self.conf is False:
             self.conf = option.ConfigurationProxy()
         return self.test, self.path
@@ -307,7 +307,7 @@ class SharedFile(CoreFile, DataOperator):
                 'Cannot save plots for original version. Please make a new version first.')
             return False
         self.reopen(mode='a')
-        plots_path = self.version + '/plot'
+        plots_path = self.get_version()+'/plot'
         if not self.has_node(plots_path):
             self.create_group(self.versioned('/'), 'plot')
             if not plot_id:
@@ -377,10 +377,11 @@ class SharedFile(CoreFile, DataOperator):
             if not self.conf:
                 self.load_conf()
             tree = self.conf.tree()
-        self.filenode_write(self.version + '/conf', obj=tree)
-        if self.version != '':
+        ver = self.get_version()
+        self.filenode_write(ver + '/conf', obj=tree)
+        if ver != '':
             a = self.get_attributes('/conf')
-            self.set_attributes(self.version + '/conf', attrs=a)
+            self.set_attributes(ver + '/conf', attrs=a)
         self.conf = option.ConfigurationProxy(desc=tree)
         return
 
@@ -423,7 +424,7 @@ class SharedFile(CoreFile, DataOperator):
         """Returns all available data references"""
         from time import time
         if not version:
-            version = self.version or ''
+            version = self.get_version()
             
         # Try to read cached header from file
         if not refresh and len(self._header)==0 and self._has_node('/userdata'):

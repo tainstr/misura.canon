@@ -443,6 +443,7 @@ class CoreFile(object):
 
     def _versioned(self, path, version=False):
         """Translate standard orig path into configured version path.
+        Returns translated path only if it exists.
         Eg: /conf to /ver_1/conf"""
         if version is False:
             version = self.version or ''
