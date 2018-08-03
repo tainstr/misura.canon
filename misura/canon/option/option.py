@@ -97,11 +97,11 @@ def tosave(entry, excl=[]):
     excl = set(excl).union(nowrite)
     """Determine if this option should be saved or not"""
     if len(excl.intersection(set([entry['type']]))) > 0:
-        print('nowrite entry by type', entry)
+        logging.debug('nowrite entry by type', entry)
         return False
     if 'attr' in entry:
         if len(excl.intersection(set(entry['attr']))) > 0:
-            print('nowrite entry by attr', entry)
+            logging.debug('nowrite entry by attr', entry)
             return False
     return True
 
@@ -147,6 +147,7 @@ def ao(d, handle=False, type='Empty', current=None, name=False,
        priority=-1, parent=False, flags=False, unit=None, options=False,
        values=False, attr=[], **kw):
     if not handle:
+        logging.debug('ao: No handle!', handle)
         return d
     flags = flags or {}
     if current is None:
@@ -200,7 +201,7 @@ def validate(entry):
     """Verify coherence of option `entry`"""
     key = entry.get('handle', False)
     if not key:
-        print('No handle for', entry, ': skipping!')
+        logging.debug('No handle for', entry, ': skipping!')
         return False
     # Type guessing
     etype = entry.get('type', False)
@@ -218,7 +219,7 @@ def validate(entry):
             if set(cur.keys()) == set('temp', 'time', 'value'):
                 etype = 'Meta'
         else:
-            print('No type for', entry, ': skipping!')
+            logging.debug('No type for', entry, ': skipping!')
             return False
         entry['type'] = etype
     # redundancy integration
@@ -387,7 +388,7 @@ class Option(object):
 
     def __delitem__(self, k):
         if k not in self._keys:
-            print('Requested key does not exist')
+            logging.debug('Requested key does not exist')
             return False
         if k in self._entry:
             del self._entry[k]
@@ -436,7 +437,7 @@ class Option(object):
             # traditional key,val was passed
             k, v = arg
         if k in read_only_keys:
-            print('Read only key!', k, v, self._entry['handle'])
+            logging.debug('Read only key!', k, v, self._entry['handle'])
             return
         self._entry[k] = v
     __setitem__ = set
@@ -501,7 +502,7 @@ class Option(object):
             new_def = [h[1] for h in self['current'][0]]
             old_def = [h[1] for h in old['current'][0]]
             if new_def != old_def:
-                print('Incompatible table definition', self['handle'], new_def, old_def)
+                logging.debug('Incompatible table definition', self['handle'], new_def, old_def)
                 self._entry['current']=[self['current'][0]]
         
         # No type change: exit
@@ -534,6 +535,6 @@ class Option(object):
                     nc = oc
             self._entry['current'] = nc
         except:
-            print('Impossible to migrate current value', old['handle'], nc, ot)
+            logging.debug('Impossible to migrate current value', old['handle'], nc, ot)
             # Remove current key
             del self._entry['current']

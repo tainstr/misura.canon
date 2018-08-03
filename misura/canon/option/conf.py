@@ -103,7 +103,7 @@ class Conf(object):
         if self.empty:
             if name not in self:
                 self.sete(name, {'factory_default': nval})
-                print('SET EMPTY',name,nval)
+                logging.debug('SET EMPTY',name,nval)
         r = self.set_current(name, nval, **k)
         return r
     
@@ -176,7 +176,7 @@ class Conf(object):
     def setattr(self, handle, key, val):
         """Sets to val the `key` of `handle` option"""
         if key in read_only_keys:
-            print('Attempt to modify read-only key', handle, key, val)
+            logging.debug('Attempt to modify read-only key', handle, key, val)
             return False
         opt = self.desc[handle]
         opt[key] = val
@@ -249,7 +249,7 @@ class Conf(object):
         opt.desc = self.desc
         failed = opt.validate()
         if len(failed) > 0:
-            print('Failed validations', failed)
+            logging.debug('Failed validations', failed)
         for k, v in opt.desc.iteritems():
             self.desc[k] = v
         return failed
