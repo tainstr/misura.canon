@@ -76,10 +76,11 @@ def nodes(func):
             n = a[0]
             keyword = False
         # If node was not specified, get from currentIndex
-        if not len(n):
+        if not n:
             n = []
             for idx in self.selectedIndexes():
                 n0 = self.model().data(idx, role=QtUserRole)
+                print '@nodes getting idx', idx, n0
                 n.append(n0)
         if keyword:
             k['nodes'] = n
@@ -104,8 +105,8 @@ class NavigatorDomain(object):
 
     @nodes
     def get_datasets_from_selection(self, nodes=False):
-        header = [node.path for node in nodes]
-        header = filter(lambda path: path in self.doc.data, header)
+        header = [(node.path, node) for node in nodes]
+        header = filter(lambda (path, node): path in self.doc.data, header)
         return header
 
     def iternodes(self, nodes, func, *args, **kwargs):
