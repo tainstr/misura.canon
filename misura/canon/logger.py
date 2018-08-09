@@ -42,7 +42,7 @@ def concatenate_message_objects(*msg):
     
 def formatMsg(*msg, **po):
     """Format the message for pretty visualization"""
-    t = csutil.time()
+    t = po.get('t' , csutil.time())
     st = datetime.fromtimestamp(t).strftime('%x %X.%f')
     # Owner e priority
     o = po.get('o')
@@ -70,12 +70,13 @@ def formatMsg(*msg, **po):
 def justPrint(*msg, **po):
     t, st, p, o, msg, pmsg = formatMsg(*msg, **po)
     print(st+' '+pmsg)
+    return pmsg
 
 
 def toLogging(*msg, **po):
     """Send log to standard python logging library"""
     t, st, p, o, msg, pmsg = formatMsg(*msg, **po)
-    logging.log(po.get('p', 10), pmsg)
+    return logging.log(po.get('p', 10), pmsg)
 
 
 

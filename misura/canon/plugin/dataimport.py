@@ -4,12 +4,12 @@ import os
 from time import time
 from fnmatch import fnmatch
 from collections import OrderedDict
-
+import logging as pylogging
 import numpy as np
 
 from ..option import ao
-from misura.canon.logger import get_module_logging
-logging = get_module_logging(__name__)
+from misura.canon.logger import get_module_logging, BaseLogger, formatMsg
+mlogging = get_module_logging(__name__)
 from .. import reference
 
 def base_dict():
@@ -115,6 +115,18 @@ def create_tree(outFile, tree, path='/'):
             continue
         create_tree(outFile, tree.child(key), dest)
         
+
+clogging = None
+
+class SelectLogging(object):
+    def __getattribute__(self, name):
+        if clogging:
+            return getattr(clogging, name)
+        else:
+            return getattr(mlogging, name)
+        
+logging = SelectLogging()
+
 class Converter(object):
     name = 'Base Converter'
     file_pattern = '*'
@@ -125,26 +137,34 @@ class Converter(object):
         self.outpath = ''
         self.interrupt = False
         self.outFile = False
-        self.log_ref = False
+        self.log_ref = None
         self.conversion_start_time = time()
+        self.log = BaseLogger(self.log_func)
         from misura.client.confwidget import check_default_database
         check_default_database()
+        
         
     def post_open_file(self, navigator, *a, **k):
         return False
         
-    def log(self, *msg, **kw):
+    def log_func(self, *msg, **kw):
+        global clogging
         # TODO: check zerotime
-        priority = kw.get('priority', 10)
-        msg = logging.info(*msg)
+        t, st, priority, o, msg, pmsg = formatMsg(*msg, **kw)
+        pylogging.log(priority, pmsg)
+        if not self.outFile:
+            clogging = None
+            return pmsg
         # Create log reference if missing
-        if not self.log_ref and self.outFile:
+        if self.log_ref is None:
             log_opt = ao({}, 'log', 'Log')['log']
             self.log_ref = reference.Log(self.outFile, '/', log_opt)
+            clogging = self.log
+            
         # Append to log reference
-        if self.log_ref:
-            t = time() - self.conversion_start_time
-            self.log_ref.commit([[t, (priority, msg)]])
+        t = time() - self.conversion_start_time
+        self.log_ref.commit([[t, (priority, pmsg)]])
+        return pmsg
     
     def cancel(self):
         """Interrupt conversion and remove output file"""
