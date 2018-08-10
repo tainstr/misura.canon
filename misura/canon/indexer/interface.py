@@ -192,12 +192,12 @@ class SharedFile(CoreFile, DataOperator):
         if not isinstance(newversion, basestring) and newversion!='':
             newversion = '/ver_{}'.format(newversion)
 
-        if self.version == newversion and self.conf:
+        if self.version == newversion and len(self.conf):
             self.log.debug('Not changing version!', self.version, newversion)
             return True
 
         self._change_version(newversion)
-        if not load_conf:
+        if load_conf:
             self.load_conf()
         self.header(refresh=False)
         return True
