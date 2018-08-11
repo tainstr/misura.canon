@@ -247,7 +247,8 @@ class ConfigurationProxy(common_proxy.CommonProxy, Aggregative, Scriptable, Conf
             opt = self.desc[key]['options']
             target = self.root.toPath(opt[0])
             if target:
-                old = target[opt[-1]]
+                if opt[-1] in target:
+                    old = target[opt[-1]]
         new = self.callback(key, old, callback_name='get')
         self.desc[key]['current'] = new
         return new
