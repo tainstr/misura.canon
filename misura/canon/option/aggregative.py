@@ -99,7 +99,6 @@ def aggregate_table(targets, values, devices, tree, precision=[], visible=[], fu
     units = []
     precision = []
     visible = []
-    N = len(visible)
     
     for i, t in enumerate(targets):
         # Take the first device
@@ -126,9 +125,6 @@ def aggregate_table(targets, values, devices, tree, precision=[], visible=[], fu
         if opt['type'] in ['Float', 'Integer', 'Number']:
             precision.append(opt.get('precision', 2))
         # Calculate visibility and precision
-        if i >= N:
-            # Extend visibility
-            visible.append(True)
         # Hide if has a parent
         #v = not opt.get('parent', False)
         v = True
@@ -139,7 +135,7 @@ def aggregate_table(targets, values, devices, tree, precision=[], visible=[], fu
         v *= ('Hidden' not in attr) and ('ClientHide' not in attr)
         v *= readLevel>=opt.get('readLevel',-1)
         print 'visible for', i, t, v, 'error' not in h.lower(), ('Hidden' not in attr), ('ClientHide' not in attr), attr, readLevel>=opt.get('readLevel',-1), d['fullpath']
-        visible[i] = bool(v)
+        visible.append(bool(v))
     
     # Extend attributes if table is flat
     if flat:
@@ -281,6 +277,16 @@ class Aggregative(object):
         fullpaths = collections.defaultdict(list)
         subtree = collections.defaultdict(list)
         
+        # Non-recursive aggregations
+        if function_name in ('deviation',):
+            fp = self['fullpath']
+            for t in targets:
+                values[t] = [self[t]]
+                fullpaths[t] = [fp]
+                devices[t] = [self]
+                subtree[t].append([self[t], {t:[]}, self['devpath']])
+            return function_name, targets, values, fullpaths, devices, subtree
+        
         for child in self.devices:
             target = None
             pack = collections.defaultdict(list)
@@ -356,6 +362,12 @@ class Aggregative(object):
                 error = float(v1.std())
             else:
                 self.log.debug('calc_aggregate: Zero-length', aggregation, v)
+        # % deviation of first argument towards second argument
+        elif function_name == 'deviation':
+            assert len(targets)==2
+            value, reference = values[targets[0]][0], values[targets[1]][0]
+            if reference>0:
+                result = 100.*(value-reference)/reference
         elif function_name == 'sum':
             result = float(
                 np.array(values[targets[0]]).astype(np.float32).sum())
