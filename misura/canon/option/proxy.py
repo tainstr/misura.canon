@@ -243,7 +243,13 @@ class ConfigurationProxy(common_proxy.CommonProxy, Aggregative, Scriptable, Conf
         if len(a) == 1 and key not in self.desc:
             return a[0]
         old = self.desc[key]['current']
+        if self.desc[key]['type'] == 'RoleIO':
+            opt = self.desc[key]['options']
+            target = self.root.toPath(opt[0])
+            if target:
+                old = target[opt[-1]]
         new = self.callback(key, old, callback_name='get')
+        self.desc[key]['current'] = new
         return new
 
     def callback(self, key, val, callback_name='set'):
