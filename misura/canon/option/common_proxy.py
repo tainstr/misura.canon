@@ -114,6 +114,17 @@ class CommonProxy(object):
         """Returns if the proxy refers to a remotely connected object or to a local data structure"""
         return False
     
+    def search_parent_key(self, dkey, default=None, reverse=False):
+        """Recursively search dkey in itself and all parents options"""
+        conf = self
+        if reverse:
+            conf = self.root
+        if dkey not in conf:
+            if not conf.parent():
+                #logging.debug('Parent key not found', conf['fullpath'], dkey)
+                return default
+            return conf.parent().search_parent_key(dkey, default=default)
+        return conf[dkey]
 
         
         
