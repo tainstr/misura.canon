@@ -70,6 +70,12 @@ class CommonProxy(object):
     _doc = None
     _changeset = 0
     
+    def __nonzero__(self):
+        return 1
+
+    def get(self, *a, **k):
+        return self.__getitem__(*a, **k)
+    
     def dump_model(self):
         self._rmodel = False
         self._recursiveModel = False
@@ -114,11 +120,31 @@ class CommonProxy(object):
         """Returns if the proxy refers to a remotely connected object or to a local data structure"""
         return False
     
+    def iter_parents(self):
+        """Yield parent objects until root is found"""
+        conf = self
+        while conf:
+            conf = conf.parent()
+            if conf:
+                yield conf
+    
     def search_parent_key(self, dkey, default=None, reverse=False):
         """Recursively search dkey in itself and all parents options"""
         conf = self
-        if reverse:
-            conf = self.root
+        
+        # Create the reverse stack
+        if reverse in (True, 1):
+            reverse = [self]+list(self.iter_parents())
+        # Walk the reverse stack until the required key is found, or default is returned
+        if reverse not in (False, 0):
+            if len(reverse)==0:
+                # End of the stack: give up
+                return default
+            conf = reverse.pop(-1)
+            if dkey in conf:
+                return conf[dkey]
+            return conf.search_parent_key(dkey, default=default, reverse=reverse)
+            
         if dkey not in conf:
             if not conf.parent():
                 #logging.debug('Parent key not found', conf['fullpath'], dkey)

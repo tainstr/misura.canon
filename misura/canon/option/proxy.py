@@ -58,6 +58,7 @@ class ConfigurationProxy(common_proxy.CommonProxy, Aggregative, Scriptable, Conf
     callbacks_set = set()
     filename = False  # Filename from which this configuration was red
     _changeset = 0
+    _parent = False
     
     def print_tree(self, *a, **k):
         print(print_tree(self.tree(), *a, **k))
@@ -232,12 +233,6 @@ class ConfigurationProxy(common_proxy.CommonProxy, Aggregative, Scriptable, Conf
         p = ConfigurationProxy()
         p.paste(self)
         return p
-
-    def __nonzero__(self):
-        return 1
-
-    def get(self, *a, **k):
-        return self.__getitem__(*a, **k)
 
     def set(self, *a, **k):
         return self.__setitem__(*a, **k)
