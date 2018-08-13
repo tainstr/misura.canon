@@ -80,7 +80,7 @@ def aggregate_table(targets, values, devices, tree, precision=[], visible=[], fu
                 # Second level of aggregation
                 subelem = elements[i][j]
                 for el in subelem: 
-                    print('Appending flat subelements', t, 'j', j, 'sub', el[0], 'el', el)
+                    #print('Appending flat subelements', t, 'j', j, 'sub', el[0], 'el', el)
                     row.append(el[0])
                 # Normalize target length
                 N = max([len(rowel[j]) for rowel in elements])                

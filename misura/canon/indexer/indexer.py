@@ -94,6 +94,7 @@ def dbcom(func):
 def tid():
     return threading.current_thread().ident
 
+
 def convert_to_relative_path(file_path, dbdir):
     if file_path.startswith('.'):
         return file_path
@@ -115,17 +116,15 @@ class FileSystemLock(object):
     def restore_lock(self, lk):
         print('FileSystemLock.restore_lock')
         self._lock = lk
-        
+
     def __getstate__(self):
         r = self.__dict__.copy()
         r.pop('_lock')
         return r
-    
+
     def __setstate__(self, s):
         map(lambda a: setattr(self, *a), s.items())
         self._lock = multiprocessing.Lock()
-        
-    
 
     def set_path(self, path):
         self.path = path
@@ -285,8 +284,9 @@ class Indexer(object):
     def searchUID(self, uid, full=False):
         """Search `uid` in tests table and return its path or full record if `full`"""
         return self._searchUID(uid, full)
-    
+
     aborted = False
+
     def abort(self):
         """Abort current rebuild/refresh process"""
         self.log.warning('Rebuild/refresh aborted!')
@@ -320,12 +320,13 @@ class Indexer(object):
         self.close_db()
         self._lock.release()
         tests_filenames = self.tests_filenames_sorted_by_date()
-        self.tasks.jobs(len(tests_filenames),'Rebuilding database', abort=self.abort)
+        self.tasks.jobs(len(tests_filenames),
+                        'Rebuilding database', abort=self.abort)
         for i, f in enumerate(tests_filenames):
             if self.aborted:
                 return 'Aborted. Indexed %i tests.' % i
             self.appendFile(f, False)
-            self.tasks.job(i,'Rebuilding database', f)
+            self.tasks.job(i, 'Rebuilding database', f)
 
         self.recalculate_incremental_ids()
 
@@ -373,7 +374,7 @@ class Indexer(object):
         if table:
             table.close()
         return r
-    
+
     @property
     def dbdir(self):
         return os.path.dirname(self.dbPath)
@@ -404,7 +405,7 @@ class Indexer(object):
         # Test row
         # ##
         test = {}
-        
+
         relative_path = convert_to_relative_path(file_path, self.dbdir)
         test['file'] = relative_path
 
@@ -441,7 +442,7 @@ class Indexer(object):
     def save_modify_date(self, file_name):
         full_test_file_name = self.convert_to_full_path(file_name)
         modify_date = int(os.path.getmtime(full_test_file_name))
-        
+
         query = "INSERT OR REPLACE INTO modify_dates VALUES (?, ?)"
 
         self.cur.execute(query, (modify_date, file_name))
@@ -524,7 +525,8 @@ class Indexer(object):
         if hdf_file.get_version() == '':
             hdf_file.create_version()
 
-        instrument_name = str(hdf_file.test.root.conf.attrs.instrument, **enc_options)
+        instrument_name = str(
+            hdf_file.test.root.conf.attrs.instrument, **enc_options)
         getattr(hdf_file.conf, instrument_name).measure[
             column_name] = new_value
 
@@ -532,7 +534,7 @@ class Indexer(object):
         hdf_file.close()
 
         return update_function(new_value, uid)
-    
+
     def change_filename(self, original_file_path, new_filename, uid):
         """Change filename and update db (not directory)"""
         folder = os.path.dirname(original_file_path)
@@ -542,15 +544,15 @@ class Indexer(object):
         num = ''
         i = -1
         while True:
-            path = os.path.join(folder, new_filename+num+ext)
+            path = os.path.join(folder, new_filename + num + ext)
             if not os.path.exists(path):
                 break
-            i += 1 
+            i += 1
             num = '_{}'.format(i)
         self.log.debug('change_filename rename', original_file_path, path)
         # Rename the file
         os.rename(original_file_path, path)
-        
+
         # Update the db
         relative_path = convert_to_relative_path(path, self.dbdir)
         self.change_column_on_database('file', relative_path, uid)
@@ -559,10 +561,10 @@ class Indexer(object):
     def change_name(self, new_name, uid, hdf_file_name):
         if not new_name:
             return 0
-        
+
         # Rename the hdf5 file
         hdf_file_name = self.change_filename(hdf_file_name, new_name, uid)
-        
+
         return self.change_column('name',
                                   self.change_name_on_database,
                                   new_name,
@@ -614,13 +616,15 @@ class Indexer(object):
 
     def delete_modified_files(self, database, all_files):
         modified_dates_on_db = self.get_modify_dates()
-        f = lambda db_entry: (db_entry[0], self.convert_to_full_path(db_entry[1]), db_entry[1])
+
+        def f(db_entry): return (
+            db_entry[0], self.convert_to_full_path(db_entry[1]), db_entry[1])
         modified_dates_on_db = [f(m) for m in modified_dates_on_db]
 
         old_modified_dates = {}
         for f in all_files:
             old_modified_dates[f] = int(os.path.getmtime(f))
-            
+
         deleted = []
         out = []
         for modify_date_on_db, full_test_file_name, relative_test_file_name in modified_dates_on_db:
@@ -632,8 +636,7 @@ class Indexer(object):
                 # Remove so it will be later re-added
                 self.clear_file_path(relative_test_file_name)
                 deleted.append(relative_test_file_name)
-        
-        
+
         for relative_file_path, uid in database:
             if relative_file_path not in deleted:
                 out.append([relative_file_path, uid])
@@ -652,7 +655,8 @@ class Indexer(object):
         return out
 
     def add_new_files(self, all_files, database):
-        file_names_in_database = [self.convert_to_full_path(d[0]) for d in database]
+        file_names_in_database = [
+            self.convert_to_full_path(d[0]) for d in database]
         pid = 'Adding files'
         self.tasks.jobs(len(all_files), pid, abort=self.abort)
         for i, f in enumerate(all_files):
@@ -734,11 +738,11 @@ class Indexer(object):
         assert order in ('DESC', 'ASC')
         assert orderby in testColumnDefault
         limit = int(limit)
-        assert limit>0
+        assert limit > 0
         offset = int(offset)
-        assert offset>=0
-        ordering = " ORDER BY `{}` {} LIMIT {} OFFSET {}".format(orderby, 
-                                                        order, limit, offset)
+        assert offset >= 0
+        ordering = " ORDER BY `{}` {} LIMIT {} OFFSET {}".format(orderby,
+                                                                 order, limit, offset)
         if len(conditions) == 0:
             self.cur.execute(
                 'SELECT * from test natural join incremental_ids ' + ordering)
@@ -797,6 +801,7 @@ class Indexer(object):
                 (self.convert_to_full_path(query_result[0]),) + query_result[1:])
 
         return converted
+
 
 if __name__ == '__main__':
     import sys
