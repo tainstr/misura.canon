@@ -143,19 +143,21 @@ class CoreFile(object):
             print(r[-1])
             h.close()
         return r
+    
     @lockme()
-    def close(self):
+    def close(self, all_handlers=False):
         self.log.debug('CoreFile.close', self.path, type(self.test))
         self.node_cache = {}
         try:
             if self.test is not False:
                 self.test.close()
-            r = CoreFile.close_handlers(self.path)
-            for msg in r:
-                self.log.debug(*msg)
+            if all_handlers:
+                r = CoreFile.close_handlers(self.path)
+                for msg in r:
+                    self.log.debug(*msg)
             return True
         except:
-            self.log.debug("Reopening:", format_exc())
+            self.log.debug("Closing:", format_exc())
             return False
 
     @lockme()
