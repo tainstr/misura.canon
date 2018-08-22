@@ -168,7 +168,7 @@ class CoreFile(object):
         return True
 
     def reopen(self, mode=None):
-        self.log.debug('Reopening', self.path)
+        self.log.debug('Reopening', self.path, mode)
         if not self.path:
             return False
         kw = {}
@@ -178,7 +178,7 @@ class CoreFile(object):
                 if mode and mode==kw.get('mode', None):
                     return True
                 self.log.debug('Closing for reopening:', self.path)
-                self.close()
+                self.close(all_handlers=True)
 
             except:
                 self.log.debug('While reopening', self.path)
