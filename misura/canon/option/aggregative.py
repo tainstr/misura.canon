@@ -134,7 +134,7 @@ def aggregate_table(targets, values, devices, tree, precision=[], visible=[], fu
         attr = opt['attr']
         v *= ('Hidden' not in attr) and ('ClientHide' not in attr)
         v *= readLevel>=opt.get('readLevel',-1)
-        print 'visible for', i, t, v, 'error' not in h.lower(), ('Hidden' not in attr), ('ClientHide' not in attr), attr, readLevel>=opt.get('readLevel',-1), d['fullpath']
+        print('visible for', i, t, v, 'error' not in h.lower(), ('Hidden' not in attr), ('ClientHide' not in attr), attr, readLevel>=opt.get('readLevel',-1), d['fullpath'])
         visible.append(bool(v))
     
     # Extend attributes if table is flat
@@ -170,7 +170,7 @@ def aggregate_table(targets, values, devices, tree, precision=[], visible=[], fu
 
     result = remove_empty_columns(result)
                 
-    print 'aggregate_table', result, units, precision, visible
+    print('aggregate_table', result, units, precision, visible)
     result = [header] + result
     return result, units, precision, visible
 
