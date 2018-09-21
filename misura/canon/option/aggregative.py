@@ -134,7 +134,7 @@ def aggregate_table(targets, values, devices, tree, precision=[], visible=[], fu
         attr = opt['attr']
         v *= ('Hidden' not in attr) and ('ClientHide' not in attr)
         v *= readLevel>=opt.get('readLevel',-1)
-        print('visible for', i, t, v, 'error' not in h.lower(), ('Hidden' not in attr), ('ClientHide' not in attr), attr, readLevel>=opt.get('readLevel',-1), d['fullpath'])
+        #print('visible for', i, t, v, 'error' not in h.lower(), ('Hidden' not in attr), ('ClientHide' not in attr), attr, readLevel>=opt.get('readLevel',-1), d['fullpath'])
         visible.append(bool(v))
     
     # Extend attributes if table is flat
@@ -170,7 +170,7 @@ def aggregate_table(targets, values, devices, tree, precision=[], visible=[], fu
 
     result = remove_empty_columns(result)
                 
-    print('aggregate_table', result, units, precision, visible)
+    #print('aggregate_table', result, units, precision, visible)
     result = [header] + result
     return result, units, precision, visible
 
@@ -296,14 +296,14 @@ class Aggregative(object):
             for target in targets:
                 # Ensure all targets exist
                 if target not in child:
-                    self.log.error('calc_aggregate: missing target in child object',
-                                   handle, aggregation, child['devpath'], target, targets)
+                    #self.log.error('calc_aggregate: missing target in child object',
+                    #               handle, aggregation, child['devpath'], target, targets)
                     # This cell will remain empty
                     pack[target].append(None)
                 # Skip this device entirely
                 elif child.getattr(target, 'type') == 'RoleIO':
-                    self.log.error('calc_aggregate: child object exposes a RoleIO for target',
-                                   child['devpath'], target)
+                    #self.log.error('calc_aggregate: child object exposes a RoleIO for target',
+                    #               child['devpath'], target)
                     pack = False
                     break
                 else:
@@ -342,8 +342,9 @@ class Aggregative(object):
                 
                 
             else:
-                self.log.error(
-                    'calc_aggregate: no values packed for', child['devpath'], target)
+                pass
+                #self.log.error(
+                #    'calc_aggregate: no values packed for', child['devpath'], target)
         return function_name, targets, values, fullpaths, devices, subtree
 
     def calc_aggregate(self, aggregation, handle=False):
@@ -418,10 +419,10 @@ class Aggregative(object):
                 if not self.hasattr(opt['error'], 'aggregate'):
                     # Assign only if the destination is not an aggregate itself
                     self[opt['error']] = error
-            self.log.debug('Updated aggregate', handle, result, error)
+            #self.log.debug('Updated aggregate', handle, result, error)
         else:
-            self.log.error('Aggregation failed for ', self.get_fullpath(),
-                           handle, aggregation)
+            #self.log.error('Aggregation failed for ', self.get_fullpath(),
+            #               handle, aggregation)
             return False
         return True
 
