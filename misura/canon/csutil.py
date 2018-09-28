@@ -341,6 +341,17 @@ def find_nearest_val(v, t, get=False, seed=None):
 
     return int(bi)
 
+def smooth(x, window=10, method='hanning'):
+    """method='flat', 'hanning', 'hamming', 'bartlett', 'blackman', 'kaiser'"""
+    s = np.r_[2 * x[0] - x[window - 1::-1], x, 2 * x[-1] - x[-1:-window:-1]]
+    # print(len(s))
+    if method == 'flat':  # moving average
+        w = np.ones(window, 'd')
+    else:
+        w = eval('np.' + method + '(window)')
+    y = np.convolve(w / w.sum(), s, mode='same')
+    y = y[window:-window + 1]
+    return y
 
 def toslice(v):
     """Recursive conversion of an iterable into slices"""
