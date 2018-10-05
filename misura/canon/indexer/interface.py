@@ -211,8 +211,10 @@ class SharedFile(CoreFile, DataOperator):
         return True
 
     def _change_version(self, new_version):
-        self.log.debug('Changing version to', repr(
-            new_version), type(new_version))
+        self.log.debug('Changing version to {}, {} (old was {})'.format(
+                            repr(new_version), 
+                            type(new_version), 
+                            self.version))
         self.version = str(new_version)
         if self.writable():
             self._set_attributes(
