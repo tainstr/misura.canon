@@ -415,13 +415,24 @@ class SharedFile(CoreFile, DataOperator):
             opt['handle'] = name
 
         self.remove_node(path)
-        data_with_time = np.transpose(np.vstack((time_data, data)))
-        dest_path_reference = reference.Array(
+        # Detect fixed time
+        td = np.diff(time_data)
+        if td.max()-td.min()>1e-14:
+            # Regular Array
+            write_data = np.transpose(np.vstack((time_data, data)))
+            array_cls = reference.Array
+        else:
+            # FixedTimeArray
+            write_data = np.transpose(data)
+            array_cls = reference.FixedTimeArray
+            opt['t0'] = time_data[0]
+            opt['dt'] = td.mean()
+        dest_path_reference = array_cls(
             self, newparent, opt=opt, with_summary=False)
-        dest_path_reference.append(data_with_time)
+        dest_path_reference.append(write_data)
         self.flush()
-        if path not in self._header['Array']:
-            self._header['Array'].append(path)
+        if path not in self._header[array_cls.__name__]:
+            self._header[array_cls.__name__].append(path)
 
     def active_version(self):
         try:
