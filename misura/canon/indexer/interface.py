@@ -195,11 +195,11 @@ class SharedFile(CoreFile, DataOperator):
                 self.log.debug(
                     'Last version was not found. Taking original')
             self._lock.release()
-            
+
         # Load version by number (deprecated)
         if not isinstance(newversion, basestring):
             newversion = '/ver_{}'.format(newversion)
-            
+
         if self.version == newversion and len(self.conf):
             self.log.debug('Not changing version!', self.version, newversion)
             return True
@@ -212,9 +212,9 @@ class SharedFile(CoreFile, DataOperator):
 
     def _change_version(self, new_version):
         self.log.debug('Changing version to {}, {} (old was {})'.format(
-                            repr(new_version), 
-                            type(new_version), 
-                            self.version))
+            repr(new_version),
+            type(new_version),
+            self.version))
         self.version = str(new_version)
         if self.writable():
             self._set_attributes(
@@ -418,8 +418,10 @@ class SharedFile(CoreFile, DataOperator):
 
         self.remove_node(path)
         # Detect fixed time
-        td = np.diff(time_data)
-        if td.max()-td.min()>1e-14:
+        td = [1, 0]
+        if len(time_data) > 10:
+            td = np.diff(time_data)
+        if max(td) - min(td) > 1e-14:
             # Regular Array
             write_data = np.transpose(np.vstack((time_data, data)))
             array_cls = reference.Array
