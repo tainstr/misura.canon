@@ -79,6 +79,8 @@ class SharedFile(CoreFile, DataOperator):
 
         try:
             self.log.debug('opening existing file', path, mode, repr(version))
+            if mode=='r' and self.highest_mode(path)=='a':
+                self.close_handlers(path)
             self.test = tables.open_file(path, mode=mode)
             self.path = path
         except:
@@ -471,8 +473,9 @@ class SharedFile(CoreFile, DataOperator):
         if refresh or len(self._header) == 0:
             t0 = time()
             self._header = list_references(self.test.root)
-            self.log.debug('References', len(
-                self._header), 1000 * (time() - t0))
+            self.log.debug('References', 
+                           len(self._header), 
+                           1000 * (time() - t0))
             if self.writable() and self._has_node('/userdata'):
                 self.test.set_node_attr('/userdata', 'header', self._header)
                 self.log.debug('Written cached header', len(

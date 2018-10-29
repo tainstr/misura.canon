@@ -144,6 +144,13 @@ class CoreFile(object):
             h.close()
         return r
     
+    @staticmethod
+    def highest_mode(path):
+        for h in list(_open_files.get_handlers_by_name(path)):
+            if h.mode in ('a','w'):
+                return 'a'
+        return 'r'
+    
     @lockme()
     def close(self, all_handlers=False):
         self.log.debug('CoreFile.close', self.path, type(self.test))
@@ -166,6 +173,11 @@ class CoreFile(object):
         self.close()
         os.remove(self.path)
         return True
+    
+    def get_mode(self):
+        if not self.test:
+            return False
+        return self.test.mode
 
     def reopen(self, mode=None):
         self.log.debug('Reopening', self.path, mode)
