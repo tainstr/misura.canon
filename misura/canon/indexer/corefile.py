@@ -207,6 +207,9 @@ class CoreFile(object):
             return False
         if name:
             where += '/' + name
+        if not where:
+            self.log.warning('Empty node location:',where)
+            return False
         if not where.startswith('/'):
             where = '/'+where
         return where in self.test
