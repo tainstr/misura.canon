@@ -197,9 +197,6 @@ class ConfigurationProxy(common_proxy.CommonProxy, Aggregative, Scriptable, Conf
 
     def has_key(self, k):
         return k in self.desc
-    
-    def __contains(self, k):
-        return k in self.desc
 
     def dumps(self):
         d = {'self': self.desc.copy()}
@@ -339,7 +336,7 @@ class ConfigurationProxy(common_proxy.CommonProxy, Aggregative, Scriptable, Conf
         Returns a ConfigurationProxy to the new child."""
         # If desc is the description dictionary and not the object tree dictionary,
         # encapsulate it in a 'self' dict
-        if not 'self' in desc:
+        if 'self' not in desc:
             desc = {'self': desc}
         if overwrite or (name not in self.children):
             self.children[name] = desc
