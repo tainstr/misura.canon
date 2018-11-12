@@ -104,7 +104,7 @@ def aggregate_table(targets, values, devices, tree, precision=[], visible=[], fu
         # Take the first device
         devs = devices[t]
         if not len(devs):
-            logging.error('No device found for target', t)
+            #logging.debug('No device found for target', t)
             continue
             #return None, None, None, None
         # Get the target option
@@ -116,7 +116,7 @@ def aggregate_table(targets, values, devices, tree, precision=[], visible=[], fu
                 opt = d.gete(t)
                 break
         if not opt:
-            logging.error('No device found with target', t, [d['fullpath'] for d in devs])
+            #logging.debug('No device found with target', t, [d['fullpath'] for d in devs])
             continue
         
         h = opt.get('column', opt['name'])
