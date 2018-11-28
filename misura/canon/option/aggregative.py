@@ -285,7 +285,7 @@ class Aggregative(object):
                 fullpaths[t] = [fp]
                 devices[t] = [self]
                 subtree[t].append([self[t], {t:[]}, self['devpath']])
-            return function_name, targets, values, fullpaths, devices, subtree
+            return function_name, targets, values, fullpaths, devices, dict(subtree)
         
         for child in self.devices:
             target = None
@@ -334,18 +334,9 @@ class Aggregative(object):
                     else:
                         # If the option is not an aggregate itself, create an empty subtree
                         subtree[t].append([child[t], {t:[]}, child['devpath']])
-                        #print('Not an aggregate', t, subtree[t][-1])
-                
-                # Revert to normal dict
-                subtree = dict(subtree)
-                
-                
-                
             else:
                 pass
-                #self.log.error(
-                #    'calc_aggregate: no values packed for', child['devpath'], target)
-        return function_name, targets, values, fullpaths, devices, subtree
+        return function_name, targets, values, fullpaths, devices, dict(subtree)
 
     def calc_aggregate(self, aggregation, handle=False):
         function_name, targets, values, fullpaths, devices, subtree = self.collect_aggregate(
