@@ -418,7 +418,7 @@ class Aggregative(object):
         return True
 
     def update_aggregates(self, recursive=1):
-        """Updates aggregate options. recursive==1, upward; -1, downward; 0, no"""
+        """Updates aggregate options. recursive==1->upward; -1->downward; 0->no"""
         # TODO: move to Scriptable class! (or a new one)
         for handle, opt in self.desc.items():
             if 'aggregate' not in opt:
