@@ -346,14 +346,18 @@ class Aggregative(object):
         # TODO: calc stdev here
         if function_name == 'mean':
             v = np.array(values[targets[0]]).astype(np.float32)
-            # FIXME: hack to filter out zeros and nans
-            v1 = v[v != 0]
-            v1 = v1[np.isfinite(v1)]
-            if len(v1):
-                result = float(v1.mean())
-                error = float(v1.std())
-            else:
-                self.log.debug('calc_aggregate: Zero-length', aggregation, v)
+            # filter out nans
+            v1 = v[np.isfinite(v)]
+            if self.getattr(handle,'type')=='Boolean':
+                result = np.all(v)
+            else:  
+                # filter out zeros
+                v1 = v1[v != 0]
+                if len(v1):
+                    result = float(v1.mean())
+                    error = float(v1.std())
+                else:
+                    self.log.debug('calc_aggregate: Zero-length', aggregation, v)
         # % deviation of first argument towards second argument
         elif function_name == 'deviation':
             assert len(targets)==2
