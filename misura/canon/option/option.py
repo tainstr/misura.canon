@@ -499,7 +499,7 @@ class Option(object):
         ot = old['type']
         nt = self['type']
         # Reset table option if its definition changed
-        if nt == 'Table' and 'current' in self._entry:
+        if nt == 'Table' and 'current' in self._entry and len(self['current']) and len(old['current']):
             new_def = [h[1] for h in self['current'][0]]
             old_def = [h[1] for h in old['current'][0]]
             if new_def != old_def:

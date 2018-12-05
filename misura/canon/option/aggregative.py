@@ -12,15 +12,18 @@ import numpy as np
 def calc_aggregate_subelements(targets, values, tree):
     devpaths = []
     elements = []
-    for i in range(len(values[targets[0]])):
+    for i in xrange(len(values[targets[0]])):
         subelements = []
         subdev = []
         for target in targets:
+            if len(tree[target])<i+1:
+                logging.error('Could not find target object', target, i,tree[target], values[targets[0]])
+                continue
             # Retrieve corresponding subaggregation for target and row
             subtree = tree[target][i] 
             # Require unary sub-aggregation
             if len(subtree[1])>1:
-                logging.debug('Excluding multiary aggregation from table_flat', subtree.keys())
+                logging.error('Excluding multiary aggregation from table_flat', subtree.keys())
                 subelements.append([])
                 continue
             # Second level of aggregation
@@ -346,13 +349,13 @@ class Aggregative(object):
         # TODO: calc stdev here
         if function_name == 'mean':
             v = np.array(values[targets[0]]).astype(np.float32)
-            # filter out nans
-            v1 = v[np.isfinite(v)]
             if self.getattr(handle,'type')=='Boolean':
                 result = np.all(v)
             else:  
                 # filter out zeros
-                v1 = v1[v != 0]
+                v1 = v[v != 0]
+                # filter out nans
+                v1 = v[np.isfinite(v)]
                 if len(v1):
                     result = float(v1.mean())
                     error = float(v1.std())
@@ -421,8 +424,9 @@ class Aggregative(object):
             return False
         return True
 
-    def update_aggregates(self, recursive=1):
-        """Updates aggregate options. recursive==1->upward; -1->downward; 0->no"""
+    def update_aggregates(self, recursive=1, stop=False):
+        """Updates aggregate options. recursive==1->upward; -1->downward; 0->no;
+        stop->stop recursion at specified ConfigurationProxy object"""
         # TODO: move to Scriptable class! (or a new one)
         for handle, opt in self.desc.items():
             if 'aggregate' not in opt:
@@ -435,13 +439,17 @@ class Aggregative(object):
                                aggregation, handle, format_exc())
                 continue
         if recursive > 0 and self.parent():
+            if self.parent() == stop:
+                return self
             self.parent().update_aggregates(recursive=1)
         elif recursive < 0:
+            last = False
             for k in self.children.keys():
-                self.child(k).update_aggregates(recursive=-1)
+                last = self.child(k).update_aggregates(recursive=-1)
             # Then run backwards as aggregates only propagates bottom-up
-            if self.parent():
-                self.parent().update_aggregates(recursive=1)
+            if last and last.parent():
+                last.parent().update_aggregates(recursive=1, stop=self)
+        return self
 
     def add_aggregation_target(self, opt, target):
         old = self.getattr(opt, 'aggregate')
