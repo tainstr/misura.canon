@@ -43,7 +43,7 @@ def node(func):
         elif isDataset(n):
             n = docname(n)
             logging.debug('@node was a dataset: found path', n)
-
+        
         # If node was expressed as/converted to string, get its corresponding
         # tree entry
         if isinstance(n, str) or isinstance(n, unicode):

@@ -451,6 +451,34 @@ class SharedFile(CoreFile, DataOperator):
             return self.test.get_node_attr('/userdata', 'active_version')
         except:
             return ''
+        
+    def _write_userdata_header(self, h):
+        """Save header dict into userdata cache.
+        No lock."""
+        from time import time
+        t0 = time()
+        if not self._has_node('/userdata'):
+            self.create_group('/', 'userdata')
+            self.set_attributes('/userdata', attrs={'active_version': ''})
+        self.test.set_node_attr('/userdata', 'header', h)
+        self.log.debug('Written cached header', len(h), 1000 * (time() - t0))
+                
+    def _read_userdata_header(self):
+        """Load header dict from userdata cache.
+        No lock"""
+        from time import time
+        t0 = time()
+        h = {}
+        if not self._has_node('/userdata'):
+            self.log.debug('_read_userdata_header: no /userdata')
+            return h
+        try:
+            h = self.test.get_node_attr('/userdata', 'header')
+        except:
+            self.log.error(format_exc())
+        self.log.debug('Loaded cached header', len(h), 1000 * (time() - t0))
+        return h
+        
 
     @lockme()
     def header(self, reference_classes=['Array'], startswith=False, refresh=False, version=False):
@@ -460,26 +488,18 @@ class SharedFile(CoreFile, DataOperator):
             version = self.get_version()
 
         # Try to read cached header from file
-        if not refresh and len(self._header) == 0 and self._has_node('/userdata'):
-            t0 = time()
-            try:
-                self._header = self.test.get_node_attr('/userdata', 'header')
-            except:
-                self._header = {}
-            self.log.debug('Loaded cached header', len(
-                self._header), 1000 * (time() - t0))
-
-        # Rebuild the header
+        if not refresh and len(self._header) == 0:
+            self._header = self._read_userdata_header()
+        
+        # Rebuild the header if empty or refresh
         if refresh or len(self._header) == 0:
             t0 = time()
             self._header = list_references(self.test.root)
             self.log.debug('References', 
                            len(self._header), 
                            1000 * (time() - t0))
-            if self.writable() and self._has_node('/userdata'):
-                self.test.set_node_attr('/userdata', 'header', self._header)
-                self.log.debug('Written cached header', len(
-                    self._header), 1000 * (time() - t0))
+            if self.writable():
+                self._write_userdata_header(self._header)
 
         if reference_classes is False:
             reference_classes = self._header.keys()
