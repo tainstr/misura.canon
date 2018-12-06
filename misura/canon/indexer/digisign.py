@@ -25,6 +25,9 @@ def list_references(parent, result=False):
     for child in parent._f_list_nodes():
         # Do not list paths from different versions
         path = child._v_pathname
+        # Skip special paths
+        if path=='/userdata':
+            continue
         # iteratively call itself onto Group nodes
         if child.__class__.__name__ == 'Group':
             result = list_references(child, result=result)

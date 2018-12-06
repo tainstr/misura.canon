@@ -16,7 +16,7 @@ from traceback import format_exc
 import tables
 from datetime import datetime
 import numpy as np
-
+from ..parameters import cfilter
 from .. import csutil
 from .. import option
 from ..csutil import lockme, enc_options, str3
@@ -460,8 +460,22 @@ class SharedFile(CoreFile, DataOperator):
         if not self._has_node('/userdata'):
             self.create_group('/', 'userdata')
             self.set_attributes('/userdata', attrs={'active_version': ''})
-        self.test.set_node_attr('/userdata', 'header', h)
-        self.log.debug('Written cached header', len(h), 1000 * (time() - t0))
+        # Write each header entry in a separate variable-length-array
+        for cls_name in h:
+            name = 'header_'+cls_name
+            if self._has_node('/userdata', name):
+                self.test.remove_node('/userdata',name)
+            vla = self.test.create_vlarray(where='/userdata',
+                                    name=name,
+                                    atom=tables.StringAtom(itemsize=1),
+                                    title='Header cache for '+cls_name,
+                                    filters=cfilter)
+            for dsn in h[cls_name]:
+                vla.append(list(dsn))
+            self.log.debug('Wrote cached header class', cls_name, len(h[cls_name]))
+        # put only the keys in the header attr
+        self.test.set_node_attr('/userdata', 'header', list(h.keys()))
+        self.log.debug('Finished writing headers cache', len(h), 1000 * (time() - t0))
                 
     def _read_userdata_header(self):
         """Load header dict from userdata cache.
@@ -473,9 +487,28 @@ class SharedFile(CoreFile, DataOperator):
             self.log.debug('_read_userdata_header: no /userdata')
             return h
         try:
-            h = self.test.get_node_attr('/userdata', 'header')
+            keys = self.test.get_node_attr('/userdata', 'header')
         except:
             self.log.error(format_exc())
+            keys = []
+            
+        # Compatibility with old caching mechanism
+        if isinstance(keys, dict):
+            self.log.debug('Reading old header cache', keys)
+            return keys
+        
+        for cls_name in keys:
+            name = 'header_'+cls_name
+            if not self._has_node('/userdata', name):
+                self.log.error('Could not find header class', cls_name)
+                continue
+            n = self._get_node('/userdata', name)
+            v = []
+            for path in n:
+                v.append(''.join(path))
+            h[cls_name] = v
+            self.log.debug('Loaded header class:',cls_name, len(v))
+            
         self.log.debug('Loaded cached header', len(h), 1000 * (time() - t0))
         return h
         
