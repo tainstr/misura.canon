@@ -353,6 +353,91 @@ def smooth(x, window=10, method='hanning'):
     y = y[window:-window + 1]
     return y
 
+from scipy.signal import butter, lfilter
+
+def butter_bandpass(lowcut, highcut, fs, order=5, btype='band'):
+    nyq = 0.5 * fs
+    low = lowcut / nyq
+    high = highcut / nyq
+    if btype.startswith('band'):
+        b, a = butter(order, [low, high], btype=btype)
+    elif btype=='lowpass':
+        b, a = butter(order, high, btype=btype)
+    else:
+        b, a = butter(order, low, btype=btype)
+        
+    return b, a
+
+
+def butter_bandpass_filter(data, lowcut, highcut, fs, order=5, invert=False):
+    btype = 'band'
+    if lowcut<=0:
+        btype = 'lowpass'
+    elif highcut>fs:
+        bytpe = 'highpass'
+    # Invert the meaning
+    if invert:
+        btype = {'h': 'lowpass', 'l':'highpass', 'b': 'bandstop'}[btype[0]]
+    b, a = butter_bandpass(lowcut, highcut, fs, order=order, btype=btype)
+    y = lfilter(b, a, data)
+    return y
+
+
+def _update_filter(new, old):
+    """Add new filter to old filter in old array indexes"""
+    j = 0
+    nj = 0
+    n = len(new)
+    print('start', new, old)
+    for o in old:
+        if o>=j:
+            j+=o-j+1
+        
+        while nj<n-1 and new[nj]+1<j: 
+            nj += 1
+        
+        if new[nj]+1<j:
+            break
+            
+        new[nj:] += 1
+        
+    return np.sort(np.concatenate((old,new)))
+
+def smooth_discard(x, percent=10., drop='absolute', passes=1, **kw):
+    y = smooth(x, **kw)
+    d = abs(x-y)
+    if drop=='absolute':
+        # Delete all elements which exceeds the stdev by percent%
+        m = (d.mean()+d.std())*(100+percent)/100.
+        s = np.where(d>m)[0]
+        n = None # take all
+    elif drop=='relative':
+        s = np.argsort(d)
+        # Delete most distant percent% elements
+        n = -int(len(s)*percent/100.)
+    else:
+        raise BaseException('Unknown parameter drop: '+drop)
+     
+    if not len(s):
+        print('smooth_discard: not filtering', drop, percent, passes)
+        return y, x, s
+    # Delete selected far points
+    s = s[n:]
+    
+    y = np.delete(y, s)
+    # Multi-pass filtering
+    if passes>1:
+        print('smooth pass', passes, len(y), len(s))
+        y, x1, s1 = smooth_discard(y, percent=percent, drop=drop, passes=passes-1, **kw)
+        # Concatenate filters
+        if len(s) and len(s1):
+            s = _update_filter(s1, s)
+    # Delete raw only in the end
+    else:
+        x = np.delete(x, s) 
+    # Smoothed filtered, raw filtered, filter
+    return y, x, s
+
 def toslice(v):
     """Recursive conversion of an iterable into slices"""
     if not isinstance(v, collections.Iterable):
