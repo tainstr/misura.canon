@@ -251,10 +251,21 @@ class ConfigurationProxy(common_proxy.CommonProxy, Aggregative, Scriptable, Conf
         return new
 
     def callback(self, key, val, callback_name='set'):
+        if not self.hasattr(key, 'callback_'+callback_name):
+            return val
+        func_names = self.getattr(key, 'callback_' + callback_name).split(',')
         callback_group = getattr(self, 'callbacks_' + callback_name)
         for cb in callback_group:
+            if cb.__name__ not in func_names:
+                continue
+            logging.debug('Calling callback', callback_name, cb.__name__)
             old = self.desc[key]['current']
             val = cb(self, key, old, val)
+            func_names.remove(cb.__name__)
+            if not len(func_names):
+                break
+        if len(func_names):
+            logging.error('Could not find callbacks:', callback_name, func_names)
         return val
 
     def __setitem__(self, key, val):
