@@ -2,6 +2,7 @@
 """Option persistence."""
 import re
 import collections
+from copy import copy, deepcopy
 from threading import Lock
 from functools import cmp_to_key
 from ..csutil import lockme
@@ -213,10 +214,11 @@ class ConfigurationProxy(common_proxy.CommonProxy, Aggregative, Scriptable, Conf
     def connection(self, *a, **k):
         return True
 
-    def paste(self, obj):
-        self.desc = obj.desc.copy()
-        self.children = obj.children #.copy()
-        self.children_obj = obj.children_obj #.copy()
+    def paste(self, obj, deep=False):
+        cp = deepcopy if deep else copy
+        self.desc = cp(obj.desc)
+        self.children = obj.children if not deep else cp(obj.children) #.copy()
+        self.children_obj = obj.children_obj if not deep else cp(obj.children_obj) #.copy()
         self._parent = obj._parent
         self._Method__name = obj._Method__name
         self._readLevel = obj._readLevel
@@ -226,9 +228,9 @@ class ConfigurationProxy(common_proxy.CommonProxy, Aggregative, Scriptable, Conf
         self.filename = obj.filename
         self._changeset = obj._changeset
 
-    def copy(self):
+    def copy(self, deep=False):
         p = ConfigurationProxy()
-        p.paste(self)
+        p.paste(self, deep=deep)
         return p
 
     def set(self, *a, **k):
