@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """Option persistence."""
+from copy import deepcopy
 from ..logger import get_module_logging
 logging = get_module_logging(__name__)
 
@@ -149,8 +150,8 @@ def ao(d, handle=False, type='Empty', current=None, name=False,
     if not handle:
         logging.debug('ao: No handle!', handle)
         return d
-    attr = attr or []
-    flags = flags or {}
+    attr = deepcopy(attr or [])
+    flags = deepcopy(flags or {})
     if current is None:
         if bytype[type] in ('float', 'integer'):
             current = 0
@@ -171,8 +172,11 @@ def ao(d, handle=False, type='Empty', current=None, name=False,
             current = ['None', 'default']
         else:
             current = ''
+    elif type not in ['Object','Binary','Image','Profile']:
+        current = deepcopy(current)
     if not name:
         name = handle
+        
     if priority < 0 or priority==None:
         priority = len(d)
 
