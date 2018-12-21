@@ -105,7 +105,6 @@ class ConfigurationProxy(common_proxy.CommonProxy, Aggregative, Scriptable, Conf
             t = c.recursive_changeset()
             n += t
         return n
-        
 
     def __getstate__(self):
         result = self.__dict__.copy()

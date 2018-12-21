@@ -105,6 +105,12 @@ class CommonProxy(object):
     def doc(self, doc):
         self.root._doc = doc
         
+    def plain_kid(self, opt):
+        kid = self.getattr(opt, 'kid')
+        for c in '/:;,-=+#@.\\':
+            kid = kid.replace(c,'_')
+        return kid
+        
     def asdict(self):
         """Return all keys current values in a dictionary"""
         r = {}
