@@ -126,7 +126,7 @@ def xmlrpcSanitize(val, attr=[], otype=False):
 
     return val
 
-
+import re
 def sanitize(func):
     """XML Sanitizer decorator"""
     @functools.wraps(func)
@@ -137,6 +137,10 @@ def sanitize(func):
     sanitize_wrapper.wrapped = inspect.getargspec(func)
     return sanitize_wrapper
 
+def natural_keys(text):
+    """Natural ordering key function for list.sort().
+    See http://www.codinghorror.com/blog/archives/001018.html"""
+    return [int(s) if s.isdigit() else s for s in re.split(r'(\d+)', text)]
 
 def func_args(func):
     """Return a flatten list of function argument names.
