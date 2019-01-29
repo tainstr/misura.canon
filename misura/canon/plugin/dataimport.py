@@ -228,5 +228,6 @@ class NullTasks(object):
     jobs = lambda *a, **k: 0
     job = lambda *a, **k: 0
     done = lambda *a, **k: 0
+    close = lambda *a, **k: 1
 
         
