@@ -615,19 +615,26 @@ class Indexer(object):
         self.tasks.done('Refreshing database')
 
     def delete_modified_files(self, database, all_files):
+        out = []
         modified_dates_on_db = self.get_modify_dates()
-
+        
         def f(db_entry): return (
             db_entry[0], self.convert_to_full_path(db_entry[1]), db_entry[1])
         modified_dates_on_db = [f(m) for m in modified_dates_on_db]
 
         old_modified_dates = {}
-        for f in all_files:
+        self.tasks.jobs(len(all_files), 'Reading modification times')
+        for i,f in enumerate(all_files):
             old_modified_dates[f] = int(os.path.getmtime(f))
+            if self.aborted:
+                return out
+            self.tasks.job(i+1, 'Reading modification times')
+        self.tasks.done('Reading modification times')
 
         deleted = []
-        out = []
-        for modify_date_on_db, full_test_file_name, relative_test_file_name in modified_dates_on_db:
+        t = 'Purging modified files before re-indexing'
+        self.tasks.jobs(len(modified_dates_on_db), t)
+        for i, (modify_date_on_db, full_test_file_name, relative_test_file_name) in enumerate(modified_dates_on_db):
             if self.aborted:
                 return out
             old_modified_date = old_modified_dates.get(
@@ -636,10 +643,12 @@ class Indexer(object):
                 # Remove so it will be later re-added
                 self.clear_file_path(relative_test_file_name)
                 deleted.append(relative_test_file_name)
-
+            self.tasks.job(i+1, t)
+        
         for relative_file_path, uid in database:
             if relative_file_path not in deleted:
                 out.append([relative_file_path, uid])
+        self.tasks.done(t)
         return out
 
     def delete_not_existing_files(self, database):
