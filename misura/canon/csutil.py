@@ -141,8 +141,6 @@ def natural_keys(text):
     """Natural ordering key function for list.sort().
     See http://www.codinghorror.com/blog/archives/001018.html"""
     r = [int(s) if re.match(r'([-]?\d+)', s) else s for s in re.split(r'([-]?\d+)', text)]
-    #r = filter(None, r)
-    print(r)
     return r
 
 def func_args(func):
