@@ -67,7 +67,8 @@ def aggregate_table(targets, values, devices, tree, precision=[], visible=[], fu
         for j, t in enumerate(targets):
             # i=row, j=column=t
             v = values[t][i]
-            if devices[t][i] is None:
+            d = devices[t][i]
+            if d is None:
                 logging.debug('Not collecting', t, i, v, devices[t][i])
                 continue
             
