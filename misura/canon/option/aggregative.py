@@ -350,7 +350,7 @@ class Aggregative(object):
         # TODO: calc stdev here
         if function_name == 'mean':
             v = np.array(values[targets[0]]).astype(np.float32)
-            if self.getattr(handle,'type')=='Boolean':
+            if handle and self.getattr(handle,'type')=='Boolean':
                 result = np.all(v)
             else:  
                 # filter out zeros

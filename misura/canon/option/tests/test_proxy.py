@@ -12,14 +12,13 @@ _calls = []
 
 def dummy_callback(conf, key, old_val, new_val):
     d = conf.gete(key)
-    if not d.get('callback_set', False) == 'dummy':
-        return new_val
+    assert 'dummy_callback' in d.get('callback_set', [])
     print('Dummy callback', conf['fullpath'], key, old_val, new_val)
     _calls.append((conf['fullpath'], key, old_val, new_val))
     return new_val
 
 
-option.proxy.ConfigurationProxy.callbacks_set.add(dummy_callback)
+
 
 def add_target(base, name, val):
     child = option.ConfigurationProxy({'self': dataimport.base_dict()})
@@ -270,12 +269,14 @@ class ConfigurationProxy(unittest.TestCase):
         self.assertEqual(precision, [1, 2, 3, 4])
 
     def test_callback(self):
+        option.proxy.ConfigurationProxy.callbacks_set.add(dummy_callback)
         base = option.ConfigurationProxy({'self': dataimport.base_dict()})
-        base.setattr('name', 'callback_set', 'dummy')
+        base.setattr('name', 'callback_set', 'dummy_callback')
         self.assertEqual(len(_calls), 0)
         base['name'] = 'ciao'
         self.assertEqual(len(_calls), 1)
         self.assertEqual(_calls[-1][1], 'name')
+        option.proxy.ConfigurationProxy.callbacks_set.remove(dummy_callback)
 
 
 if __name__ == "__main__":

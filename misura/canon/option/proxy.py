@@ -266,7 +266,7 @@ class ConfigurationProxy(common_proxy.CommonProxy, Aggregative, Scriptable, Conf
             if not len(func_names):
                 break
         if len(func_names):
-            logging.error('Could not find callbacks:', callback_name, func_names)
+            logging.error('Could not find callbacks:', callback_name, func_names, callback_group)
         return val
 
     def __setitem__(self, key, val):
