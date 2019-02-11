@@ -25,10 +25,11 @@ logging = get_module_logging(__name__)
 
 from misura.canon.indexer.interface import SharedFile
 
-def current_Meta(current):
+def current_Meta(opt):
     ret = []
+    cur = opt['current']
     for k in ('temp', 'time', 'value'):
-        v = current[k]
+        v = cur[k]
         try:
             v = float(v)
         except:
@@ -36,8 +37,7 @@ def current_Meta(current):
         ret.append(v)
     return ret
     
-def current_RoleIO(current):
-    return [current[0]+current[2]]
+
 
 
 #TODO: the combination of first 3 columns must be unique. Enforceable via sqlite? Or should I define a new combined key?
@@ -47,16 +47,16 @@ opt_unique = "uid, version, fullpath, handle"
 
 # table name:  ([(name, type),], insert_func, unique)
 toi_tables = {'option_Float': (opt_base[:]+[('current', 'real')], 
-                               lambda a: [float(a)], 
+                               lambda a: [float(a['current'])], 
                                opt_unique),
               'option_Integer': (opt_base[:]+[('current', 'integer')], 
-                                 lambda a: [int(a)], 
+                                 lambda a: [int(a['current'])], 
                                  opt_unique),
               'option_Boolean': (opt_base[:]+[('current', 'bool')], 
-                                 lambda a: [bool(a)],
+                                 lambda a: [bool(a['current'])],
                                  opt_unique),
               'option_String': (opt_base[:]+[('current', 'text')], 
-                                lambda a: [unicode(a)], 
+                                lambda a: [unicode(a['current'])], 
                                 opt_unique),
               'option_Meta': (opt_base[:]+[('current', 'real'), ('time', 'real'), ('value','real')], 
                               current_Meta, 
@@ -70,8 +70,8 @@ toi_tables = {'option_Float': (opt_base[:]+[('current', 'real')],
     }
 
 
-special_funcs = {'Role': lambda a: [a[0]],
-                 'RoleIO': lambda a: [a[0]+a[2]]}
+special_funcs = {'Role': lambda a: [a['current'][0]],
+                 'RoleIO': lambda a: [a['current'][0]+a['current'][2]]}
 
 aliases = {'Number': 'Float', 'Progress': 'Float', 'Time': 'Float'}
 
@@ -99,10 +99,19 @@ def create_tables(cursor):
         cmd += ';'
         cursor.execute(cmd)
     return True
+
+def drop_tables(cursor):
+    for tab_name in toi_tables.keys()+views.keys():
+        cursor.execute("drop table if exists '{}'".format(tab_name))
+    return True
         
-def purge_test_uid(cursor, uid):
+def clear_test_uid(cursor, uid):
     """Remove test UID entries from all tables"""
-    pass
+    for tab_name in toi_tables.keys():
+        cmd = "delete from '{}' where uid='{}'".format(tab_name, uid)
+        print(cmd)
+        cursor.execute(cmd)
+    return True
 
 def index_option(cursor, uid, version, path, opt):
     """Insert an option into its table"""
@@ -115,7 +124,7 @@ def index_option(cursor, uid, version, path, opt):
     current_func = special_funcs.get(opt['type'], current_func)
     colnames = get_column_names(listdef)
     try:
-        currents = current_func(opt['current'])
+        currents = current_func(opt)
     except:
         logging.info('Could not normalize option value', path, opt['handle'], opt['current'], current_func)
         return False
@@ -188,6 +197,7 @@ def index_file(cursor, shfile):
     """Scans the original version and all versions
     using index_version"""
     vers = shfile.get_versions()
+    shfile.uid = shfile.get_node_attr('/conf', 'uid')
     i = 0
     for verpath, (vername, verdate) in vers.items():
         logging.debug('index_file', verpath, vername, verdate)
@@ -195,6 +205,31 @@ def index_file(cursor, shfile):
         i += r
     return r
 
+views = {'view_sample': \
+'''
+SELECT t.file AS file, 
+        t.uid AS uid,
+        t.zerotime AS zerotime, 
+        t.instrument AS instrument, 
+        t.name AS name, 
+        t.elapsed AS elapsed, 
+        t.nSamples AS nSamples,
+        s.current AS sample
+FROM test as t
+INNER JOIN option_String AS s ON t.uid = s.uid
+WHERE s.handle = 'name' AND s.fullpath LIKE "/%/sample_/";
+''',
+}
 
 
+def create_views(cur):
+    for name, view in views.items():
+        cmd = 'create view if not exists {} as {}'.format(name, view)
+        cur.execute(cmd)
+    return True
 
+
+def drop_views(cursor):
+    for tab_name in views.keys():
+        cursor.execute("drop table if exists '{}'".format(tab_name))
+    return True

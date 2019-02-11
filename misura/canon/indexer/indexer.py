@@ -318,6 +318,7 @@ class Indexer(object):
         cur.execute("DROP TABLE IF EXISTS sync_approve")
         cur.execute("DROP TABLE IF EXISTS sync_error")
         cur.execute("DROP TABLE IF EXISTS modify_dates")
+        toi.drop_tables(cur)
         conn.commit()
         self.close_db()
         self._lock.release()
@@ -340,7 +341,9 @@ class Indexer(object):
         uids = self.cur.fetchall()
         for uid in uids:
             self.add_incremental_id(self.cur, uid[0])
-
+            
+        if self.toi:
+            toi.create_views(self.cur)
         self.conn.commit()
 
     def tests_filenames_sorted_by_date(self):
@@ -361,7 +364,7 @@ class Indexer(object):
             self.log.warning('File not found', file_path)
             return False
         r = False
-        table = False
+        sh = False
         try:
             self.log.debug('Appending',  file_path)
             sh = SharedFile(file_path, mode='r', header=False, load_conf=False)
@@ -374,8 +377,8 @@ class Indexer(object):
                 sh, file_path, add_uid_to_incremental_ids_table)
         except:
             print_exc()
-        if table:
-            sh.close()
+        if sh:
+            sh.close(all_handlers=True)
         return r
 
     @property
@@ -494,12 +497,13 @@ class Indexer(object):
 
         if add_uid_to_incremental_ids_table:
             self.add_incremental_id(cur, test['uid'])
+            
+        if self.toi:
+            toi.index_file(cur, sharedfile)
+            
         self.conn.commit()
         # This is actually the relative path saved before
         self.save_modify_date(test['file'])
-
-        if self.toi:
-            toi.index_file(cur, sharedfile)
 
         return True
 
@@ -689,6 +693,14 @@ class Indexer(object):
         """Remove file in `relative_file_path` from db"""
         self.log.debug(
             'Removing obsolete database entry: ', relative_file_path)
+        self.cur.execute('SELECT uid FROM test where file=?', (relative_file_path, ))
+        uids = set(self.cur.fetchall())
+        if not uids:
+            self.log.debug('No db entry found for:', relative_file_path)
+            return False
+        for uid in uids:
+            toi.clear_test_uid(self.cur, uid[0])
+        r = self.cur.fetchall()
         e = self.cur.execute(
             'delete from test where file=?', (relative_file_path,))
         e = self.cur.execute(
