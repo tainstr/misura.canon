@@ -166,12 +166,13 @@ class Indexer(object):
 #   conn=False
     addr = 'LOCAL'
 
-    def __init__(self, dbPath=False, paths=[], log=False):
+    def __init__(self, dbPath=False, paths=[], log=False, toi=False):
         self._lock = FileSystemLock()
         self.tasks = NullTasks()
         self.threads = {}
         self.dbPath = dbPath
         self.paths = paths
+        self.toi = toi
         if log is False:
             log = csutil.FakeLogger()
         self.log = log
@@ -363,7 +364,7 @@ class Indexer(object):
         table = False
         try:
             self.log.debug('Appending',  file_path)
-            sh = SharedFile(file_path, mode='r')
+            sh = SharedFile(file_path, mode='r', header=False, load_conf=False)
             #table = tables.open_file(file_path, mode='r')
             if not getattr(sh.test.root, 'conf', False):
                 self.log.debug('Tree configuration not found', file_path)
@@ -497,11 +498,8 @@ class Indexer(object):
         # This is actually the relative path saved before
         self.save_modify_date(test['file'])
 
-        # ##
-        # Options
-        # ##
-        #return True
-        toi.index_file(cur, sharedfile)
+        if self.toi:
+            toi.index_file(cur, sharedfile)
 
         return True
 

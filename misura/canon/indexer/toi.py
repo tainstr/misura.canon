@@ -26,9 +26,15 @@ logging = get_module_logging(__name__)
 from misura.canon.indexer.interface import SharedFile
 
 def current_Meta(current):
-    return [float(current['temp']),
-            float(current['time']),
-            float(current['value'])]
+    ret = []
+    for k in ('temp', 'time', 'value'):
+        v = current[k]
+        try:
+            v = float(v)
+        except:
+            v = -1
+        ret.append(v)
+    return ret
     
 def current_RoleIO(current):
     return [current[0]+current[2]]
