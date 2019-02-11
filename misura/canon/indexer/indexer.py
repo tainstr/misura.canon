@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 """Indexing hdf5 files"""
-# NOTICE: THIS FILE IS ALSO PART OF THE CLIENT. IT SHOULD NOT CONTAIN
-# REFERENCES TO THE SERVER OR TWISTED PKG.
 ext = '.h5'
 
 import hashlib
@@ -29,6 +27,8 @@ from .. import csutil, option
 from .filemanager import FileManager
 from misura.canon.indexer.interface import SharedFile
 from misura.canon.plugin import NullTasks
+
+from . import toi
 
 testColumn = ('file', 'serial', 'uid', 'id', 'zerotime', 'instrument',
               'flavour', 'name', 'elapsed', 'nSamples', 'comment', 'verify')
@@ -242,6 +242,7 @@ class Indexer(object):
         cur.execute(
             "create table if not exists modify_dates " + modifyDatesTableDef)
 
+        toi.create_tables(cur)
         conn.commit()
         return True
 
@@ -362,17 +363,18 @@ class Indexer(object):
         table = False
         try:
             self.log.debug('Appending',  file_path)
-            table = tables.open_file(file_path, mode='r')
-            if not getattr(table.root, 'conf', False):
+            sh = SharedFile(file_path, mode='r')
+            #table = tables.open_file(file_path, mode='r')
+            if not getattr(sh.test.root, 'conf', False):
                 self.log.debug('Tree configuration not found', file_path)
-                table.close()
+                sh.close()
                 return False
             r = self._appendFile(
-                table, file_path, add_uid_to_incremental_ids_table)
+                sh, file_path, add_uid_to_incremental_ids_table)
         except:
             print_exc()
         if table:
-            table.close()
+            sh.close()
         return r
 
     @property
@@ -457,14 +459,15 @@ class Indexer(object):
         return self.cur.fetchall()
 
     @dbcom
-    def _appendFile(self, table, file_path, add_uid_to_incremental_ids_table):
+    def _appendFile(self, sharedfile, file_path, add_uid_to_incremental_ids_table):
         """Inserts a new file in the database"""
+        table = sharedfile.test
         v, tree, instrument, test = self.get_test_data(
             table, file_path, add_uid_to_incremental_ids_table)
 
         cur = self.cur
         cmd = '?,' * len(v)
-        cmd = 'INSERT INTO test VALUES (' + cmd[:-1] + ')'
+        cmd = 'INSERT OR REPLACE INTO test VALUES (' + cmd[:-1] + ')'
         print('Executing', cmd, v)
         self.cur.execute(cmd, v)
         r = cur.fetchall()
@@ -483,7 +486,7 @@ class Indexer(object):
                     val = smp[k]['current']
                 v.append(val)
             cmd = '?,' * len(v)
-            cmd = 'INSERT INTO sample VALUES (' + cmd[:-1] + ')'
+            cmd = 'INSERT OR REPLACE INTO sample VALUES (' + cmd[:-1] + ')'
             cur.execute(cmd, v)
             r = cur.fetchall()
             print('Result:', r)
@@ -497,18 +500,15 @@ class Indexer(object):
         # ##
         # Options
         # ##
-        return True
-        s = option.SqlStore()
-        s.cursor = cur
-        s.write_tree(tree, preset=test['uid'])
-        self.conn.commit()
+        #return True
+        toi.index_file(cur, sharedfile)
 
         return True
 
     def add_incremental_id(self, cursor, uid):
         try:
             cursor.execute(
-                "insert into incremental_ids(uid) values (?)", (uid,))
+                "insert or replace into incremental_ids(uid) values (?)", (uid,))
         except sqlite3.IntegrityError:
             self.log.debug(
                 'uid ' + uid + ' already exists in incremental_ids table: no big deal')

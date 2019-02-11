@@ -8,7 +8,7 @@ from misura.canon.csutil import xmlrpcSanitize
 from misura.canon.csutil import next_point
 from misura.canon.csutil import filter_calibration_filenames
 from misura.canon.csutil import only_hdf_files
-from misura.canon.csutil import incremental_filename
+from misura.canon.csutil import incremental_filename, _update_filter
 
 
 class TestCsUtil(unittest.TestCase):
@@ -85,6 +85,17 @@ class TestCsUtil(unittest.TestCase):
             self.assertEqual(incremental_filename(f.name), f.name[:-5]+'_16.f')          
         with tempfile.NamedTemporaryFile(suffix='_1_2_dsf_1_56_d.f') as f:
             self.assertEqual(incremental_filename(f.name), f.name[:-2]+'_0.f')
+            
+    def test__update_filter(self):
+        old = np.array([0,1,4,8,10,11])
+        new = np.array([0,2,8,9,10])
+        res = _update_filter(new, old)
+        self.assertEqual(list(res), list(np.sort([0,1,4, 8, 10,11, 
+                                                  2, 5, 14, 15, 16])))
+        res1 = _update_filter(np.array([1,3,5]), res)
+        self.assertEqual(list(res1), list(np.sort([0,1,4, 8, 10,11, 
+                                                  2, 5, 14, 15, 16,
+                                                  6, 9,13])))
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

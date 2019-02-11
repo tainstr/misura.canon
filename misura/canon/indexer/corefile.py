@@ -108,6 +108,10 @@ class CoreFile(object):
             if not kid or kid==path:
                 self.node_cache[path] = n
         return n
+    
+    @lockme()
+    def get_node(self, path, subpath=False):
+        return self._get_node(path, subpath=subpath)
 
     @lockme()
     def __len__(self, path=False):
@@ -464,6 +468,8 @@ class CoreFile(object):
         Eg: /conf to /ver_1/conf"""
         if version is False:
             version = self.version or ''
+        if version and not version.startswith('/'):
+            version = '/'+version
         if version and not path.startswith(version):
             path1 = version + path
             if self._has_node(path1):

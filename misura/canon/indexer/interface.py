@@ -297,11 +297,11 @@ class SharedFile(CoreFile, DataOperator):
         for node in self.test.list_nodes(plots_path):
             path = plots_path + '/{}/'.format(node._v_name)
             script = self.test.get_node(path + 'script')
+            image = False
             if render:
                 if path + 'render' in self.test:
                     image = self._file_node(path + 'render')
-                else:
-                    image = False
+                    
             r[node._v_name] = (script.attrs.title, script.attrs.date,
                                image, script.attrs.format)
         return r
@@ -364,11 +364,13 @@ class SharedFile(CoreFile, DataOperator):
                 txt += '\n'
         return txt
 
-    def conf_tree(self):
-        self.log.debug('Loading conf', self.versioned('/conf'))
-        tree = self.file_node(self.versioned('/conf'))
+    def conf_tree(self, path=False):
+        if not path:
+            path = self.versioned('/conf')
+        self.log.debug('Loading conf', path)
+        tree = self.file_node(path)
         if tree in [False, None]:
-            self.log.warning('Configuration node file not found!')
+            self.log.warning('Configuration node file not found!', path)
             return '{}'
         # test
         self.log.debug('loading ', len(tree))

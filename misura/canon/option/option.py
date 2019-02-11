@@ -198,7 +198,10 @@ def ao(d, handle=False, type='Empty', current=None, name=False,
         ent['unit'] = {'time': 'second', 'temp': 'celsius', 'value': 'None'}
     ent['kid'] = str(id(ent))
     ent = validate(ent)
-    d[handle] = ent
+    if hasattr(d, 'items'):
+        d[handle] = ent
+    else:
+        d.append(ent)
     return d
 
 
