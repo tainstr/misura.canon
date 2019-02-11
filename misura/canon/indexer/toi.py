@@ -101,8 +101,10 @@ def create_tables(cursor):
     return True
 
 def drop_tables(cursor):
-    for tab_name in toi_tables.keys()+views.keys():
+    for tab_name in toi_tables.keys():
         cursor.execute("drop table if exists '{}'".format(tab_name))
+    for view_name in views:
+        cursor.execute("drop view if exists '{}'".format(tab_name))
     return True
         
 def clear_test_uid(cursor, uid):
@@ -199,14 +201,17 @@ def index_file(cursor, shfile):
     vers = shfile.get_versions()
     shfile.uid = shfile.get_node_attr('/conf', 'uid')
     i = 0
+    active_version = shfile.active_version()
     for verpath, (vername, verdate) in vers.items():
         logging.debug('index_file', verpath, vername, verdate)
-        r = index_version(cursor, shfile, verpath, vername, verdate, verpath==shfile.version)
+        active = verpath == active_version or len(vers)==1
+        r = index_version(cursor, shfile, verpath, vername, verdate, active=active)
         i += r
     return r
 
-views = {'view_sample': \
+views = [
 '''
+CREATE VIEW IF NOT EXISTS view_sample AS
 SELECT t.file AS file, 
         t.uid AS uid,
         t.zerotime AS zerotime, 
@@ -214,18 +219,62 @@ SELECT t.file AS file,
         t.name AS name, 
         t.elapsed AS elapsed, 
         t.nSamples AS nSamples,
+        s.version AS version,
+        s.fullpath AS fullpath,
         s.current AS sample
 FROM test as t
 INNER JOIN option_String AS s ON t.uid = s.uid
+INNER JOIN versions AS v ON v.uid = s.uid AND v.active = 1 AND v.version = s.version
 WHERE s.handle = 'name' AND s.fullpath LIKE "/%/sample_/";
 ''',
-}
+]
 
+view_names = ['view_sample']
+
+for shape in ('Sintering', 'Softening', 'Sphere', 'HalfSphere', 'Melting'):
+    view = '''CREATE VIEW IF NOT EXISTS view_sample_hsm_{0} AS
+SELECT t.uid AS uid,
+       s.fullpath AS fullpath,
+       s.current AS current
+FROM view_sample as t
+INNER JOIN option_Meta AS s ON t.uid = s.uid AND t.version = s.version
+WHERE s.handle = '{0}' AND s.fullpath = t.fullpath;
+'''.format(shape) 
+    view_names.append('view_sample_hsm_{0}'.format(shape))
+    views.append(view)
+    print(view)
+    
+views.append('''CREATE VIEW IF NOT EXISTS view_sample_hsm AS
+SELECT t.file AS file, 
+        t.uid AS uid,
+        t.zerotime AS zerotime, 
+        t.instrument AS instrument, 
+        t.name AS name, 
+        t.elapsed AS elapsed, 
+        t.nSamples AS nSamples,
+        s.version AS version,
+        s.sample AS sample,
+        sint.current AS sintering,
+        soft.current AS softening,
+        sph.current AS sphere,
+        hsph.current AS halfSphere,
+        melt.current AS melting
+FROM test as t
+INNER JOIN view_sample AS s ON t.uid = s.uid
+INNER JOIN view_sample_hsm_Sintering AS sint ON s.fullpath = sint.fullpath AND s.uid = sint.uid
+INNER JOIN view_sample_hsm_Softening AS soft ON s.fullpath = soft.fullpath AND s.uid = soft.uid
+INNER JOIN view_sample_hsm_Sphere AS sph ON s.fullpath = sph.fullpath AND s.uid = sph.uid
+INNER JOIN view_sample_hsm_HalfSphere AS hsph ON s.fullpath = hsph.fullpath AND s.uid = hsph.uid
+INNER JOIN view_sample_hsm_Melting AS melt ON s.fullpath = melt.fullpath AND t.uid = melt.uid
+''')
+
+view_names.append('view_sample_hsm')
+
+print(views[-1])
 
 def create_views(cur):
-    for name, view in views.items():
-        cmd = 'create view if not exists {} as {}'.format(name, view)
-        cur.execute(cmd)
+    for view in views:
+        cur.execute(view)
     return True
 
 
