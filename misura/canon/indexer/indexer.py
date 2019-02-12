@@ -166,13 +166,12 @@ class Indexer(object):
 #   conn=False
     addr = 'LOCAL'
 
-    def __init__(self, dbPath=False, paths=[], log=False, toi=False):
+    def __init__(self, dbPath=False, paths=[], log=False):
         self._lock = FileSystemLock()
         self.tasks = NullTasks()
         self.threads = {}
         self.dbPath = dbPath
         self.paths = paths
-        self.toi = toi
         if log is False:
             log = csutil.FakeLogger()
         self.log = log
@@ -343,8 +342,7 @@ class Indexer(object):
         for uid in uids:
             self.add_incremental_id(self.cur, uid[0])
             
-        if self.toi:
-            toi.create_views(self.cur)
+        toi.create_views(self.cur)
         self.conn.commit()
 
     def tests_filenames_sorted_by_date(self):
@@ -499,8 +497,7 @@ class Indexer(object):
         if add_uid_to_incremental_ids_table:
             self.add_incremental_id(cur, test['uid'])
             
-        if self.toi:
-            toi.index_file(cur, sharedfile)
+        toi.index_file(cur, sharedfile)
             
         self.conn.commit()
         # This is actually the relative path saved before
