@@ -62,9 +62,9 @@ toi_tables = {'option_Float': (opt_base[:]+[('current', 'real')],
                               current_Meta, 
                               opt_unique),
               
-              'versions':([('uid', 'text'), ('version', 'text'), ('title', 'text'), ('date', 'text'), ('active', 'bool')], 
+              'versions':([('uid', 'text'), ('version', 'text'), ('name', 'text'), ('date', 'text'), ('active', 'bool')], 
                           None, "uid, version"),
-              'plots':([('hash', 'text'), ('uid', 'text'), ('version', 'text'), ('name', 'text'), ('title', 'text'), 
+              'plots':([('hash', 'text'), ('uid', 'text'), ('version', 'text'), ('node', 'text'), ('name', 'text'), 
                         ('date', 'text'), ('script','text'), ('render', 'blob'), ('format', 'text')], 
                         None, "hash, uid, version"),
     }
@@ -159,6 +159,14 @@ def index_tree(cursor, uid, version, tree):
         # Auto-iterate
         index_tree(cursor, uid, version, sub)
 
+def reorder_date(date):
+    d = date.split(', ')
+    if len(d)!=2:
+        return date
+    h, d = d
+    d = '-'.join(d.split('/')[::-1])
+    return d+' '+h
+
 def index_plots(cursor, shfile, version=''):
     """Index all plots contained in a specific `version`"""
     if version=='':
@@ -172,7 +180,7 @@ def index_plots(cursor, shfile, version=''):
         script_path =shfile._versioned('/plot/'+plot_name+'/script', version=version)
         script = shfile.file_node(script_path)
         plot_hash = hashlib.md5(script).hexdigest()
-        vals = [plot_hash, shfile.uid, version, plot_name, title, date, script, sqlite3.Binary(render), render_format]
+        vals = [plot_hash, shfile.uid, version, plot_name, title, reorder_date(date), script, sqlite3.Binary(render), render_format]
         colnames = get_column_names(toi_tables['plots'][0])
         q = ('?,' * len(vals))[:-1]
         cmd = "insert or replace into 'plots' ({}) values ({});".format(colnames, q)
@@ -189,7 +197,7 @@ def index_version(cursor, shfile, path='', name='Original', date='', active=Fals
     index_plots(cursor, shfile, path)
     # versions table entry
     colnames = get_column_names(toi_tables['versions'][0])
-    vals = [shfile.uid, path, name, date, active]
+    vals = [shfile.uid, path, name, reorder_date(date), active]
     q = ('?,' * len(vals))[:-1]
     cmd = "insert or replace into 'versions' ({}) values ({});".format(colnames, q)
     cursor.execute(cmd, vals)
@@ -211,17 +219,32 @@ def index_file(cursor, shfile):
 
 views = [
 '''
+CREATE VIEW IF NOT EXISTS view_plots AS
+SELECT t.file, p.name, p.date, t.name AS testName, t.zerotime, p.hash, p.uid, p.version, p.node
+FROM plots as p
+JOIN test AS t ON p.uid = t.uid
+''',
+
+'''
+CREATE VIEW IF NOT EXISTS view_versions AS
+SELECT t.file, p.name, p.date, p.version, t.name AS testName, t.zerotime, p.active
+FROM versions as p
+JOIN test AS t ON p.uid = t.uid
+''',
+    
+'''
 CREATE VIEW IF NOT EXISTS view_sample AS
 SELECT t.file AS file, 
+        s.current AS sample,
+        t.name AS name, 
         t.uid AS uid,
         t.zerotime AS zerotime, 
-        t.instrument AS instrument, 
-        t.name AS name, 
+        t.instrument AS instrument,  
         t.elapsed AS elapsed, 
         t.nSamples AS nSamples,
         s.version AS version,
-        s.fullpath AS fullpath,
-        s.current AS sample
+        s.fullpath AS fullpath
+        
 FROM test as t
 INNER JOIN option_String AS s ON t.uid = s.uid
 INNER JOIN versions AS v ON v.uid = s.uid AND v.active = 1 AND v.version = s.version
@@ -229,7 +252,7 @@ WHERE s.handle = 'name' AND s.fullpath LIKE "/%/sample_/";
 ''',
 ]
 
-view_names = ['view_sample']
+view_names = ['view_plots', 'view_versions', 'view_sample']
 
 for shape in ('Sintering', 'Softening', 'Sphere', 'HalfSphere', 'Melting'):
     view = '''CREATE VIEW IF NOT EXISTS view_sample_hsm_{0} AS
@@ -240,20 +263,20 @@ FROM view_sample as t
 INNER JOIN option_Meta AS s ON t.uid = s.uid AND t.version = s.version
 WHERE s.handle = '{0}' AND s.fullpath = t.fullpath;
 '''.format(shape) 
-    view_names.append('view_sample_hsm_{0}'.format(shape))
     views.append(view)
-    print(view)
+    view_names.append('view_sample_hsm_{0}'.format(shape))
     
 views.append('''CREATE VIEW IF NOT EXISTS view_sample_hsm AS
-SELECT t.file AS file, 
+SELECT t.file AS file,  
+        s.sample AS sample,
+        t.name AS name, 
         t.uid AS uid,
         t.zerotime AS zerotime, 
-        t.instrument AS instrument, 
-        t.name AS name, 
+        t.instrument AS instrument,  
         t.elapsed AS elapsed, 
         t.nSamples AS nSamples,
         s.version AS version,
-        s.sample AS sample,
+        s.fullpath AS fullpath,
         sint.current AS sintering,
         soft.current AS softening,
         sph.current AS sphere,
@@ -270,15 +293,15 @@ INNER JOIN view_sample_hsm_Melting AS melt ON s.fullpath = melt.fullpath AND t.u
 
 view_names.append('view_sample_hsm')
 
-print(views[-1])
 
 def create_views(cur):
     for view in views:
+        print 'creating view', view
         cur.execute(view)
     return True
 
 
 def drop_views(cursor):
-    for tab_name in views.keys():
-        cursor.execute("drop table if exists '{}'".format(tab_name))
+    for tab_name in view_names:
+        cursor.execute("drop view if exists '{}'".format(tab_name))
     return True

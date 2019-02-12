@@ -242,7 +242,7 @@ class Indexer(object):
             "create table if not exists incremental_ids " + incrementalIdsTableDef)
         cur.execute(
             "create table if not exists modify_dates " + modifyDatesTableDef)
-
+        
         toi.create_tables(cur)
         conn.commit()
         return True
@@ -322,6 +322,7 @@ class Indexer(object):
         conn.commit()
         self.close_db()
         self._lock.release()
+        self.refresh_views()
         tests_filenames = self.tests_filenames_sorted_by_date()
         self.tasks.jobs(len(tests_filenames),
                         'Rebuilding database', abort=self.abort)
@@ -592,11 +593,17 @@ class Indexer(object):
 
     def change_comment_on_database(self, new_comment, uid):
         return self.change_column_on_database('comment', new_comment, uid)
+    
+    @dbcom
+    def refresh_views(self):
+        toi.drop_views(self.cur)
+        toi.create_views(self.cur)
+        self.conn.commit()
 
     def refresh(self):
         """Updates the database by inserting new files and removing deleted files"""
         self.aborted = False
-        self.tasks.jobs(5, 'Refreshing database', abort=self.abort)
+        self.tasks.jobs(6, 'Refreshing database', abort=self.abort)
         database = self.execute_fetchall("select file, uid from test")
         if self.aborted:
             return False
@@ -614,6 +621,8 @@ class Indexer(object):
             return False
         self.tasks.job(4, 'Refreshing database', 'Re-index modified files')
         self.add_new_files(all_files, database)
+        self.tasks.job(4, 'Refreshing database', 'Create views')
+        self.refresh_views()
         self.tasks.done('Refreshing database')
 
     def delete_modified_files(self, database, all_files):
@@ -725,10 +734,12 @@ class Indexer(object):
             return False
 
     @dbcom
-    def header(self):
-        self.cur.execute('PRAGMA table_info(test)')
+    def header(self, table='test'):
+        self.cur.execute('PRAGMA table_info({})'.format(table))
         r = self.cur.fetchall()
         test_header = [str(col[1]) for col in r]
+        if table!='test':
+            return test_header
 
         self.cur.execute('PRAGMA table_info(incremental_ids)')
         r = self.cur.fetchall()
@@ -750,21 +761,29 @@ class Indexer(object):
         return r
 
     @dbcom
-    def query(self, conditions={}, operator=1, orderby='zerotime', order='DESC', limit=1000, offset=0):
+    def query(self, conditions={}, operator=1, orderby='zerotime', 
+              order='DESC', limit=1000, offset=0, table='test'):
         # FIXME: inter-thread #412
         operator = ['OR', 'AND'][operator]
         order = order.upper()
         assert order in ('DESC', 'ASC')
-        assert orderby in testColumnDefault
         limit = int(limit)
         assert limit > 0
         offset = int(offset)
         assert offset >= 0
         ordering = " ORDER BY `{}` {} LIMIT {} OFFSET {}".format(orderby,
                                                                  order, limit, offset)
+        
+        join = ''
+        if table=='test':
+            join = 'natural join incremental_ids'
+        
+        cmd = 'SELECT * from {} {}'.format(table, join) 
+        
         if len(conditions) == 0:
-            self.cur.execute(
-                'SELECT * from test natural join incremental_ids ' + ordering)
+            cmd += ordering
+            self.log.debug('Executing', cmd)
+            self.cur.execute(cmd)
         else:
             cnd = []
             vals = []
@@ -772,16 +791,15 @@ class Indexer(object):
                 cnd.append(k + ' like ?')
                 vals.append('%' + v + '%')
             cnd = ' {} '.format(operator).join(cnd)
-            cmd = 'SELECT * from test natural join incremental_ids WHERE ' + \
-                cnd + ordering
+            cmd += 'WHERE ' + cnd + ordering
             self.log.debug('Executing', cmd, vals)
             self.cur.execute(cmd, vals)
         r = self.cur.fetchall()
         return self.convert_query_result_to_full_path(r)
 
     @dbcom
-    def get_len(self):
-        self.cur.execute('SELECT Count(*) FROM test')
+    def get_len(self, table='test'):
+        self.cur.execute('SELECT Count(*) FROM {}'.format(table))
         r = self.cur.fetchone()[0]
         return r
 

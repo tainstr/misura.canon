@@ -31,6 +31,7 @@ class TestTotalOptionIndexer(unittest.TestCase):
         self.conn = sqlite3.connect(testdb, detect_types=sqlite3.PARSE_DECLTYPES)
         self.cur = self.conn.cursor()
         toi.create_tables(self.cur)
+        toi.create_views(self.cur)
         self.conn.commit()
         
     
