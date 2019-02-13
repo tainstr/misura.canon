@@ -802,7 +802,7 @@ class Indexer(object):
         otype = toi.aliases.get(otype, otype)
         cmd = """SELECT test.zerotime, test.name, opt.current FROM 'option_{}' AS opt
 INNER JOIN test ON test.uid = opt.uid
-WHERE opt.fullpath = '{}' AND opt.handle='{}' ORDER BY test.zerotime DESC LIMIT 10""".format(otype, fullpath, handle)
+WHERE opt.fullpath LIKE '{}' AND opt.handle='{}' ORDER BY test.zerotime DESC LIMIT 10""".format(otype, fullpath, handle)
         self.cur.execute(cmd)
         return self.cur.fetchall()
   
