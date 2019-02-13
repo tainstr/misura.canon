@@ -98,6 +98,7 @@ def create_tables(cursor):
         cmd = 'create table if not exists {} {}'.format(tab_name, tab_def)
         cmd += ';'
         cursor.execute(cmd)
+        cur.execute('create index if not exists idx_{0}_uid on {0}(uid)'.format(uid))
     return True
 
 def drop_tables(cursor):

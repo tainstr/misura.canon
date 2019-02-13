@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """Indexing hdf5 files"""
+from bonobo.activation import query
 ext = '.h5'
 
 import hashlib
@@ -241,6 +242,9 @@ class Indexer(object):
             "create table if not exists incremental_ids " + incrementalIdsTableDef)
         cur.execute(
             "create table if not exists modify_dates " + modifyDatesTableDef)
+        
+        cur.execute('create index if not exists idx_test_zerotime on test(zerotime)')
+        cur.execute('create index if not exists idx_test_uid on test(uid)')
         
         toi.create_tables(cur)
         conn.commit()
@@ -793,6 +797,16 @@ class Indexer(object):
             self.cur.execute(cmd, vals)
         r = self.cur.fetchall()
         return self.convert_query_result_to_full_path(r)
+    
+    @dbcom
+    def query_recent_option(self, otype, fullpath, handle):
+        otype = toi.aliases.get(otype, otype)
+        cmd = """SELECT test.zerotime, test.name, opt.current FROM 'option_{}' AS opt
+INNER JOIN test ON test.uid = opt.uid
+WHERE opt.fullpath = '{}' AND opt.handle='{}' ORDER BY test.zerotime DESC LIMIT 10""".format(otype, fullpath, handle)
+        self.cur.execute(cmd)
+        return self.cur.fetchall()
+  
 
     @dbcom
     def get_len(self, table='test'):
