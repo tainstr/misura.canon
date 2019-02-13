@@ -157,6 +157,21 @@ class FileSystemLock(object):
         os.rmdir(self.path)
         return r
 
+def create_tables(cur):
+    cur.execute("CREATE TABLE if not exists test " + testTableDef)
+    cur.execute("CREATE TABLE if not exists sample " + sampleTableDef)
+    # Sync tables
+    cur.execute("create table if not exists sync_exclude " + syncTableDef)
+    cur.execute("create table if not exists sync_queue " + syncTableDef)
+    cur.execute("create table if not exists sync_approve " + syncTableDef)
+    cur.execute("create table if not exists sync_error " + errorTableDef)
+    cur.execute(
+        "create table if not exists incremental_ids " + incrementalIdsTableDef)
+    cur.execute(
+        "create table if not exists modify_dates " + modifyDatesTableDef)
+    
+    cur.execute('create index if not exists idx_test_zerotime on test(zerotime)')
+    cur.execute('create index if not exists idx_test_uid on test(uid)')
 
 class Indexer(object):
     public = ['rebuild', 'searchUID', 'update', 'header', 'listMaterials',
@@ -230,20 +245,8 @@ class Indexer(object):
                 self.dbPath, detect_types=sqlite3.PARSE_DECLTYPES)
             cur = conn.cursor()
             self.threads[tid()] = (conn, cur)
-        cur.execute("CREATE TABLE if not exists test " + testTableDef)
-        cur.execute("CREATE TABLE if not exists sample " + sampleTableDef)
-        # Sync tables
-        cur.execute("create table if not exists sync_exclude " + syncTableDef)
-        cur.execute("create table if not exists sync_queue " + syncTableDef)
-        cur.execute("create table if not exists sync_approve " + syncTableDef)
-        cur.execute("create table if not exists sync_error " + errorTableDef)
-        cur.execute(
-            "create table if not exists incremental_ids " + incrementalIdsTableDef)
-        cur.execute(
-            "create table if not exists modify_dates " + modifyDatesTableDef)
         
-        cur.execute('create index if not exists idx_test_zerotime on test(zerotime)')
-        cur.execute('create index if not exists idx_test_uid on test(uid)')
+        create_tables(cur)
         
         toi.create_tables(cur)
         conn.commit()

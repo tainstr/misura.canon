@@ -297,7 +297,6 @@ view_names.append('view_sample_hsm')
 
 def create_views(cur):
     for view in views:
-        print 'creating view', view
         cur.execute(view)
     return True
 

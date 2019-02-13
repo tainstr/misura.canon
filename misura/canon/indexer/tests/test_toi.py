@@ -6,7 +6,7 @@ import sqlite3
 from misura.canon import indexer, option
 from misura.canon.tests import testdir
 from misura.canon.indexer.interface import SharedFile
-from misura.canon.indexer import toi
+from misura.canon.indexer import toi, create_tables
 from misura.canon.plugin import dataimport
 import os
 import shutil
@@ -30,6 +30,7 @@ class TestTotalOptionIndexer(unittest.TestCase):
             os.remove(testdb)
         self.conn = sqlite3.connect(testdb, detect_types=sqlite3.PARSE_DECLTYPES)
         self.cur = self.conn.cursor()
+        create_tables(self.cur)
         toi.create_tables(self.cur)
         toi.create_views(self.cur)
         self.conn.commit()
@@ -37,8 +38,8 @@ class TestTotalOptionIndexer(unittest.TestCase):
     
     def tearDown(self):
         self.conn.close()
-        #if os.path.exists(testdb)
-        #    os.remove(testdb)
+        if os.path.exists(testdb):
+            os.remove(testdb)
         
 
     def test_create_tables(self):    
