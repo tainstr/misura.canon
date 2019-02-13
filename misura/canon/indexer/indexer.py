@@ -775,7 +775,7 @@ class Indexer(object):
         if table=='test':
             join = 'natural join incremental_ids'
         
-        cmd = 'SELECT * from {} {}'.format(table, join) 
+        cmd = 'SELECT * from {} {} '.format(table, join) 
         
         if len(conditions) == 0:
             cmd += ordering
