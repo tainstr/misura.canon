@@ -41,6 +41,8 @@ class DummyInstrument(dict):
     running = True
     log = logger.Log
     _parent = None
+    manager = False
+    main_confdir = testdir
     
     def __init__(self, fullpath=False):
         super(DummyInstrument, self).__init__()
@@ -63,6 +65,16 @@ class DummyInstrument(dict):
 
     def stop_acquisition(self):
         self.running = False
+        
+    def putSubHandler(self, *a):
+        pass
+    
+    @property
+    def devices(self):
+        return []
+    
+    def iter_samples(self):
+        return []
         
 class FakeStorageFile(object):
 
