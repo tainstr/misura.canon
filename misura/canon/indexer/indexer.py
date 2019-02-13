@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 """Indexing hdf5 files"""
-from bonobo.activation import query
 ext = '.h5'
 
 import hashlib
