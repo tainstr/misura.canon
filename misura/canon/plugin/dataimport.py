@@ -142,6 +142,14 @@ class Converter(object):
         self.log = BaseLogger(self.log_func)
         from misura.client.confwidget import check_default_database
         check_default_database()
+    
+    @classmethod    
+    def check_importable(cls, filename):
+        for pattern in cls.file_pattern.split(';'):
+            if fnmatch(filename, pattern):
+                logging.debug('Found converter', filename, cls.file_pattern, pattern)
+                return True
+        return False
         
         
     def post_open_file(self, navigator, *a, **k):
@@ -205,10 +213,8 @@ data_importers = set([])
 def search_registry(filename):
     """Find a matching converter for filename"""
     for converter in data_importers:
-        for pattern in converter.file_pattern.split(';'):
-            if fnmatch(filename, pattern):
-                logging.debug('Found converter', filename, converter.file_pattern, pattern)
-                return converter
+        if converter.check_importable(filename):
+            return converter
     logging.error('No converter found', filename)
     return False
 
