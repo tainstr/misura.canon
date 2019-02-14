@@ -88,7 +88,7 @@ vkeys = "handle,name,current,factory_default,attr,type,writeLevel,readLevel,mb,s
 str_keys = ('handle', 'name', 'type', 'parent', 'unit', 'csunit', 'kid','aggregate')
 int_keys = ('readLevel', 'writeLevel', 'mb', 'priority')
 type_keys = ('current', 'factory_default', 'min', 'max', 'step')
-repr_keys = ('attr', 'flags', 'options', 'values')  # and any other....
+repr_keys = ('attr', 'flags', 'options', 'values', 'chron')  # and any other....
 
 nowrite = set(['Binary', 'Runtime'])  # attributes/types which should not be saved
 # TODO: limit the nowrite just to the current and factory_default properties.
