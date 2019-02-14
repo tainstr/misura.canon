@@ -2,6 +2,23 @@
 from misura.canon.logger import get_module_logging
 logging = get_module_logging(__name__)
 import re
+from time import time
+
+coalesce_chron = 2 # seconds
+def manage_chron(obj, key, nval):
+    if not obj.hasattr(key, 'chron'):
+        obj.setattr(key, 'chron', [[],[]])
+    chron = obj.getattr(key, 'chron')
+    chron[0].append(time())
+    chron[1].append(nval)
+    if len(chron[0])>2 and chron[0][-1]-chron[0][-2]<coalesce_chron:
+        chron[0].pop(-2)
+        chron[1].pop(-2)
+    if len(chron)>20:
+        chron[0].pop(0)
+        chron[1].pop(0)
+    obj.setattr(key, 'chron', chron)
+    return chron
 
 def from_column(column, proxy=False):
     """Returns the object able to return the column `col` and the column option name"""
@@ -75,6 +92,10 @@ class CommonProxy(object):
 
     def get(self, *a, **k):
         return self.__getitem__(*a, **k)
+    
+    def set(self, *a, **k):
+        return self.__setitem__(*a, **k)
+        
     
     def dump_model(self):
         self._rmodel = False

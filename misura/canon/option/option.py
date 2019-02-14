@@ -182,7 +182,8 @@ def ao(d, handle=False, type='Empty', current=None, name=False,
 
     ent = {'priority': priority, 'handle': handle, 'name': name, 'current': current,
            'factory_default': current, 'readLevel': 0, 'writeLevel': 0,
-           'type': type, 'kid': 0, 'attr': attr, 'flags': flags, 'parent': parent}
+           'type': type, 'kid': 0, 'attr': attr, 'flags': flags, 'parent': parent,
+           'chron': [[],[]]}
     ent.update(kw)
     if values is not False:
         ent['values'] = values
@@ -253,6 +254,8 @@ def validate(entry):
         else:
             v = ''
         entry['current'] = v
+    if 'chron' not in entry or len(entry['chron'])!=2:
+        entry['chron'] = [[],[]]
 
     if etype == 'RoleIO' and 'options' not in entry:
         entry['options'] = ['None', 'default', 'None']

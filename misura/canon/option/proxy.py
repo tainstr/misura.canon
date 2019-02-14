@@ -232,9 +232,6 @@ class ConfigurationProxy(common_proxy.CommonProxy, Aggregative, Scriptable, Conf
         p.paste(self, deep=deep)
         return p
 
-    def set(self, *a, **k):
-        return self.__setitem__(*a, **k)
-
     def __getitem__(self, key, *a):
         if key == 'fullpath':
             return self.get_fullpath()
@@ -281,7 +278,9 @@ class ConfigurationProxy(common_proxy.CommonProxy, Aggregative, Scriptable, Conf
         #cur = self.desc[key]['current']
         self.desc[key]['current'] = val
         self._changeset += 1
+        common_proxy.manage_chron(self, key, val)
         return True
+    
 
     def gettype(self, key):
         return self.desc[key]['type']
