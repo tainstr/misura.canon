@@ -98,14 +98,26 @@ def create_tables(cursor):
         cmd = 'create table if not exists {} {}'.format(tab_name, tab_def)
         cmd += ';'
         cursor.execute(cmd)
-        cursor.execute('create index if not exists idx_{0}_uid on {0}(uid)'.format(tab_name))
+        
+        index = 'create index if not exists idx_{0}_uid on {0}(uid)'.format(tab_name)
+        cursor.execute(index)
+        
+        if not tab_name.startswith('option_'):
+            continue
+        
+        view = '''CREATE VIEW IF NOT EXISTS view_recent_{0} AS
+SELECT test.uid, test.zerotime, test.name, opt.fullpath, opt.handle, opt.current
+FROM '{0}' AS opt INNER JOIN test ON test.uid = opt.uid
+ORDER BY test.zerotime DESC'''.format(tab_name)
+        cursor.execute(view)
+        
     return True
 
 def drop_tables(cursor):
     for tab_name in toi_tables.keys():
         cursor.execute("drop table if exists '{}'".format(tab_name))
-    for view_name in views:
-        cursor.execute("drop view if exists '{}'".format(tab_name))
+        cursor.execute("drop view if exists 'view_recent_{}'".format(tab_name))
+    drop_views(cursor)
     return True
         
 def clear_test_uid(cursor, uid):
@@ -266,6 +278,8 @@ WHERE s.handle = '{0}' AND s.fullpath = t.fullpath;
 '''.format(shape) 
     views.append(view)
     view_names.append('view_sample_hsm_{0}'.format(shape))
+    
+    
     
 views.append('''CREATE VIEW IF NOT EXISTS view_sample_hsm AS
 SELECT t.file AS file,  

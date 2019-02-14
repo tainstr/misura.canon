@@ -803,9 +803,8 @@ class Indexer(object):
     @dbcom
     def query_recent_option(self, otype, fullpath, handle):
         otype = toi.aliases.get(otype, otype)
-        cmd = """SELECT test.zerotime, test.name, opt.current FROM 'option_{}' AS opt
-INNER JOIN test ON test.uid = opt.uid
-WHERE opt.fullpath LIKE '{}' AND opt.handle='{}' ORDER BY test.zerotime DESC LIMIT 10""".format(otype, fullpath, handle)
+        cmd = """SELECT zerotime, name, current FROM 'view_recent_option_{}' AS opt
+WHERE opt.fullpath LIKE '{}' AND opt.handle='{}' LIMIT 10""".format(otype, fullpath, handle)
         self.cur.execute(cmd)
         return self.cur.fetchall()
   
