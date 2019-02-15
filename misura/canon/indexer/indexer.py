@@ -158,6 +158,7 @@ class FileSystemLock(object):
         return r
 
 def create_tables(cur):
+    #print("AAAAAAA", testTableDef)
     cur.execute("CREATE TABLE if not exists test " + testTableDef)
     cur.execute("CREATE TABLE if not exists sample " + sampleTableDef)
     # Sync tables
@@ -170,6 +171,7 @@ def create_tables(cur):
     cur.execute(
         "create table if not exists modify_dates " + modifyDatesTableDef)
     
+    #cur.execute('create index if not exists idx_test_instrument on test(instrument)')
     cur.execute('create index if not exists idx_test_zerotime on test(zerotime)')
     cur.execute('create index if not exists idx_test_uid on test(uid)')
 
