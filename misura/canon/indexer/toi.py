@@ -319,3 +319,10 @@ def drop_views(cursor):
     for tab_name in view_names:
         cursor.execute("drop view if exists '{}'".format(tab_name))
     return True
+
+def query_recent_option(cur, otype, fullpath, handle):
+        otype = aliases.get(otype, otype)
+        cmd = """SELECT zerotime, name, current FROM 'view_recent_option_{}' AS opt
+WHERE opt.fullpath LIKE '{}' AND opt.handle='{}' LIMIT 10""".format(otype, fullpath, handle)
+        cur.execute(cmd)
+        return cur.fetchall()

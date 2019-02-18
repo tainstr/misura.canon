@@ -329,7 +329,6 @@ class Indexer(object):
         conn.commit()
         self.close_db()
         self._lock.release()
-        self.refresh_views()
         tests_filenames = self.tests_filenames_sorted_by_date()
         self.tasks.jobs(len(tests_filenames),
                         'Rebuilding database', abort=self.abort)
@@ -340,7 +339,8 @@ class Indexer(object):
             self.tasks.job(i, 'Rebuilding database', f)
 
         self.recalculate_incremental_ids()
-
+        self.analyze_queries()
+        self.refresh_views()
         return 'Done. Found %i tests.' % len(tests_filenames)
 
     @dbcom
@@ -603,6 +603,25 @@ class Indexer(object):
     def refresh_views(self):
         toi.drop_views(self.cur)
         toi.create_views(self.cur)
+        self.cur.execute('VACUUM')
+        self.conn.commit()
+        
+    @dbcom
+    def analyze_queries(self):
+        """Runs a first query on option_* tables in order to optimize future query times"""
+        self.log.debug('Analyze option_String table')
+        toi.query_recent_option(self.cur, 'String','/','name')
+        self.log.debug('Analyze option_String table')
+        toi.query_recent_option(self.cur, 'Integer','/','maxErr')
+        self.log.debug('Analyze option_String table')
+        toi.query_recent_option(self.cur, 'Float','/','maxfreq')
+        self.log.debug('Analyze option_String table')
+        toi.query_recent_option(self.cur, 'Boolean','/','isRunning')
+        self.log.debug('Running ANALYZE')
+        self.cur.execute('ANALYZE')
+        self.log.debug('Running PRAGMA optimize')
+        self.cur.execute('PRAGMA optimize')
+        self.log.debug('analyze_queries DONE')
         self.conn.commit()
 
     def refresh(self):
@@ -627,7 +646,9 @@ class Indexer(object):
         self.tasks.job(4, 'Refreshing database', 'Re-index modified files')
         self.add_new_files(all_files, database)
         self.tasks.job(4, 'Refreshing database', 'Create views')
+        self.analyze_queries()
         self.refresh_views()
+        
         self.tasks.done('Refreshing database')
 
     def delete_modified_files(self, database, all_files):
@@ -802,13 +823,10 @@ class Indexer(object):
         r = self.cur.fetchall()
         return self.convert_query_result_to_full_path(r)
     
+    
     @dbcom
     def query_recent_option(self, otype, fullpath, handle):
-        otype = toi.aliases.get(otype, otype)
-        cmd = """SELECT zerotime, name, current FROM 'view_recent_option_{}' AS opt
-WHERE opt.fullpath LIKE '{}' AND opt.handle='{}' LIMIT 10""".format(otype, fullpath, handle)
-        self.cur.execute(cmd)
-        return self.cur.fetchall()
+        return toi.query_recent_option(self.cur, otype, fullpath, handle)
   
 
     @dbcom
