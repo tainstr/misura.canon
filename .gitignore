@@ -67,3 +67,4 @@ target/
 /misura/canon/option/out.csv
 /misura/canon/out.csv
 /misura/out.csv
+/misura/canon/tests/storage/toi.sqlite
