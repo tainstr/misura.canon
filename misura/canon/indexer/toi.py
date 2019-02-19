@@ -105,7 +105,7 @@ def create_tables(cursor):
             continue
         
         view = '''CREATE VIEW IF NOT EXISTS view_recent_{0} AS
-SELECT test.uid, test.zerotime, test.name, opt.fullpath, opt.handle, opt.current
+SELECT test.uid, test.zerotime, test.name, opt.fullpath, opt.mro, opt.handle, opt.current
 FROM '{0}' AS opt INNER JOIN test ON test.uid = opt.uid
 ORDER BY test.zerotime DESC'''.format(tab_name)
         cursor.execute(view)
@@ -150,7 +150,7 @@ def index_option(cursor, uid, version, path, mro, opt):
     cursor.execute(cmd, vals)
     return True
 
-mro_blacklist = set(['XMLRPC', 'ConfigurationInterface', 'Node', 'Aggregative', 'Scriptable', 'Device'])
+mro_blacklist = set(['XMLRPC', 'ConfigurationInterface', 'Node', 'Aggregative', 'Scriptable', 'Device', 'Measurer'])
 
 def clean_mro(mro):
     mro = filter(lambda cls: cls not in mro_blacklist, mro[:])
@@ -340,9 +340,11 @@ def query_recent_option(cur, otype, fullpath=None, handle=None, mro=None, limit=
             cds.append(" opt.handle='{}' ".format(handle))
         
         if mro:
-            
            cds.append(" opt.mro='{}' ".format(clean_mro(mro)))
+           
         cmd += ' AND '.join(cds)
         cmd += ' LIMIT {}'.format(limit)
+        print('KKKKKKKK', fullpath, handle, mro)
+        print('ZZZZZZZ', cmd)
         cur.execute(cmd)
         return cur.fetchall()

@@ -832,7 +832,8 @@ class Indexer(object):
     
     @dbcom
     def query_recent_option(self, otype, fullpath=None, handle=None, mro=None):
-        return toi.query_recent_option(self.cur, otype, fullpath, handle)
+        return toi.query_recent_option(self.cur, otype, fullpath=fullpath, 
+                                       handle=handle, mro=mro)
   
 
     @dbcom

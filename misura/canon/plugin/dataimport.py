@@ -29,6 +29,7 @@ def base_dict():
 def measure_dict():
     """Returns a dictionary containing typical options for a generic Measure object"""
     out = base_dict()
+    out['mro']['current'] = ['Measure']
     out['name']['current'] = 'Measure'
     ao(out, 'nSamples', 'Integer', 1, readLevel=3)
     ao(out, 'id', 'String', 'Conversion source ID', readLevel=3)
@@ -42,6 +43,7 @@ def measure_dict():
 def smp_dict():
     """Returns a dictionary containing typical options for a generic Sample object"""
     out = base_dict()
+    out['mro']['current'] = ['Sample']
     out['name']['current'] = 'Sample'
     ao(out, 'idx', 'Integer', attr=['Hidden'])
     ao(out, 'ii', 'Integer', attr=['Hidden'])
@@ -52,6 +54,7 @@ def kiln_dict():
     """Returns a dictionary containing typical options for Kiln object"""
     out = base_dict()
     out['name']['current'] = 'Kiln'
+    out['mro']['current'] = ['Kiln', 'Instrument']
     ao(out, 'serial', 'String', readLevel=4)
     ao(out, 'curve', 'Hidden', [[0, 0]], 'Heating curve')
     ao(out, 'thermalCycle', 'ThermalCycle', 'default')
@@ -69,6 +72,7 @@ def kiln_dict():
 def instr_dict():
     """Returns a dictionary containing typical options for generic instrument object"""
     out = base_dict()
+    out['mro']['current'] = ['Instrument']
     ao(out, 'nSamples', 'Integer', 1, 'Number of samples', readLevel=3)
     ao(out, 'devices', 'List', attr=['Hidden'])
     ao(out, 'initTest', 'Progress', attr=['Hidden'])
