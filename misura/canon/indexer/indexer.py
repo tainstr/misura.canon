@@ -16,6 +16,7 @@ import functools
 import threading
 import multiprocessing
 import datetime
+from time import time
 
 from misura.canon.csutil import unlockme, lockme, enc_options, sharedProcessResources
 
@@ -66,11 +67,13 @@ colConverter = {'text': unicode, 'real': float, 'bool': bool, 'integer': int,
 for i, n in enumerate(testColumn):
     testColConverter[n] = colConverter[testColDef[i]]
 
+optimize_timeout = 3
 
 def dbcom(func):
     """Decorator to open db before operations and close at the end."""
     @functools.wraps(func)
     def safedb_wrapper(self, *args, **kwargs):
+        t0 = time()
         try:
             r = self._lock.acquire(timeout=10)
             if not r:
@@ -79,6 +82,7 @@ def dbcom(func):
             return func(self, *args, **kwargs)
         finally:
             try:
+                optimize = time()-t0>optimize_timeout
                 self.close_db()
             except:
                 print_exc()
@@ -254,8 +258,10 @@ class Indexer(object):
         conn.commit()
         return True
 
-    def close_db(self):
+    def close_db(self, optimize=False):
         conn, cur = self.threads.pop(tid(), (0, 0))
+        if optimize:
+            cur.execute('PRAGMA optimize')
         if cur:
             cur.close()
         if conn:
@@ -825,7 +831,7 @@ class Indexer(object):
     
     
     @dbcom
-    def query_recent_option(self, otype, fullpath, handle):
+    def query_recent_option(self, otype, fullpath=None, handle=None, mro=None):
         return toi.query_recent_option(self.cur, otype, fullpath, handle)
   
 

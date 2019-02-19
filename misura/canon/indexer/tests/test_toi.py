@@ -48,7 +48,7 @@ class TestTotalOptionIndexer(unittest.TestCase):
         
     def test_index_option(self):
         opt = option.ao([],'test0','String', 'bla bla')[0]
-        toi.index_option(self.cur, 'abcde','ver_1', '/option/full/path/', opt)
+        toi.index_option(self.cur, 'abcde','ver_1', '/option/full/path/', 'ConfigurationInterface.Node.Device', opt)
         self.conn.commit()
         
     def test_index_desc(self):

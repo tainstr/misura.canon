@@ -39,9 +39,8 @@ def current_Meta(opt):
     
 
 
-
 #TODO: the combination of first 3 columns must be unique. Enforceable via sqlite? Or should I define a new combined key?
-opt_base = [('uid', 'text'), ('version', 'text'),('fullpath', 'text'), ('handle', 'text')]
+opt_base = [('uid', 'text'), ('version', 'text'),('fullpath', 'text'), ('mro', 'text'), ('handle', 'text')]
 
 opt_unique = "uid, version, fullpath, handle"
 
@@ -65,7 +64,7 @@ toi_tables = {'option_Float': (opt_base[:]+[('current', 'real')],
               'versions':([('uid', 'text'), ('version', 'text'), ('name', 'text'), ('date', 'text'), ('active', 'bool')], 
                           None, "uid, version"),
               'plots':([('hash', 'text'), ('uid', 'text'), ('version', 'text'), ('node', 'text'), ('name', 'text'), 
-                        ('date', 'text'), ('script','text'), ('render', 'blob'), ('format', 'text')], 
+                        ('date', 'text'), ('script','text')], 
                         None, "hash, uid, version"),
     }
 
@@ -128,7 +127,7 @@ def clear_test_uid(cursor, uid):
         cursor.execute(cmd)
     return True
 
-def index_option(cursor, uid, version, path, opt):
+def index_option(cursor, uid, version, path, mro, opt):
     """Insert an option into its table"""
     otype = aliases.get(opt['type'], opt['type'])
     tab_name = 'option_'+otype
@@ -143,21 +142,31 @@ def index_option(cursor, uid, version, path, opt):
     except:
         logging.info('Could not normalize option value', path, opt['handle'], opt['current'], current_func)
         return False
-    vals = [uid, version, path, opt['handle']]+currents
+    
+    vals = [uid, version, path, mro, opt['handle']]+currents
     q = ('?,' * len(vals))[:-1]
     assert len(listdef)==len(vals), 'Table definition differs from values provided {} {}'.format(listdef, vals)
     cmd = "insert or replace into '{}' ({}) values ({});".format(tab_name, colnames, q)
     cursor.execute(cmd, vals)
     return True
 
+mro_blacklist = set(['XMLRPC', 'ConfigurationInterface', 'Node', 'Aggregative', 'Scriptable', 'Device'])
+
+def clean_mro(mro):
+    mro = filter(lambda cls: cls not in mro_blacklist, mro[:])
+    return '.'.join(mro[::-1])
+
 def index_desc(cursor, uid, version, desc):
     """Parse a full configuration dictionary"""
     fullpath = desc['fullpath']['current']
+    mro = ''
+    if 'mro' in desc:
+        mro = clean_mro(desc['mro']['current'])
     i = 0
     for handle, opt in desc.items():
         if handle == 'self':
             continue
-        i += index_option(cursor, uid, version, fullpath, opt)
+        i += index_option(cursor, uid, version, fullpath, mro, opt)
     return i
 
 def index_tree(cursor, uid, version, tree):
@@ -185,7 +194,7 @@ def index_plots(cursor, shfile, version=''):
     if version=='':
         return False
     i = 0
-    p = shfile.get_plots(version=version, render=True)
+    p = shfile.get_plots(version=version, render=False)
     if not p:
         return False
     for plot_name, (title, date, render, render_format) in p.items():
@@ -193,7 +202,7 @@ def index_plots(cursor, shfile, version=''):
         script_path =shfile._versioned('/plot/'+plot_name+'/script', version=version)
         script = shfile.file_node(script_path)
         plot_hash = hashlib.md5(script).hexdigest()
-        vals = [plot_hash, shfile.uid, version, plot_name, title, reorder_date(date), script, sqlite3.Binary(render), render_format]
+        vals = [plot_hash, shfile.uid, version, plot_name, title, reorder_date(date), script]
         colnames = get_column_names(toi_tables['plots'][0])
         q = ('?,' * len(vals))[:-1]
         cmd = "insert or replace into 'plots' ({}) values ({});".format(colnames, q)
@@ -320,9 +329,20 @@ def drop_views(cursor):
         cursor.execute("drop view if exists '{}'".format(tab_name))
     return True
 
-def query_recent_option(cur, otype, fullpath, handle):
+def query_recent_option(cur, otype, fullpath=None, handle=None, mro=None, limit=10):
         otype = aliases.get(otype, otype)
-        cmd = """SELECT zerotime, name, current FROM 'view_recent_option_{}' AS opt
-WHERE opt.fullpath LIKE '{}' AND opt.handle='{}' LIMIT 10""".format(otype, fullpath, handle)
+        cmd = """SELECT zerotime, name, current FROM 'view_recent_option_{}' AS opt WHERE """.format(otype)
+        cds = []
+        if fullpath:
+            cds.append(" opt.fullpath LIKE '{}' ".format(fullpath))
+        
+        if handle:
+            cds.append(" opt.handle='{}' ".format(handle))
+        
+        if mro:
+            
+           cds.append(" opt.mro='{}' ".format(clean_mro(mro)))
+        cmd += ' AND '.join(cds)
+        cmd += ' LIMIT {}'.format(limit)
         cur.execute(cmd)
         return cur.fetchall()
