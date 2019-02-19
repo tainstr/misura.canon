@@ -340,11 +340,9 @@ def query_recent_option(cur, otype, fullpath=None, handle=None, mro=None, limit=
             cds.append(" opt.handle='{}' ".format(handle))
         
         if mro:
-           cds.append(" opt.mro='{}' ".format(clean_mro(mro)))
+            cds.append(" opt.mro='{}' ".format(clean_mro(mro)))
            
         cmd += ' AND '.join(cds)
         cmd += ' LIMIT {}'.format(limit)
-        print('KKKKKKKK', fullpath, handle, mro)
-        print('ZZZZZZZ', cmd)
         cur.execute(cmd)
         return cur.fetchall()
