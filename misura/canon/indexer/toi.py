@@ -343,6 +343,7 @@ def query_recent_option(cur, otype, fullpath=None, handle=None, mro=None, limit=
             cds.append(" opt.mro='{}' ".format(clean_mro(mro)))
            
         cmd += ' AND '.join(cds)
+        cmd += ' GROUP BY current ORDER BY zerotime DESC '
         cmd += ' LIMIT {}'.format(limit)
         cur.execute(cmd)
         return cur.fetchall()

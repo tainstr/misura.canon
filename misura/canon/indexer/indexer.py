@@ -16,14 +16,12 @@ import functools
 import threading
 import multiprocessing
 import datetime
-from time import time
 
-from misura.canon.csutil import unlockme, lockme, enc_options, sharedProcessResources
+from misura.canon.csutil import unlockme, enc_options, sharedProcessResources
 
-import tables
 from tables.nodes import filenode
 
-from .. import csutil, option
+from .. import csutil
 
 from .filemanager import FileManager
 from misura.canon.indexer.interface import SharedFile
@@ -66,7 +64,8 @@ for i, n in enumerate(testColumn):
 optimize_timeout = 3
 
 def dbcom(func):
-    """Decorator to open db before operations and close at the end."""
+    """Decorator to open db before operations and close at the end.
+    Runs query optimization in case of long operations."""
     @functools.wraps(func)
     def safedb_wrapper(self, *args, **kwargs):
         t0 = time()
@@ -79,7 +78,7 @@ def dbcom(func):
         finally:
             try:
                 optimize = time()-t0>optimize_timeout
-                self.close_db()
+                self.close_db(optimize=optimize)
             except:
                 print_exc()
             finally:
@@ -254,6 +253,8 @@ class Indexer(object):
         return True
 
     def close_db(self, optimize=False):
+        """Close the database connection for the caller thread.
+        `optimize`=True runs query optimizations"""
         conn, cur = self.threads.pop(tid(), (0, 0))
         if optimize:
             cur.execute('PRAGMA optimize')
