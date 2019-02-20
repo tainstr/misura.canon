@@ -56,10 +56,6 @@ syncTableDef = '''(file text, serial text, uid text primary key, id text,
                    elapsed real, nSamples integer, comment text,verify bool)'''
 errorTableDef = syncTableDef[:-1] + ', error text)'
 
-sampleTableDef = '''(file text, ii integer, idx integer, material text,
-                     name text, comment text, dim integer, height integer,
-                     volume integer, sintering real, softening real,
-                     sphere real, halfSphere real, melting real )'''
 testColConverter = {}
 colConverter = {'text': unicode, 'real': float, 'bool': bool, 'integer': int,
                 'date': lambda x: str(datetime.datetime.fromtimestamp(int(x)))}
@@ -164,7 +160,6 @@ class FileSystemLock(object):
 def create_tables(cur):
     #print("AAAAAAA", testTableDef)
     cur.execute("CREATE TABLE if not exists test " + testTableDef)
-    cur.execute("CREATE TABLE if not exists sample " + sampleTableDef)
     # Sync tables
     cur.execute("create table if not exists sync_exclude " + syncTableDef)
     cur.execute("create table if not exists sync_queue " + syncTableDef)
@@ -180,7 +175,7 @@ def create_tables(cur):
     cur.execute('create index if not exists idx_test_uid on test(uid)')
 
 class Indexer(object):
-    public = ['rebuild', 'searchUID', 'update', 'header', 'listMaterials',
+    public = ['rebuild', 'searchUID', 'update', 'header', 
               'query', 'remove_uid', 'get_len', 'list_tests', 'get_dbpath',
               'refresh']
 #   cur=False
@@ -325,7 +320,6 @@ class Indexer(object):
         cur.execute("DROP TABLE IF EXISTS test")
         cur.execute("CREATE TABLE test " + testTableDef)
         cur.execute("DROP TABLE IF EXISTS sample")
-        cur.execute("CREATE TABLE sample " + sampleTableDef)
         cur.execute("DROP TABLE IF EXISTS sync_exclude")
         cur.execute("DROP TABLE IF EXISTS sync_queue")
         cur.execute("DROP TABLE IF EXISTS sync_approve")
@@ -488,25 +482,6 @@ class Indexer(object):
         print('Executing', cmd, v)
         self.cur.execute(cmd, v)
         r = cur.fetchall()
-        # ##
-        # Sample Rows
-        # ##
-        for i in range(8):
-            s = 'sample%i' % i
-            if s not in tree[instrument].keys():
-                break
-            smp = tree[instrument][s]
-            v = [file_path]
-            for k in 'ii,index,material,name,comment,dim,height,volume,sintering,softening,sphere,halfSphere,melting'.split(','):
-                val = 0
-                if k in smp:
-                    val = smp[k]['current']
-                v.append(val)
-            cmd = '?,' * len(v)
-            cmd = 'INSERT OR REPLACE INTO sample VALUES (' + cmd[:-1] + ')'
-            cur.execute(cmd, v)
-            r = cur.fetchall()
-            print('Result:', r)
 
         if add_uid_to_incremental_ids_table:
             self.add_incremental_id(cur, test['uid'])
@@ -723,12 +698,12 @@ class Indexer(object):
         return True
 
     def remove_uid(self, uid):
-        fn = self.searchUID(uid)
-        if not fn:
-            self.log.error('Impossible delete:', uid, 'not found.')
+        absolute_path = self.searchUID(uid)
+        if not absolute_path:
+            self.log.error('Impossible delete:', uid, 'not found.', absolute_path)
             return False
-        self.log.debug('Removing file by uid:', uid, fn)
-        return self.remove_file(fn)
+        self.log.debug('Removing file by uid:', uid, absolute_path)
+        return self.remove_file(absolute_path)
 
     def _clear_file_path(self, relative_file_path):
         """Remove file in `relative_file_path` from db"""
@@ -744,8 +719,6 @@ class Indexer(object):
         r = self.cur.fetchall()
         e = self.cur.execute(
             'delete from test where file=?', (relative_file_path,))
-        e = self.cur.execute(
-            'delete from sample where file=?', (relative_file_path,))
         self.conn.commit()
         return True
 
@@ -755,11 +728,13 @@ class Indexer(object):
         self._clear_file_path(relative_file_path)
 
     @dbcom
-    def remove_file(self, file_path):
-        self._clear_file_path(file_path)
-        if os.path.exists(file_path):
-            self.log.debug('Removing existing data file:', file_path)
-            os.remove(file_path)
+    def remove_file(self, absolute_path):
+        self.log.debug('remove_file', absolute_path)
+        relative_path = convert_to_relative_path(absolute_path, self.dbdir)
+        self._clear_file_path(relative_path)
+        if os.path.exists(absolute_path):
+            self.log.debug('Removing existing data file:', absolute_path)
+            os.remove(absolute_path)
             return True
         else:
             self.log.info('Asked to delete a non-existing file:', file_path)
@@ -781,16 +756,6 @@ class Indexer(object):
             if h not in test_header:
                 test_header.append(h)
         return test_header
-
-    @dbcom
-    def listMaterials(self):
-        """Lists all materials present in the database"""
-        self.cur.execute('SELECT material FROM sample')
-        r = self.cur.fetchall()
-        r = list(a[0] for a in r)
-        r = list(set(r))
-        print('LIST MATERIALS', r)
-        return r
 
     @dbcom
     def query(self, conditions={}, operator=1, orderby='zerotime', 
@@ -859,6 +824,7 @@ class Indexer(object):
 
     def get_dbpath(self):
         return self.dbPath
+        
 
     def convert_to_full_path(self, file_path):
         if file_path.startswith("."):
