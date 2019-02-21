@@ -84,7 +84,7 @@ class CommonProxy(object):
     """Cached Item model for tree representation"""
     _navigator = None
     """Navigator instance for configuration-plot interactions"""
-    _doc = None
+    _doc = False
     _changeset = 0
     
     def __nonzero__(self):
