@@ -92,14 +92,21 @@ def get_column_names(listdef):
 
 def create_tables(cursor):
     """Creates all option tables"""
+    
     for tab_name, (tab_def, cur_func, unique_def) in toi_tables.items():
         tab_def = get_table_definition(tab_def, unique_def)
         cmd = 'create table if not exists {} {}'.format(tab_name, tab_def)
         cmd += ';'
         cursor.execute(cmd)
         
-        index = 'create index if not exists idx_{0}_uid on {0}(uid)'.format(tab_name)
-        cursor.execute(index)
+        
+        for col in ('uid', 'mro', 'fullpath', 'handle'):
+            if '{} text'.format(col) not in tab_def:
+                continue
+            print('Creating index for', col, tab_name, tab_def )
+            index = 'create index if not exists idx_{0}_{1} on {0}({1})'.format(tab_name, col)
+            cursor.execute(index)
+            
         
         if not tab_name.startswith('option_'):
             continue

@@ -61,7 +61,7 @@ colConverter = {'text': unicode, 'real': float, 'bool': bool, 'integer': int,
 for i, n in enumerate(testColumn):
     testColConverter[n] = colConverter[testColDef[i]]
 
-optimize_timeout = 3
+optimize_timeout = 2
 
 def dbcom(func):
     """Decorator to open db before operations and close at the end.
@@ -257,6 +257,7 @@ class Indexer(object):
         `optimize`=True runs query optimizations"""
         conn, cur = self.threads.pop(tid(), (0, 0))
         if optimize:
+            self.log.debug('Optimizing last query')
             cur.execute('PRAGMA optimize')
         if cur:
             cur.close()
