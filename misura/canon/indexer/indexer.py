@@ -180,6 +180,7 @@ class Indexer(object):
 #   cur=False
 #   conn=False
     addr = 'LOCAL'
+    initialized = False
 
     def __init__(self, dbPath=False, paths=[], log=False):
         self._lock = FileSystemLock()
@@ -245,11 +246,11 @@ class Indexer(object):
                 self.dbPath, detect_types=sqlite3.PARSE_DECLTYPES)
             cur = conn.cursor()
             self.threads[tid()] = (conn, cur)
-        
-        create_tables(cur)
-        
-        toi.create_tables(cur)
-        conn.commit()
+        if not self.initialized:
+            create_tables(cur)
+            toi.create_tables(cur)
+            conn.commit()
+            self.initialized = True
         return True
 
     def close_db(self, optimize=False):
@@ -308,6 +309,7 @@ class Indexer(object):
     def rebuild(self):
         """Completely recreate the SQLite Database indexing all test files."""
         self.aborted = False
+        self.initialized = False
         if not self.dbPath:
             return False
         # if os.path.exists(self.dbPath):
@@ -610,6 +612,7 @@ class Indexer(object):
     def refresh(self):
         """Updates the database by inserting new files and removing deleted files"""
         self.aborted = False
+        self.initialized = False
         self.tasks.jobs(6, 'Refreshing database', abort=self.abort)
         database = self.execute_fetchall("select file, uid from test")
         if self.aborted:
@@ -770,8 +773,13 @@ class Indexer(object):
         assert limit > 0
         offset = int(offset)
         assert offset >= 0
-        ordering = " ORDER BY `{}` {} LIMIT {} OFFSET {}".format(orderby,
-                                                                 order, limit, offset)
+        ordering = ""
+        if orderby and order:
+            ordering += " ORDER BY `{}` {} ".format(orderby, order)
+        if limit:
+            ordering += " LIMIT {} ".format(limit)
+        if offset:
+            ordering += " OFFSET {}".format(offset)
         
         join = ''
         if table=='test':
