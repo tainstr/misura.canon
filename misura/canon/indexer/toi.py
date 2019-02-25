@@ -2,28 +2,10 @@
 """Total Option Indexing"""
 
 import hashlib
-import os
-from time import time
-try:
-    import cPickle as pickle
-except:
-    import pickle
-    unicode = str
 from traceback import format_exc
-import sqlite3
-import functools
-import datetime
 
-from misura.canon.csutil import unlockme, lockme, enc_options, sharedProcessResources
-
-import tables
-from tables.nodes import filenode
-
-from .. import csutil, option
 from ..logger import get_module_logging
 logging = get_module_logging(__name__)
-
-from misura.canon.indexer.interface import SharedFile
 
 def current_Meta(opt):
     ret = []
@@ -103,8 +85,8 @@ def create_tables(cursor):
         for col in ('uid', 'mro', 'fullpath', 'handle'):
             if '{} text'.format(col) not in tab_def:
                 continue
-            print('Creating index for', col, tab_name, tab_def )
             index = 'create index if not exists idx_{0}_{1} on {0}({1})'.format(tab_name, col)
+            logging.debug(index)
             cursor.execute(index)
             
         
@@ -130,7 +112,7 @@ def clear_test_uid(cursor, uid):
     """Remove test UID entries from all tables"""
     for tab_name in toi_tables.keys():
         cmd = "delete from '{}' where uid='{}'".format(tab_name, uid)
-        print(cmd)
+        logging.debug(cmd)
         cursor.execute(cmd)
     return True
 
@@ -352,5 +334,6 @@ def query_recent_option(cur, otype, fullpath=None, handle=None, mro=None, limit=
         cmd += ' AND '.join(cds)
         cmd += ' GROUP BY current ORDER BY zerotime DESC '
         cmd += ' LIMIT {}'.format(limit)
+        logging.debug(cmd)
         cur.execute(cmd)
         return cur.fetchall()
