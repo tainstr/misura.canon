@@ -247,7 +247,9 @@ class Indexer(object):
             cur = conn.cursor()
             self.threads[tid()] = (conn, cur)
         if not self.initialized:
+            self.log.debug('Initializing database')
             create_tables(cur)
+            conn.commit()
             toi.create_tables(cur)
             conn.commit()
             self.initialized = True
@@ -257,9 +259,10 @@ class Indexer(object):
         """Close the database connection for the caller thread.
         `optimize`=True runs query optimizations"""
         conn, cur = self.threads.pop(tid(), (0, 0))
-        if optimize:
+        if optimize and cur and conn:
             self.log.debug('Optimizing last query')
             cur.execute('PRAGMA optimize')
+            conn.commit()
         if cur:
             cur.close()
         if conn:
@@ -309,7 +312,6 @@ class Indexer(object):
     def rebuild(self):
         """Completely recreate the SQLite Database indexing all test files."""
         self.aborted = False
-        self.initialized = False
         if not self.dbPath:
             return False
         # if os.path.exists(self.dbPath):
@@ -317,8 +319,9 @@ class Indexer(object):
         if not self._lock.acquire(timeout=10):
             self.log.error('Cannot lock database for rebuild')
             return False
+        
+        # Cleanup
         self.open_db(self.dbPath)
-
         conn = self.conn
         cur = self.cur
         cur.execute("DROP TABLE IF EXISTS test")
@@ -333,6 +336,9 @@ class Indexer(object):
         conn.commit()
         self.close_db()
         self._lock.release()
+        
+        # Rebuild the structure
+        self.initialized = False
         tests_filenames = self.tests_filenames_sorted_by_date()
         self.tasks.jobs(len(tests_filenames),
                         'Rebuilding database', abort=self.abort)
@@ -343,8 +349,8 @@ class Indexer(object):
             self.tasks.job(i, 'Rebuilding database', f)
 
         self.recalculate_incremental_ids()
-        self.analyze_queries()
         self.refresh_views()
+        self.analyze_queries()
         return 'Done. Found %i tests.' % len(tests_filenames)
 
     @dbcom
@@ -354,7 +360,6 @@ class Indexer(object):
         for uid in uids:
             self.add_incremental_id(self.cur, uid[0])
             
-        toi.create_views(self.cur)
         self.conn.commit()
 
     def tests_filenames_sorted_by_date(self):
@@ -587,7 +592,9 @@ class Indexer(object):
     @dbcom
     def refresh_views(self):
         toi.drop_views(self.cur)
+        self.conn.commit()
         toi.create_views(self.cur)
+        self.conn.commit()
         self.cur.execute('VACUUM')
         self.conn.commit()
         

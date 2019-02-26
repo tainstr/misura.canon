@@ -77,41 +77,41 @@ def create_tables(cursor):
     
     for tab_name, (tab_def, cur_func, unique_def) in toi_tables.items():
         tab_def = get_table_definition(tab_def, unique_def)
-        cmd = 'create table if not exists {} {}'.format(tab_name, tab_def)
-        cmd += ';'
+        cmd = 'create table if not exists {} {};'.format(tab_name, tab_def)
+        logging.debug(cmd)
         cursor.execute(cmd)
         
-        
+        # Create indexes
         for col in ('uid', 'mro', 'fullpath', 'handle'):
             if '{} text'.format(col) not in tab_def:
                 continue
-            index = 'create index if not exists idx_{0}_{1} on {0}({1})'.format(tab_name, col)
+            index = 'create index if not exists idx_{0}_{1} on {0}({1});'.format(tab_name, col)
             logging.debug(index)
             cursor.execute(index)
-            
         
         if not tab_name.startswith('option_'):
             continue
         
+        # Create recent view
         view = '''CREATE VIEW IF NOT EXISTS view_recent_{0} AS
 SELECT test.uid, test.zerotime, test.name, opt.fullpath, opt.mro, opt.handle, opt.current
 FROM '{0}' AS opt INNER JOIN test ON test.uid = opt.uid
-ORDER BY test.zerotime DESC'''.format(tab_name)
+ORDER BY test.zerotime DESC;'''.format(tab_name)
+        logging.debug(view)
         cursor.execute(view)
-        
     return True
 
 def drop_tables(cursor):
     for tab_name in toi_tables.keys():
-        cursor.execute("drop table if exists '{}'".format(tab_name))
-        cursor.execute("drop view if exists 'view_recent_{}'".format(tab_name))
+        cursor.execute("drop table if exists '{}';".format(tab_name))
+        cursor.execute("drop view if exists 'view_recent_{}';".format(tab_name))
     drop_views(cursor)
     return True
         
 def clear_test_uid(cursor, uid):
     """Remove test UID entries from all tables"""
     for tab_name in toi_tables.keys():
-        cmd = "delete from '{}' where uid='{}'".format(tab_name, uid)
+        cmd = "delete from '{}' where uid='{}';".format(tab_name, uid)
         logging.debug(cmd)
         cursor.execute(cmd)
     return True

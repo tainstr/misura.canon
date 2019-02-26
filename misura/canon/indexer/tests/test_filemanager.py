@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 import unittest
-
+import os
 from misura.canon.tests import testdir
 from misura.canon import indexer
 print('Importing test_indexer')
@@ -19,6 +19,7 @@ class FileManager(unittest.TestCase):
 
     @classmethod
     def setUpClass(c):
+        os.remove(dbPath)
         store = indexer.Indexer(dbPath, paths)
         print('FileManager', dbPath, paths, store.rebuild())
         c.m = indexer.FileManager(store)
