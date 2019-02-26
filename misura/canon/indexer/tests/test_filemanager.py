@@ -19,7 +19,8 @@ class FileManager(unittest.TestCase):
 
     @classmethod
     def setUpClass(c):
-        os.remove(dbPath)
+        if os.path.exists(dbPath):
+            os.remove(dbPath)
         store = indexer.Indexer(dbPath, paths)
         print('FileManager', dbPath, paths, store.rebuild())
         c.m = indexer.FileManager(store)
