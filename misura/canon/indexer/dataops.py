@@ -64,13 +64,10 @@ No data will be evaluate if older than zerotime."""
             try:
                 n = n[:].view(np.float64).reshape(n.shape + (-1,))
             except:
-                self.log.debug('SHAPE', path, n.shape)
                 raise
-            
         if idx_or_slice is not None:
             slc = csutil.toslice(idx_or_slice)
             n = n[slc]
-            
         return n
 
     def _col_at(self, path, idx, raw=False):

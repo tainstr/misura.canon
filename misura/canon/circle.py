@@ -33,6 +33,30 @@ def circle(a, b, c):
         return 0, 0, 0
     return float(r), float(x), float(y)
 
+def absolute_flex(middle_delta, right_delta, left_delta, 
+                  right_optics_position, left_optics_position):
+    # Concyclic points
+    left_point   =    [-left_optics_position  , left_delta]
+    center_point =  [0                      , middle_delta]
+    right_point  =   [right_optics_position  , right_delta]
+    smp = {}
+    radius, x_center, y_center = circle(left_point, center_point, right_point)
+    smp['radius'] = radius
+    if radius == 0:
+        smp['d'] = 0
+        return smp
+    
+    # Calculate the theoretical point of maximum flexion (which may not be equal to d)
+    # Length of the chord is the sum of R/L distances from middle cam
+    q = (right_optics_position + left_optics_position) / 2.
+    # Angle associated with half-chord
+    ang = np.arcsin(q / radius)
+    # Maximum circle-chord distance
+    d1 = radius * (1 - np.cos(ang))
+    # Apply the sign of the center y relative to the middle y
+    smp['d'] = - np.sign(y_center - middle_delta) * abs(float(d1))
+    return smp
+
 
 def syn(a, b, c, step=1):
     """Create a circle (x,y) sequence passing through a,b,c"""
