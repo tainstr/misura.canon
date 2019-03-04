@@ -22,6 +22,18 @@ def manage_chron(obj, key, nval):
     obj.setattr(key, 'chron', chron)
     return chron
 
+def match_node_path(node, rule):
+    fullpath = False
+    if isinstance(node, basestring):
+        fullpath = node
+    elif node and node.path:
+        fullpath = node.path
+    if not fullpath:
+        return False
+    fullpath = fullpath.rstrip('/')
+    regex = re.compile(rule.replace('\n', '|'))
+    return regex.search(fullpath)
+
 def from_column(column, proxy=False):
     """Returns the object able to return the column `col` and the column option name"""
     column = re.sub("^[0-9]+:", '', column)
