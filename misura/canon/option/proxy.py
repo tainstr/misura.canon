@@ -274,11 +274,12 @@ class ConfigurationProxy(common_proxy.CommonProxy, Aggregative, Scriptable, Conf
             self.log.error(
                 'No authorization to edit the option', key, self._writeLevel)
             return False
+        old = self.desc[key]['current']
         val = self.callback(key, val)
         #cur = self.desc[key]['current']
         self.desc[key]['current'] = val
         self._changeset += 1
-        common_proxy.manage_chron(self, key, val)
+        common_proxy.manage_chron(self, key, val, old)
         return True
     
 

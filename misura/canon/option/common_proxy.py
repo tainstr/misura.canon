@@ -5,12 +5,15 @@ import re
 from time import time
 
 coalesce_chron = 2 # seconds
-def manage_chron(obj, key, nval):
+def manage_chron(obj, key, nval, old_val):
     if not obj.hasattr(key, 'chron'):
         obj.setattr(key, 'chron', [[],[]])
     chron = obj.getattr(key, 'chron')
     t = time()
     t -= t % coalesce_chron
+    if len(chron[0])==0:
+        chron[0].append(t-4)
+        chron[1].append(old_val)
     if len(chron[0])>1 and t==chron[0][-1]:
         chron[1][-1] = nval
     else:
