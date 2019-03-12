@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 """Test per Mis
 ura Language."""
+import os
 import unittest
 import numpy
 from misura.canon import milang, indexer
@@ -42,14 +43,19 @@ mi.t(i)
 """
 
 # FIXME: for this to work, we need real data here!
-path = testdir + 'storage/hsm_test.h5'
+path = os.path.join(testdir,'storage','hsm_test.h5')
 
 
 class DataEnvironment(unittest.TestCase):
-    env = milang.DataEnvironment()
-    tab = indexer.SharedFile(path)
-    env.hdf = tab
-    env.prefix = '/hsm/sample0/'
+    
+    def setUp(self):
+        self.env = milang.DataEnvironment()
+        self.tab = indexer.SharedFile(path)
+        self.env.hdf = self.tab
+        self.env.prefix = '/hsm/sample0/'
+        
+    def tearDown(self):
+        self.tab.close(all_handlers=True)
 
     def test_Value(self):
         self.env.Value(10)

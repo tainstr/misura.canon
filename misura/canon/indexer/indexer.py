@@ -10,7 +10,7 @@ try:
 except:
     import pickle
     unicode = str
-from traceback import print_exc
+from traceback import format_exc
 import sqlite3
 import functools
 import threading
@@ -80,13 +80,13 @@ def dbcom(func):
                 optimize = time()-t0>optimize_timeout
                 self.close_db(optimize=optimize)
             except:
-                print_exc()
+                self.log.info('Closing db', format_exc())
             finally:
                 self._lock.acquire(False)
                 try:
                     self._lock.release()
                 except:
-                    print_exc()
+                    self.log.info('Releasing lock',format_exc())
     return safedb_wrapper
 
 
@@ -153,7 +153,8 @@ class FileSystemLock(object):
 
     def release(self):
         r = self._lock.release()
-        os.rmdir(self.path)
+        if os.path.exists(self.path):
+            os.rmdir(self.path)
         return r
 
 def create_tables(cur):
@@ -267,10 +268,16 @@ class Indexer(object):
             cur.close()
         if conn:
             conn.close()
+        
         return True
 
     def close(self):
-        return self.close_db()
+        r = self.close_db()
+        try:
+            self._lock.release()
+        except:
+            self.log.debug(format_exc())
+        return r
 
     def tab_len(self, table_name):
         """Returns length of a table"""
@@ -392,7 +399,7 @@ class Indexer(object):
             r = self._appendFile(
                 sh, file_path, add_uid_to_incremental_ids_table)
         except:
-            print_exc()
+            self.log.info(format_exc())
         if sh:
             sh.close(all_handlers=True)
         return r
@@ -500,7 +507,6 @@ class Indexer(object):
         self.conn.commit()
         # This is actually the relative path saved before
         self.save_modify_date(test['file'])
-
         return True
 
     def add_incremental_id(self, cursor, uid):
@@ -529,8 +535,7 @@ class Indexer(object):
             column_name] = new_value
 
         hdf_file.save_conf()
-        hdf_file.close()
-
+        hdf_file.close(all_handlers=True)
         return update_function(new_value, uid)
 
     def change_filename(self, original_file_path, new_filename, uid):

@@ -196,7 +196,6 @@ class DataEnvironment(BaseEnvironment):
     def Raises(self, curve0, val, start_time=0):
         """Returns time where curve value raises above val"""
         curve = self._cname(curve0)
-        print('Raises', curve, curve0, val, start_time, self.prefix, self.obj)
         if curve is not False:
             return self.hdf.rises(curve, val, start_time)
         # TODO: array was passed

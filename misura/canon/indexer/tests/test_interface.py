@@ -24,7 +24,7 @@ class SharedFile(unittest.TestCase):
         self.shared_file = indexer.SharedFile(self.test_file)
 
     def tearDown(self):
-        self.shared_file.close()
+        self.shared_file.close(all_handlers=True)
         os.remove(self.test_file)
 
 

@@ -22,7 +22,7 @@ def verify_point(test, env, time=None, temp=None, value=None, comment=''):
     if time in ['None', None]:
         test.assertEqual(env.time, None)
     else:
-        test.assertAlmostEqual(env.time, time)
+        test.assertAlmostEqual(env.time, time, delta=1.5)
     if temp in ['None', None]:
         test.assertEqual(env.temp, None)
     else:
