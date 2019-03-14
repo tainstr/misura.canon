@@ -148,7 +148,9 @@ class Reference(object):
         return [dat[0], dat[1:]]
 
     def __getitem__(self, idx_or_slice):
-        if isinstance(idx_or_slice, int):
+        isint = map(lambda t: isinstance(idx_or_slice, t),  (int, np.int, np.int32, np.int16, np.int64)) 
+        isint = sum(isint) 
+        if isint:
             return self.decode(self.outfile.col_at(self.path, idx_or_slice, raw=True))
         return [self.decode(d) for d in self.outfile.col(self.path, idx_or_slice, raw=True)]
 
