@@ -754,7 +754,7 @@ class Indexer(object):
             os.remove(absolute_path)
             return True
         else:
-            self.log.info('Asked to delete a non-existing file:', file_path)
+            self.log.info('Asked to delete a non-existing file:', absolute_path)
             return False
 
     @dbcom
