@@ -46,6 +46,10 @@ testTableDef = '''(file text unique, serial text, uid text primary key,
                    id text, zerotime text, instrument text, flavour text,
                    name text, elapsed real, nSamples integer,
                    comment text,verify bool)'''
+                   
+
+errorsTableDef = '''(file text unique, error text, time real)'''  
+                                   
 incrementalIdsTableDef = '''(incremental_id INTEGER PRIMARY KEY AUTOINCREMENT, uid text unique)'''
 modifyDatesTableDef = '''(modify_date integer, file text unique)'''
 
@@ -160,6 +164,7 @@ class FileSystemLock(object):
 def create_tables(cur):
     #print("AAAAAAA", testTableDef)
     cur.execute("CREATE TABLE if not exists test " + testTableDef)
+    cur.execute("CREATE TABLE if not exists errors " + errorsTableDef)
     # Sync tables
     cur.execute("create table if not exists sync_exclude " + syncTableDef)
     cur.execute("create table if not exists sync_queue " + syncTableDef)
@@ -333,6 +338,8 @@ class Indexer(object):
         cur = self.cur
         cur.execute("DROP TABLE IF EXISTS test")
         cur.execute("CREATE TABLE test " + testTableDef)
+        cur.execute("DROP TABLE IF EXISTS errors")
+        cur.execute("CREATE TABLE errors " + errorsTableDef)
         cur.execute("DROP TABLE IF EXISTS sample")
         cur.execute("DROP TABLE IF EXISTS sync_exclude")
         cur.execute("DROP TABLE IF EXISTS sync_queue")
@@ -381,6 +388,18 @@ class Indexer(object):
                     tests_filenames.append(fp)
 
         return sorted(tests_filenames, key=os.path.getctime)
+    
+    @dbcom
+    def append_error(self, file_path, err):
+        cur = self.cur
+        v = [file_path, err, time()]
+        cmd = '?,' * len(v)
+        cmd = 'INSERT OR REPLACE INTO errors VALUES (' + cmd[:-1] + ')'
+        print('Executing', cmd, v)
+        self.cur.execute(cmd, v)
+        r = cur.fetchall()
+        self.conn.commit()
+        return r
 
     def appendFile(self, file_path, add_uid_to_incremental_ids_table=True):
         if not os.path.exists(file_path):
@@ -399,7 +418,9 @@ class Indexer(object):
             r = self._appendFile(
                 sh, file_path, add_uid_to_incremental_ids_table)
         except:
-            self.log.info(format_exc())
+            err = format_exc()
+            self.append_error(file_path, err)
+            self.log.info(err)
         if sh:
             sh.close(all_handlers=True)
         return r
