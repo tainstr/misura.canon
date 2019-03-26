@@ -3,7 +3,7 @@
 from .corefile import addHeader
 from .interface import SharedFile
 from .filemanager import FileManager
-from .indexer import Indexer, create_tables
+from .indexer import Indexer, create_tables, FileSystemLock
 
 import toi
 
