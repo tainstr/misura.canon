@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Indexing hdf5 files"""
 ext = '.h5'
-
+import shutil
 import hashlib
 import os
 from time import time
@@ -110,7 +110,8 @@ def convert_to_relative_path(file_path, dbdir):
 
 class FileSystemLock(object):
     stale_file_timeout = 10
-
+    copy_on_lock = False
+    
     def __init__(self,  path=False):
         self._lock = multiprocessing.Lock()
         self.path = path
@@ -132,7 +133,19 @@ class FileSystemLock(object):
     def set_path(self, path):
         self.path = path
         if path:
+            if self.copy_on_lock:
+                self.copy_on_lock = path
             self.path += '.lock'
+            
+    def recover_backup(self):
+        if not self.copy_on_lock:
+            return False
+        if not os.path.exists(self.copy_on_lock+'.backup'):
+            print('Cannot recover backup', self.copy_on_lock)
+            return False
+        shutil.copy(self.copy_on_lock+'.backup', self.copy_on_lock)
+        return True
+        
 
     def acquire(self,  block=True,  timeout=0):
         r = self._lock.acquire(block)
@@ -146,8 +159,7 @@ class FileSystemLock(object):
         while os.path.exists(self.path):
             if t0 - t1 > self.stale_file_timeout:
                 os.rmdir(self.path)
-                raise BaseException(
-                    'Stale FileSystemLock detected: ' + self.path)
+                print('Stale FileSystemLock detected: ' + self.path)
             if not block:
                 return False
             if timeout > 0 and (time() - t0) > timeout:
@@ -156,6 +168,8 @@ class FileSystemLock(object):
         return True
 
     def release(self):
+        if self.copy_on_lock:
+            shutil.copy(self.copy_on_lock, self.copy_on_lock+'.backup')
         r = self._lock.release()
         if os.path.exists(self.path):
             os.rmdir(self.path)
