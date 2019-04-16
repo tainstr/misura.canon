@@ -42,7 +42,7 @@ class TestTotalOptionIndexer(unittest.TestCase):
             os.remove(testdb)
         
 
-    def test_create_tables(self):    
+    def test_create_tables(self):
         self.assertTrue(os.path.exists(testdb))
         #TODO: check if all tables are defined
         
@@ -92,6 +92,10 @@ class TestTotalOptionIndexer(unittest.TestCase):
         sh.close()
         self.conn.commit()
         self.assertTrue(r)
+        
+    def test_a_test(self):
+        print("HERE NOW")
+        self.assertTrue(True)
         
 
 
